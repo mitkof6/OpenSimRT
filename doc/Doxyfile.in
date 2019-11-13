@@ -1,0 +1,16 @@
+PROJECT_NAME           = "@CMAKE_PROJECT_NAME@"
+PROJECT_NUMBER         = @VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
+                         @PROJECT_BINARY_DIR@
+INPUT                  = @doxy_main_page@ \
+                         @PROJECT_SOURCE_DIR@/src
+FILE_PATTERNS          = *.h *.hpp *.c *.cpp
+RECURSIVE              = YES
+# Enable the USE_MATHJAX option to render LaTeX formulas using MathJax
+# (see http://www.mathjax.org) which uses client side Javascript for the
+# rendering instead of using prerendered bitmaps. Use this if you do not
+# have LaTeX installed or if you want to formulas look prettier in the HTML
+# output. When enabled you also need to install MathJax separately and
+# configure the path to it using the MATHJAX_RELPATH option.
+USE_MATHJAX = @DOXYGEN_USE_MATHJAX_DOXYFILE@
+USE_MDFILE_AS_MAINPAGE = @doxy_main_page@

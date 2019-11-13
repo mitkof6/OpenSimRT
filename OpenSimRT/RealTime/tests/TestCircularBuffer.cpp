@@ -1,0 +1,56 @@
+/**
+ * @file testCircularBuffer.cpp
+ *
+ * \brief Tests the utilization of the thread safe circular buffer.
+ *
+ * @author Dimitar Stanev <jimstanev@gmail.com>
+ */
+#include <iostream>
+#include <thread>
+#include "SimulationUtils.h"
+
+using namespace std;
+using namespace OpenSim;
+using namespace SimTK;
+
+CircularBuffer<100, double> buffer;
+
+void producerFunction() {
+    for (int i = 1 ; i <= 100; ++i) {
+	buffer.add(i);
+	cout << "ID: " << this_thread::get_id() << " Add: " << i << endl;
+	this_thread::sleep_for(chrono::milliseconds(10));
+    }
+}
+
+void consumerFunction(int M) {
+    for (int i = 1 ; i <= 50; ++i) {
+	auto data = buffer.get(M);
+	cout << "ID: " << this_thread::get_id() <<" Get: ";
+	for (auto d : data) {
+	    cout << d << "\t";
+	}
+	cout << endl;
+	this_thread::sleep_for(chrono::milliseconds(100));
+    }
+}
+
+void run() {
+    thread producer(producerFunction);
+    thread consumer1(consumerFunction, 5);
+    thread consumer2(consumerFunction, 100);
+   
+    producer.join();
+    consumer1.join();
+    consumer2.join();
+}
+
+int main(int argc, char *argv[]) {
+    try {
+        // run();
+    } catch (exception &e) {
+        cout << e.what() << endl;
+        return -1;
+    }
+    return 0;
+}

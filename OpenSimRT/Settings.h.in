@@ -1,0 +1,9 @@
+#ifndef SETTINGS_H
+#define SETTINGS_H
+
+#include <string>
+
+std::string DATA_DIR = "@DATA_DIR@";
+std::string INI_FILE = "@INI_FILE@";
+
+#endif

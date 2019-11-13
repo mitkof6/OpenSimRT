@@ -1,0 +1,226 @@
+#include "InverseDynamics.h"
+#include "SimulationUtils.h"
+#include <OpenSim/Simulation/Model/BodySet.h>
+#include <OpenSim/Simulation/Model/Muscle.h>
+
+using namespace std;
+using namespace OpenSim;
+using namespace SimTK;
+
+/*******************************************************************************/
+
+Vector ExternalWrench::Input::toVector() {
+    Vector out(9);
+    out[0] = point[0];
+    out[1] = point[1];
+    out[2] = point[2];
+    out[3] = force[0];
+    out[4] = force[1];
+    out[5] = force[2];
+    out[6] = torque[0];
+    out[7] = torque[1];
+    out[8] = torque[2];
+    return out;
+}
+
+void ExternalWrench::Input::fromVector(const Vector& in) {
+    point[0] = in[0];
+    point[1] = in[1];
+    point[2] = in[2];
+    force[0] = in[3];
+    force[1] = in[4];
+    force[2] = in[5];
+    torque[0] = in[6];
+    torque[1] = in[7];
+    torque[2] = in[8];
+}
+
+int ExternalWrench::Input::size() {
+    return 9;
+}
+
+ExternalWrench::ExternalWrench(const ExternalWrench::Parameters& parameters)
+    : Force(), parameters(parameters) {
+    // logger
+    logger = new CSVLogger({"time",
+			    "p_x", "p_y", "p_z",
+			    "f_x", "f_y", "f_z",
+			    "tau_x", "tau_y", "tau_z"});
+}
+
+void ExternalWrench::computeForce(const State& state,
+                                  Vector_<SpatialVec>& bodyForces,
+                                  Vector& generalizedForces) const {
+    // get references
+    const auto& engine = getModel().getSimbodyEngine();
+    const auto& appliedToBody = getModel().getBodySet().get(parameters.appliedToBody);
+    const auto& forceExpressedInBody = getModel().getBodySet().get(parameters.forceExpressedInBody);
+    const auto& pointExpressedInBody = getModel().getBodySet().get(parameters.pointExpressedInBody);
+
+    // re-express point in applied body frame
+    Vec3 point = input.point;
+    engine.transformPosition(state, pointExpressedInBody, point,
+                             appliedToBody, point);
+
+    // re-express force in ground frame
+    Vec3 force = input.force;
+    engine.transform(state, forceExpressedInBody,
+                     force, getModel().getGround(), force);
+
+    // add-in force to the corresponding slot in bodyForces
+    getModel().getMatterSubsystem()
+        .addInStationForce(state,
+			   appliedToBody.getMobilizedBodyIndex(),
+                           point, force, bodyForces);
+
+    // re-express torque in ground frame
+    Vec3 torque = input.torque;
+    engine.transform(state, forceExpressedInBody, torque,
+                     getModel().getGround(), torque);
+
+    // add-in torque in the corresponding slot in bodyForces
+    getModel().getMatterSubsystem()
+        .addInBodyTorque(state,
+                         appliedToBody.getMobilizedBodyIndex(),
+                         torque, bodyForces);
+
+    // log
+    Vector temp(9);
+    temp[0] = input.point[0]; // ground frame not local frame
+    temp[1] = input.point[1];
+    temp[2] = input.point[2];
+    temp[3] = force[0];
+    temp[4] = force[1];
+    temp[5] = force[2];
+    temp[6] = torque[0];
+    temp[7] = torque[1];
+    temp[8] = torque[2];
+    logger->addRow(state.getTime(), temp);
+}
+
+/*******************************************************************************/
+
+InverseDynamics::InverseDynamics(string modelFile,
+                                 const vector<ExternalWrench::Parameters>& wrenchParameters)
+    : model(modelFile) {
+    // add externally applied forces
+    for (int i = 0; i < wrenchParameters.size(); ++i) {
+        auto wrench = new ExternalWrench(wrenchParameters[i]);
+        externalWrenches.push_back(wrench);
+        model.addForce(wrench);
+    }
+
+    // disable muscles, otherwise they apply passive forces
+    state = model.initSystem();
+    for (int i = 0; i < model.getMuscles().getSize(); ++i) {
+        model.updMuscles()[i].setAppliesForce(state, false);
+    }
+
+    // logger
+    auto coordinateColumnNames = getCoordinateNames(model);
+    coordinateColumnNames.insert(coordinateColumnNames.begin(), "time");
+    logger = new CSVLogger(coordinateColumnNames);
+}
+
+InverseDynamics::Output InverseDynamics::solve(
+    const InverseDynamics::Input& input) {
+    // update state
+    state.updTime() = input.t;
+    state.updQ() = input.q;
+    state.updU() = input.qDot;
+    state.updUDot() = input.qDDot;
+
+    // update external wrenches
+    if (input.externalWrenches.size() != externalWrenches.size()) {
+        THROW_EXCEPTION("input wrenches dimensionality mismatch " +
+                        toString(input.externalWrenches.size()) + " != " +
+                        toString(externalWrenches.size()));
+    }
+
+    for (int i = 0; i < input.externalWrenches.size(); ++i) {
+        externalWrenches[i]->input = input.externalWrenches[i];
+    }
+
+    // realize to dynamics stage so that all model forces are computed
+    model.getMultibodySystem().realize(state, Stage::Dynamics);
+
+    // get applied mobility (generalized) forces generated by components of the
+    // model, like actuators
+    const Vector &appliedMobilityForces = model.getMultibodySystem()
+        .getMobilityForces(state, Stage::Dynamics);
+
+    // get all applied body forces like those from contact
+    const Vector_<SpatialVec>& appliedBodyForces = model.getMultibodySystem()
+        .getRigidBodyForces(state, Stage::Dynamics);
+
+    // perform inverse dynamics
+    Output output;
+    output.t = input.t;
+    model.getMultibodySystem().getMatterSubsystem()
+        .calcResidualForceIgnoringConstraints(state,
+                                              appliedMobilityForces,
+                                              appliedBodyForces,
+                                              input.qDDot,
+                                              output.tau);
+    // log
+    logger->addRow(output.t, output.tau);
+    return output;
+}
+
+/*******************************************************************************/
+
+vector<string> createGRFLabelsFromIdentifiers(string pointIdentifier,
+					      string forceIdentifier,
+					      string torqueIdentifier) {
+    if (pointIdentifier.size() == 0 || forceIdentifier.size() == 0 ||
+	torqueIdentifier.size() == 0) {
+	THROW_EXCEPTION("empty identifiers not allowed");
+    }
+    vector<string> temp;
+    temp.push_back(pointIdentifier + "x");
+    temp.push_back(pointIdentifier + "y");
+    temp.push_back(pointIdentifier + "z");
+    temp.push_back(forceIdentifier + "x");
+    temp.push_back(forceIdentifier + "y");
+    temp.push_back(forceIdentifier + "z");
+    temp.push_back(torqueIdentifier + "x");
+    temp.push_back(torqueIdentifier + "y");
+    temp.push_back(torqueIdentifier + "z");
+    return temp;
+}
+
+ExternalWrench::Input getWrenchFromExternalForce(double t,
+                                                 const ExternalForce& force) {
+    ExternalWrench::Input input;
+    input.point = force.getPointAtTime(t);
+    input.force = force.getForceAtTime(t);
+    input.torque = force.getTorqueAtTime(t);
+    return input;
+}
+
+ExternalWrench::Input getWrenchFromStorage(double t,
+                                           const vector<string>& labels,
+                                           const Storage& storage) {
+    if (labels.size() != 9) {
+        THROW_EXCEPTION("labels dimension does not agree with ExternalWrench");
+    }
+
+    // assumes labels are pre-ordered (point, force, torque)
+    auto columns = storage.getColumnLabels();
+    Vector row(columns.getSize() - 1, 0.0);
+    storage.getDataAtTime(t, columns.getSize() - 1, row);
+
+    Vector collect(columns.getSize() - 1, 0.0);
+    for (int i = 0; i < labels.size(); ++i) {
+        int ind = columns.findIndex(labels[i]);
+        if (ind < 0) {
+            THROW_EXCEPTION("label: " + labels[i] + " does not exist in storage");
+        }
+        collect[i] = row[ind - 1];
+    }
+    ExternalWrench::Input input;
+    input.fromVector(collect);
+    return input;
+}
+
+/*******************************************************************************/

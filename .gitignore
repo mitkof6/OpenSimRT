@@ -1,0 +1,5 @@
+/.dir-locals.el
+*~
+.cquery_cached_index/
+build/
+/OpenSimRT/Settings.h
