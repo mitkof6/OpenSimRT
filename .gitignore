@@ -3,3 +3,5 @@
 .cquery_cached_index/
 build/
 /OpenSimRT/Settings.h
+.clangd/
+/compile_commands.json

@@ -5,29 +5,32 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 # project
 project(OpenSimRT VERSION 1.0.0)
 
-# modules
+# cmake modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(cmake/CMakeHelpers.cmake)
 
 # ctest
 include(CTest)
 
+# force RelWithDebInfo on Linux
 if(UNIX AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the build type" FORCE)
 endif()
 
-
+# build documentation
 option(BUILD_DOCUMENTATION
   "Create and install the HTML based API documentation (requires Doxygen)" OFF)
 
+# enables speedup in build
 option(USE_UNITY_BUILD "Enable to speed up the building" OFF)
 
-option(BUILD_VICON "Build Vicon interface" ON)
+# build Vicon interface
+option(BUILD_VICON "Build Vicon streamer interface" OFF)
 
 # compilation database
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# for grouping into folders
+# group targets into folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # c++11, -g option is used to export debug symbols for gdb
@@ -54,7 +57,6 @@ if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
 else()
   set(PLATFORM_ABI x86)
 endif()
-
 set(BUILD_PLATFORM "${CMAKE_HOST_SYSTEM_NAME}:${PLATFORM_ABI}" CACHE STRING
     "This is the platform and ABI we're building for." FORCE)
 
@@ -91,6 +93,8 @@ mark_as_advanced(CMAKE_MINSIZEREL_POSTFIX)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
 
+################################################################################
+
 # configure project global settings that are include in the source
 set(INI_FILE "${PROJECT_SOURCE_DIR}/data/setup.ini")
 set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
@@ -100,7 +104,7 @@ set(CMAKE_EXTRA_INCLUDE_FILES)
 
 ################################################################################
 
-# configure OpenSim
+# find OpenSim
 find_package(OpenSim REQUIRED)
 include_directories(${OpenSim_INCLUDE_DIRS})
 link_directories(${OpenSim_LIB_DIR})
