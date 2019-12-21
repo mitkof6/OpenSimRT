@@ -1,7 +1,5 @@
-include_directories(
-  .
-  Common/)
-
+include_directories(.)
+add_subdirectory(Common)
 add_subdirectory(RealTime)
 if(BUILD_VICON)
   add_subdirectory(Vicon)

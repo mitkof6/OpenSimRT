@@ -9,6 +9,9 @@
 #include <iostream>
 #include <thread>
 #include "Simulation.h"
+#include "Visualization.h"
+#include "CSVLogger.h"
+#include "OpenSimUtils.h"
 #include "INIReader.h"
 #include "Settings.h"
 
@@ -38,7 +41,7 @@ void run() {
                                                       observationOrder);
 
     // initialize loggers
-    auto coordinateColumnNames = getCoordinateNames(model);
+    auto coordinateColumnNames = ModelUtils::getCoordinateNames(model);
     coordinateColumnNames.insert(coordinateColumnNames.begin(), "time");
     CSVLogger q(coordinateColumnNames);
 
@@ -60,7 +63,7 @@ void run() {
         // perform ik
         auto pose = ik.solve(frame);
         q.addRow(pose.t, pose.q);
-        
+
         // visualize
         visualizer.update(pose.q);
         this_thread::sleep_for(chrono::milliseconds(10));

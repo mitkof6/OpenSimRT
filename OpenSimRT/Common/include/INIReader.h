@@ -10,13 +10,13 @@
 #ifndef INI_READER_H
 #define INI_READER_H
 
-// #include "internal/SimulationExports.h"
 #include <map>
 #include <string>
+#include "internal/CommonExports.h"
 
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
-class INIReader {
+class Common_API INIReader {
 public:
     INIReader()
     {
@@ -31,7 +31,7 @@ public:
 
     // Get a string value from INI file, returning default_value if not found.
     std::string Get(std::string section, std::string name,
-        std::string default_value);
+                    std::string default_value);
 
     // Get an integer (long) value from INI file, returning default_value if not
     // found or not a valid integer (decimal "1234", "-1234", or hex "0x4d2").
@@ -82,6 +82,4 @@ private:
         void* user);
 };
 
-#include "INIReader.cpp"
-
-#endif 
+#endif

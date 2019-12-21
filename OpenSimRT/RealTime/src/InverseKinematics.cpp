@@ -1,5 +1,5 @@
 #include "InverseKinematics.h"
-#include "SimulationUtils.h"
+#include "Exception.h"
 #include <OpenSim/Simulation/Model/MarkerSet.h>
 #include <OpenSim/Simulation/Model/BodySet.h>
 #include <OpenSim/Tools/IKCoordinateTask.h>

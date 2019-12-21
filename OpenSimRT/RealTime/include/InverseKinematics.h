@@ -55,7 +55,7 @@ class RealTime_API InverseKinematics {
     };
  public:                        /* public interface */
    /**
-    * Inverse kinematics constructs, that accepts a model, the marker tasks (if
+    * Inverse kinematics constructor, that accepts a model, the marker tasks (if
     * any), the IMU tasks (if any) and the constraint weight.
     */
     InverseKinematics(const OpenSim::Model& model,

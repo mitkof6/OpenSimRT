@@ -7,7 +7,8 @@ file(GLOB exclude_sources src/SymbolicMomentArm.cpp)
 
 # dependencies
 include_directories(include/)
-set(DEPENDENCY_LIBRARIES ${OpenSim_LIBRARIES})
+include_directories(../Common/include/)
+set(DEPENDENCY_LIBRARIES ${OpenSim_LIBRARIES} Common)
 
 # dynamic library
 set(target RealTime)
@@ -21,7 +22,7 @@ addLibrary(
 )
 
 # tests
-addTests( 
+addTests(
     TESTPROGRAMS ${tests}
     LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
 )

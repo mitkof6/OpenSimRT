@@ -13,7 +13,6 @@
 /* #include "MuscleOptimization.h" */
 /* #include "JointReaction.h" */
 /* #include "SignalProcessing.h" */
-#include "SimulationUtils.h"
 /* #include "SymbolicMomentArm.h" */
 /* #include "RealTimeAnalysis.h" */
 
