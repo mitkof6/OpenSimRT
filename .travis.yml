@@ -2,8 +2,6 @@ language: cpp
 dist: bionic
 addons:
   apt:
-    # sources:
-    #  - ppa:ubuntu-toolchain-r/test
     packages:
       - freeglut3-dev
       - libxi-dev
@@ -39,8 +37,9 @@ script:
   - cmake ../
       -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
       -DCMAKE_INSTALL_PREFIX:PATH=../install
-      -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
+      # -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
       -DOpenSim_DIR:PATH=$OpenSim_DIR
-      # -DUSE_SIMBODY_VISUALIZER=OFF
+      -DCONTINUOUS_INTEGRATION=ON
   - make -j8
   - ctest
+  - make install

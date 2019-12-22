@@ -47,6 +47,8 @@ void run() {
                          vector<InverseKinematics::MarkerTask>{},
                          imuTasks,
                          100);
+
+    // visualizer
     BasicModelVisualizer visualizer(modelFile);
 
     // loop through marker frames

@@ -30,12 +30,18 @@ option(BUILD_VICON "Build Vicon streamer interface" OFF)
 # compilation database
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# disable code parts when CI is invoked
+option(CONTINUOUS_INTEGRATION "Continuous integration" OFF)
+if(CONTINUOUS_INTEGRATION)
+  add_definitions(-DCONTINUOUS_INTEGRATION)
+endif()
+
 # group targets into folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # c++11, -g option is used to export debug symbols for gdb
 if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU OR
-   ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
+    ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
   # Using C++11 on OSX requires using libc++ instead of libstd++.
   # libc++ is an implementation of the C++ standard library for OSX.
   if(APPLE)
@@ -58,7 +64,7 @@ else()
   set(PLATFORM_ABI x86)
 endif()
 set(BUILD_PLATFORM "${CMAKE_HOST_SYSTEM_NAME}:${PLATFORM_ABI}" CACHE STRING
-    "This is the platform and ABI we're building for." FORCE)
+  "This is the platform and ABI we're building for." FORCE)
 
 # install layout
 # Layout. This works for all platforms:
@@ -99,7 +105,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
 set(INI_FILE "${PROJECT_SOURCE_DIR}/data/setup.ini")
 set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
 configure_file("${PROJECT_SOURCE_DIR}/OpenSimRT/Settings.h.in"
-               "${PROJECT_SOURCE_DIR}/OpenSimRT/Settings.h")
+  "${PROJECT_SOURCE_DIR}/OpenSimRT/Settings.h")
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
 ################################################################################
@@ -118,7 +124,7 @@ include(CMakePackageConfigHelpers)
 
 # configuration
 set(TARGET_EXPORT_NAME "${PROJECT_NAME}-targets" CACHE
-    INTERNAL "Internal variable that is referenced by library generation")
+  INTERNAL "Internal variable that is referenced by library generation")
 set(GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 set(VERSION_CONFIG "${GENERATED_DIR}/${PROJECT_NAME}ConfigVersion.cmake")
 set(PROJECT_CONFIG "${GENERATED_DIR}/${PROJECT_NAME}Config.cmake")
@@ -126,33 +132,33 @@ set(PROJECT_CONFIG "${GENERATED_DIR}/${PROJECT_NAME}Config.cmake")
 # Configure '<PROJECT-NAME>ConfigVersion.cmake'
 # Note: PROJECT_VERSION is used as a VERSION
 write_basic_package_version_file("${VERSION_CONFIG}"
-                                 COMPATIBILITY SameMajorVersion)
+  COMPATIBILITY SameMajorVersion)
 
 # Configure '<PROJECT-NAME>Config.cmake'
 configure_package_config_file("cmake/Config.cmake.in"
-                              "${PROJECT_CONFIG}"
-			      INSTALL_DESTINATION "${CMAKE_INSTALL_CONFIG}")
+  "${PROJECT_CONFIG}"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_CONFIG}")
 
 # intall configuration
 #   * <prefix>/lib/cmake/Foo/FooConfig.cmake
 #   * <prefix>/lib/cmake/Foo/FooConfigVersion.cmake
 install(FILES "${PROJECT_CONFIG}" "${VERSION_CONFIG}"
-        DESTINATION "${CMAKE_INSTALL_CONFIG}")
+  DESTINATION "${CMAKE_INSTALL_CONFIG}")
 
 # install target configuration
 #   * <prefix>/lib/cmake/Foo/FooTargets.cmake
 install(EXPORT ${TARGET_EXPORT_NAME}
-        DESTINATION "${CMAKE_INSTALL_CONFIG}")
+  DESTINATION "${CMAKE_INSTALL_CONFIG}")
 
-# # # scripts directory
+# # scripts directory
 # install(
 #   DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/scripts/
 #   DESTINATION "${CMAKE_INSTALL_SCRIPTS}")
 
 # # data dir
-# install(
-#   DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/data/
-#   DESTINATION "${CMAKE_INSTALL_DATADIR}")
+install(
+  DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/data/
+  DESTINATION "${CMAKE_INSTALL_DATADIR}")
 
 # others dirs can be copied to the install dir
 

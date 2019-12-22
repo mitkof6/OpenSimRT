@@ -54,10 +54,14 @@ void ForceDecorator::generateDecorations(const State& state,
 /******************************************************************************/
 
 BasicModelVisualizer::BasicModelVisualizer(string modelFile)
-    : model(modelFile) {
-    shouldTerminate = false;
+    : model(modelFile), shouldTerminate(false) {
+#ifndef CONTINUOUS_INTEGRATION
     model.setUseVisualizer(true);
+#endif
+
     state = model.initSystem();
+
+#ifndef CONTINUOUS_INTEGRATION
     visualizer = &model.updVisualizer().updSimbodyVisualizer();
     silo = &model.updVisualizer().updInputSilo();
     visualizer->setShowFrameRate(false);
@@ -67,12 +71,17 @@ BasicModelVisualizer::BasicModelVisualizer(string modelFile)
     visualizer->setDesiredFrameRate(60);
     fps = new FPSDecorator();
     visualizer->addDecorationGenerator(fps);
+#endif
 }
 
 void BasicModelVisualizer::update(const Vector& q,
                                   const Vector& muscleActivations) {
-    // kinematics
+
+#ifndef CONTINUOUS_INTEGRATION
     fps->measureFPS();
+#endif
+
+    // kinematics
     state.updQ() = q;
 
     // muscle activations
@@ -82,8 +91,9 @@ void BasicModelVisualizer::update(const Vector& q,
             model.getMuscles()[i].setActivation(state, muscleActivations[i]);
         }
     }
-    visualizer->report(state);
 
+#ifndef CONTINUOUS_INTEGRATION
+    visualizer->report(state);
     // terminate if ESC key is pressed
     unsigned key, modifiers;
     if (silo->takeKeyHit(key, modifiers)) {
@@ -91,6 +101,7 @@ void BasicModelVisualizer::update(const Vector& q,
             shouldTerminate = true;
         }
     }
+#endif
 }
 
 /******************************************************************************/
