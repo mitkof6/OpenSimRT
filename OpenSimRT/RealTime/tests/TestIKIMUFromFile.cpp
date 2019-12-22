@@ -22,9 +22,9 @@ using namespace OpenSimRT;
 void run() {
     // subject data
     INIReader ini(INI_FILE);
-    auto subjectDir = DATA_DIR + ini.Get("NGIMU", "SUBJECT_DIR", "");
-    auto modelFile = subjectDir +  ini.Get("NGIMU", "MODEL_FILE", "");
-    auto trcFile = subjectDir +  ini.Get("NGIMU", "TRC_FILE", "");
+    auto subjectDir = DATA_DIR + ini.getString("NGIMU", "SUBJECT_DIR", "");
+    auto modelFile = subjectDir +  ini.getString("NGIMU", "MODEL_FILE", "");
+    auto trcFile = subjectDir +  ini.getString("NGIMU", "TRC_FILE", "");
 
     Model model(modelFile);
 

@@ -1,0 +1,46 @@
+language: cpp
+dist: bionic
+addons:
+  apt:
+    # sources:
+    #  - ppa:ubuntu-toolchain-r/test
+    packages:
+      - freeglut3-dev
+      - libxi-dev
+      - libxmu-dev
+      - liblapack-dev
+      - doxygen
+      - swig
+      - python-dev
+      - cmake
+before_script:
+  # setup OpenSim
+  - wget https://sourceforge.net/projects/dependencies/files/opensim-core/opensim-core-4.0-ubuntu-18.04.tar.xz
+  - tar -xvf opensim-core-4.0-ubuntu-18.04.tar.xz
+  - export OPENSIM_HOME=$(pwd)/opensim-core
+  - export OpenSim_DIR=$OPENSIM_HOME/lib/cmake/OpenSim
+  - export PATH=$OPENSIM_HOME/bin:$PATH
+  - export LD_LIBRARY_PATH=$OPENSIM_HOME/lib:$LD_LIBRARY_PATH
+  # setup OSCPack
+  - wget https://sourceforge.net/projects/dependencies/files/oscpack/oscpack-ubuntu-18.04.tar.xz
+  - tar -xvf oscpack-ubuntu-18.04.tar.xz
+  - export OSCPACK_DIR=$(pwd)/oscpack
+  - export LD_LIBRARY_PATH=$OSCPACK_DIR/lib:$LD_LIBRARY_PATH
+  # setup ViconDataStreamSDK
+  - wget https://sourceforge.net/projects/dependencies/files/vicon/ViconDataStreamSDK_1.7.1_96542h.tar.xz
+  - tar -xvf ViconDataStreamSDK_1.7.1_96542h.tar.xz
+  - export VICONDATASTREAM_DIR=$(pwd)/ViconDataStreamSDK_1.7.1_96542h/Linux64-boost-1.58.0/20170125_96542h.x64
+  - export LD_LIBRARY_PATH=$VICONDATASTREAM_DIR:$LD_LIBRARY_PATH
+script:
+  # build
+  - git submodule update --init
+  - mkdir build
+  - cd build
+  - cmake ../
+      -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+      -DCMAKE_INSTALL_PREFIX:PATH=../install
+      -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
+      -DOpenSim_DIR:PATH=$OpenSim_DIR
+      # -DUSE_SIMBODY_VISUALIZER=OFF
+  - make -j8
+  - ctest

@@ -23,10 +23,10 @@ using namespace OpenSimRT;
 void run() {
     // subject data
     INIReader ini(INI_FILE);
-    auto subjectDir = DATA_DIR + ini.Get("TESTS", "SUBJECT_DIR", "");
-    auto modelFile = subjectDir +  ini.Get("TESTS", "MODEL_FILE", "");
-    auto trcFile = subjectDir +  ini.Get("TESTS", "TRC_FILE", "");
-    auto ikTaskSetFile = subjectDir +  ini.Get("TESTS", "IK_TASK_SET_FILE", "");
+    auto subjectDir = DATA_DIR + ini.getString("TESTS", "SUBJECT_DIR", "");
+    auto modelFile = subjectDir +  ini.getString("TESTS", "MODEL_FILE", "");
+    auto trcFile = subjectDir +  ini.getString("TESTS", "TRC_FILE", "");
+    auto ikTaskSetFile = subjectDir +  ini.getString("TESTS", "IK_TASK_SET_FILE", "");
 
     Model model(modelFile);
 
@@ -50,6 +50,8 @@ void run() {
                          markerTasks,
                          vector<InverseKinematics::IMUTask>{},
                          100);
+
+    // visualizer
     BasicModelVisualizer visualizer(modelFile);
 
     // loop through marker frames
