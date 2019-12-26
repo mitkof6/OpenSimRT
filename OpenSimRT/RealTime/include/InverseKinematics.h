@@ -8,12 +8,13 @@
 #ifndef INVERSE_KINEMATICS_H
 #define INVERSE_KINEMATICS_H
 
+#include "internal/RealTimeExports.h"
+
+#include <OpenSim/Common/MarkerData.h>
 #include <OpenSim/Simulation/Model/Model.h>
 #include <OpenSim/Tools/IKTaskSet.h>
-#include <OpenSim/Common/MarkerData.h>
 #include <simbody/internal/AssemblyCondition_Markers.h>
 #include <simbody/internal/AssemblyCondition_OrientationSensors.h>
-#include "internal/RealTimeExports.h"
 
 namespace OpenSimRT {
 
@@ -31,7 +32,7 @@ namespace OpenSimRT {
  * overall solution and speed up the process.
  */
 class RealTime_API InverseKinematics {
- public:                        /* public data structures */
+ public: /* public data structures */
     struct MarkerTask {
         std::string name;
         std::string marker;
@@ -53,11 +54,12 @@ class RealTime_API InverseKinematics {
         double t;
         SimTK::Vector q;
     };
- public:                        /* public interface */
-   /**
-    * Inverse kinematics constructor, that accepts a model, the marker tasks (if
-    * any), the IMU tasks (if any) and the constraint weight.
-    */
+
+ public: /* public interface */
+         /**
+          * Inverse kinematics constructor, that accepts a model, the marker tasks
+          * (if      any), the IMU tasks (if any) and the constraint weight.
+          */
     InverseKinematics(const OpenSim::Model& model,
                       const std::vector<MarkerTask>& markerTasks,
                       const std::vector<IMUTask>& imuTasks,
@@ -66,34 +68,35 @@ class RealTime_API InverseKinematics {
      * Track an input frame (marker and/or IMU target positions/orientation).
      */
     Output solve(const Input& input);
- public:                        /* static methods */
+
+ public: /* static methods */
     /**
      * Creates marker tasks and observation order from IKTaskSet.
      */
-    static void createMarkerTasksFromIKTaskSet(
-        const OpenSim::Model& model,
-        const OpenSim::IKTaskSet& ikTaskSet,
-        std::vector<MarkerTask>& markerTasks,
-        std::vector<std::string>& observationOrder);
+    static void
+    createMarkerTasksFromIKTaskSet(const OpenSim::Model& model,
+                                   const OpenSim::IKTaskSet& ikTaskSet,
+                                   std::vector<MarkerTask>& markerTasks,
+                                   std::vector<std::string>& observationOrder);
     /**
      * An interface of InverseKinematics with MarkerData. This function reads
      * the marker data (marker names extracted from column names) and constructs
      * the InverseKinematics::MarkerTask tasks and well as the observation
      * order.
      */
-    static void createMarkerTasksFromMarkerData(
-        const OpenSim::Model& model,
-        const OpenSim::MarkerData& markerData,
-        std::vector<MarkerTask>& markerTasks,
-        std::vector<std::string>& observationOrder);
+    static void
+    createMarkerTasksFromMarkerData(const OpenSim::Model& model,
+                                    const OpenSim::MarkerData& markerData,
+                                    std::vector<MarkerTask>& markerTasks,
+                                    std::vector<std::string>& observationOrder);
     /**
      * Creates marker tasks and observation order from marker names.
      */
     static void createMarkerTasksFromMarkerNames(
-        const OpenSim::Model& model,
-        const std::vector<std::string>& markerNames,
-        std::vector<MarkerTask>& markerTasks,
-        std::vector<std::string>& observationOrder);
+            const OpenSim::Model& model,
+            const std::vector<std::string>& markerNames,
+            std::vector<MarkerTask>& markerTasks,
+            std::vector<std::string>& observationOrder);
     /**
      * An interface of InverseKinematics with MarkerData in case that IMU
      * measurements are stored into a .trc file. No relative orientations of the
@@ -102,18 +105,18 @@ class RealTime_API InverseKinematics {
      * data and constructs the InverseKinematics::IMUTask tasks and well as the
      * observation order.
      */
-    static void createIMUTasksFromMarkerData(
-        const OpenSim::Model& model,
-        const OpenSim::MarkerData& markerData,
-        std::vector<IMUTask>& imuTasks,
-        std::vector<std::string>& observationOrder);
+    static void
+    createIMUTasksFromMarkerData(const OpenSim::Model& model,
+                                 const OpenSim::MarkerData& markerData,
+                                 std::vector<IMUTask>& imuTasks,
+                                 std::vector<std::string>& observationOrder);
     /**
      * When the IMUs are assigned manually.
      */
     static void createIMUTasksFromObservationOrder(
-        const OpenSim::Model& model,
-        const std::vector<std::string>& observationOrder,
-        std::vector<IMUTask>& imuTasks);
+            const OpenSim::Model& model,
+            const std::vector<std::string>& observationOrder,
+            std::vector<IMUTask>& imuTasks);
     /**
      * An interface of InverseKinematics with MarkerFrame. This function
      * constructs the InverseKinematics::Input from the MarkerFrame. In case
@@ -121,12 +124,12 @@ class RealTime_API InverseKinematics {
      * sensors only, one can set the isIMU flag to populate the IMU observations
      * in the InverseKinematics::Input instead of the marker observations.
      */
-    static Input getFrameFromMarkerData(
-        int i,
-        OpenSim::MarkerData& markerData,
-        const std::vector<std::string>& observationOrder,
-        bool isIMU);
- private:                       /* private members */
+    static Input
+    getFrameFromMarkerData(int i, OpenSim::MarkerData& markerData,
+                           const std::vector<std::string>& observationOrder,
+                           bool isIMU);
+
+ private: /* private members */
     OpenSim::Model model;
     SimTK::State state;
     SimTK::ReferencePtr<SimTK::Assembler> assembler;

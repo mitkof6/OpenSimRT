@@ -1,3 +1,10 @@
+/**
+ * @file OpenSimUtils.h
+ *
+ * \brief Common OpenSim operations and functions.
+ *
+ * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ */
 #ifndef OPENSIM_UTILS_H
 #define OPENSIM_UTILS_H
 

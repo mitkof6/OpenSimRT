@@ -6,14 +6,15 @@
  *
  * @author Dimitar Stanev dimitar.stanev@epfl.ch
  */
-#include <iostream>
-#include <OpenSim/Common/TimeSeriesTable.h>
-#include <OpenSim/Common/STOFileAdapter.h>
+#include "INIReader.h"
+#include "OpenSimUtils.h"
+#include "Settings.h"
 #include "Simulation.h"
 #include "Visualization.h"
-#include "OpenSimUtils.h"
-#include "INIReader.h"
-#include "Settings.h"
+
+#include <OpenSim/Common/STOFileAdapter.h>
+#include <OpenSim/Common/TimeSeriesTable.h>
+#include <iostream>
 
 using namespace std;
 using namespace OpenSim;
@@ -25,10 +26,12 @@ void run() {
     INIReader ini(INI_FILE);
     auto section = "RAJAGOPAL_2015";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-    auto modelFile = subjectDir +  ini.getString(section, "MODEL_FILE", "");
-    auto trcFile = subjectDir +  ini.getString(section, "TRC_FILE", "");
-    auto ikTaskSetFile = subjectDir +  ini.getString(section, "IK_TASK_SET_FILE", "");
+    auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+    auto trcFile = subjectDir + ini.getString(section, "TRC_FILE", "");
+    auto ikTaskSetFile =
+            subjectDir + ini.getString(section, "IK_TASK_SET_FILE", "");
 
+    // setup model
     Model model(modelFile);
     ModelUtils::removeActuators(model);
 
@@ -37,21 +40,17 @@ void run() {
     MarkerData markerData(trcFile);
     vector<InverseKinematics::MarkerTask> markerTasks;
     vector<string> observationOrder;
-    InverseKinematics::createMarkerTasksFromIKTaskSet(model,
-                                                      ikTaskSet,
-                                                      markerTasks,
-                                                      observationOrder);
+    InverseKinematics::createMarkerTasksFromIKTaskSet(
+            model, ikTaskSet, markerTasks, observationOrder);
 
     // initialize loggers
     auto coordinateColumnNames = ModelUtils::getCoordinateNames(model);
     TimeSeriesTable q;
     q.setColumnLabels(coordinateColumnNames);
-    
+
     // initialize ik
-    InverseKinematics ik(model,
-                         markerTasks,
-                         vector<InverseKinematics::IMUTask>{},
-                         100);
+    InverseKinematics ik(model, markerTasks,
+                         vector<InverseKinematics::IMUTask>{}, 100);
 
     // visualizer
     BasicModelVisualizer visualizer(model);
@@ -59,11 +58,8 @@ void run() {
     // loop through marker frames
     for (int i = 0; i < markerData.getNumFrames(); ++i) {
         // get frame data
-        auto frame = InverseKinematics::getFrameFromMarkerData(i,
-                                                               markerData,
-                                                               observationOrder,
-                                                               false);
-
+        auto frame = InverseKinematics::getFrameFromMarkerData(
+                i, markerData, observationOrder, false);
 
         // perform ik
         auto pose = ik.solve(frame);
@@ -72,17 +68,17 @@ void run() {
         visualizer.update(pose.q);
 
         // record
-	q.appendRow(pose.t, ~pose.q);
+        q.appendRow(pose.t, ~pose.q);
     }
 
     // store results
     STOFileAdapter::write(q, subjectDir + "real_time/q.sto");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     try {
         run();
-    } catch (exception &e) {
+    } catch (exception& e) {
         cout << e.what() << endl;
         return -1;
     }

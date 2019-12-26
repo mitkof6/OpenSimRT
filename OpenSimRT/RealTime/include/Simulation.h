@@ -9,7 +9,7 @@
 #define REAL_TIME_H
 
 #include "InverseKinematics.h"
-/* #include "InverseDynamics.h" */
+#include "InverseDynamics.h"
 /* #include "MuscleOptimization.h" */
 /* #include "JointReaction.h" */
 /* #include "SignalProcessing.h" */

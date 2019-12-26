@@ -1,3 +1,10 @@
+/**
+ * @file Measure.h
+ *
+ * \brief Utilities for measuring time.
+ *
+ * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ */
 #ifndef MEASURE_H
 #define MEASURE_H
 
@@ -17,7 +24,7 @@ namespace OpenSimRT {
     std::cout << "Elapsed time: "                                       \
               << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() \
     << "ms" << std::endl;
-    
+
 } // namespace OpenSimRT
 
 #endif

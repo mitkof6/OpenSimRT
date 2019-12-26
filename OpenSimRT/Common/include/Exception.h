@@ -1,3 +1,10 @@
+/**
+ * @file Exception.h
+ *
+ * \brief Exception utilities.
+ *
+ * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ */
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 

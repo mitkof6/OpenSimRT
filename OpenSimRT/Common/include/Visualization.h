@@ -1,10 +1,18 @@
+/**
+ * @file Visualization.h
+ *
+ * \brief OpenSim basic visualization primitives.
+ *
+ * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ */
 #ifndef VISUALIZATION_H
-#define VISUALZIATION_H
+#define VISUALIZATION_H
 
-#include <OpenSim/Simulation/Model/ModelVisualizer.h>
-#include <OpenSim/Simulation/Model/Model.h>
-#include <simbody/internal/Visualizer_InputListener.h>
 #include "internal/CommonExports.h"
+
+#include <OpenSim/Simulation/Model/Model.h>
+#include <OpenSim/Simulation/Model/ModelVisualizer.h>
+#include <simbody/internal/Visualizer_InputListener.h>
 
 namespace OpenSimRT {
 
@@ -32,9 +40,11 @@ namespace OpenSimRT {
 class Common_API FPSDecorator : public SimTK::DecorationGenerator {
  public:
     FPSDecorator();
-    void generateDecorations(const SimTK::State& state,
-                             SimTK::Array_<SimTK::DecorativeGeometry>& geometry) override;
+    void generateDecorations(
+            const SimTK::State& state,
+            SimTK::Array_<SimTK::DecorativeGeometry>& geometry) override;
     std::chrono::milliseconds calculateLoopDelay();
+
  private:
     std::string text;
 };
@@ -46,8 +56,10 @@ class Common_API ForceDecorator : public SimTK::DecorationGenerator {
  public:
     ForceDecorator(SimTK::Vec3 color, double scaleFactor, int lineThikness);
     void update(SimTK::Vec3 point, SimTK::Vec3 force);
-    void generateDecorations(const SimTK::State& state,
-                             SimTK::Array_<SimTK::DecorativeGeometry>& geometry) override;
+    void generateDecorations(
+            const SimTK::State& state,
+            SimTK::Array_<SimTK::DecorativeGeometry>& geometry) override;
+
  private:
     SimTK::Vec3 color;
     SimTK::Vec3 point;
@@ -64,9 +76,11 @@ class Common_API ForceDecorator : public SimTK::DecorationGenerator {
  */
 class Common_API BasicModelVisualizer {
  public:
- BasicModelVisualizer(const OpenSim::Model& model);
+    BasicModelVisualizer(const OpenSim::Model& model);
+    SimTK::Visualizer* getVisualizer();
     void update(const SimTK::Vector& q,
                 const SimTK::Vector& muscleActivations = SimTK::Vector());
+
  private:
     OpenSim::Model model;
     SimTK::State state;

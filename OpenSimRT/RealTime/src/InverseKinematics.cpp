@@ -1,12 +1,14 @@
 #include "InverseKinematics.h"
+
 #include "Exception.h"
-#include <OpenSim/Simulation/Model/MarkerSet.h>
+
 #include <OpenSim/Simulation/Model/BodySet.h>
+#include <OpenSim/Simulation/Model/MarkerSet.h>
 #include <OpenSim/Tools/IKCoordinateTask.h>
 
-using std::vector, std::string, std::cout, std::endl;
 using OpenSim::Model, OpenSim::MarkerData, OpenSim::Units, OpenSim::IKTaskSet,
-    OpenSim::IKCoordinateTask;
+        OpenSim::IKCoordinateTask;
+using std::vector, std::string, std::cout, std::endl;
 using namespace SimTK;
 using namespace OpenSimRT;
 
@@ -16,8 +18,8 @@ InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
                                      const vector<MarkerTask>& markerTasks,
                                      const vector<IMUTask>& imuTasks,
                                      double constraintsWeight)
-    : model(*otherModel.clone()), assembled(false) {
-    // initialize model and assembler  
+        : model(*otherModel.clone()), assembled(false) {
+    // initialize model and assembler
     state = model.initSystem();
     assembler = new Assembler(model.getMultibodySystem());
     // assembler->setAccuracy(1e-3);
@@ -29,16 +31,15 @@ InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
     Array_<string> markerObservationOrder;
     for (const auto& task : markerTasks) {
         int markerIndex = model.getMarkerSet().getIndex(task.marker);
-        if (markerIndex < 0){
-            THROW_EXCEPTION("marker: "+ task.marker + " does not exist in the "
+        if (markerIndex < 0) {
+            THROW_EXCEPTION("marker: " + task.marker +
+                            " does not exist in the "
                             "model");
         }
         const auto& marker = model.getMarkerSet()[markerIndex];
         const auto& mobod = marker.getParentFrame().getMobilizedBody();
-        markerAssemblyConditions->addMarker(task.name,
-                                            mobod,
-                                            marker.get_location(),
-                                            task.weight);
+        markerAssemblyConditions->addMarker(task.name, mobod,
+                                            marker.get_location(), task.weight);
         markerObservationOrder.push_back(task.name);
     }
     markerAssemblyConditions->defineObservationOrder(markerObservationOrder);
@@ -51,14 +52,12 @@ InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
     Array_<string> imuObservationOrder;
     for (const auto& task : imuTasks) {
         int bodyIndex = model.getBodySet().getIndex(task.body);
-        if (bodyIndex < 0){
-            THROW_EXCEPTION("body: "+ task.body + " does not exist in model");
+        if (bodyIndex < 0) {
+            THROW_EXCEPTION("body: " + task.body + " does not exist in model");
         }
         const auto& body = model.getBodySet()[bodyIndex];
         const auto& mobod = body.getMobilizedBody();
-        imuAssemblyConditions->addOSensor(task.name,
-                                          mobod,
-                                          task.orientation,
+        imuAssemblyConditions->addOSensor(task.name, mobod, task.orientation,
                                           task.weight);
         imuObservationOrder.push_back(task.name);
     }
@@ -78,7 +77,7 @@ InverseKinematics::Output InverseKinematics::solve(const Input& input) {
     if (assembled) {
         rms = assembler->track();
     } else {
-        rms =assembler->assemble();
+        rms = assembler->assemble();
         assembled = true;
     }
     assembler->updateFromInternalState(state);
@@ -88,18 +87,14 @@ InverseKinematics::Output InverseKinematics::solve(const Input& input) {
 /******************************************************************************/
 
 void InverseKinematics::createMarkerTasksFromIKTaskSet(
-    const Model& model,
-    const IKTaskSet& ikTaskSet,
-    vector<MarkerTask>& markerTasks,
-    vector<string>& observationOrder) {
-    if (ikTaskSet.getSize() == 0) {
-        THROW_EXCEPTION("IKTaskSet is empty");
-    }
+        const Model& model, const IKTaskSet& ikTaskSet,
+        vector<MarkerTask>& markerTasks, vector<string>& observationOrder) {
+    if (ikTaskSet.getSize() == 0) { THROW_EXCEPTION("IKTaskSet is empty"); }
 
     for (int i = 0; i < ikTaskSet.getSize(); ++i) {
         if (dynamic_cast<const IKCoordinateTask*>(&ikTaskSet[i])) {
-            cout << "IKCoordinateTask: " << ikTaskSet[i].getName()
-                 << " ignored" << endl;
+            cout << "IKCoordinateTask: " << ikTaskSet[i].getName() << " ignored"
+                 << endl;
             continue;
         }
         if (ikTaskSet[i].getApply() &&
@@ -116,10 +111,8 @@ void InverseKinematics::createMarkerTasksFromIKTaskSet(
 }
 
 void InverseKinematics::createMarkerTasksFromMarkerData(
-    const Model& model,
-    const MarkerData& markerData,
-    vector<MarkerTask>& markerTasks,
-    vector<string>& observationOrder) {
+        const Model& model, const MarkerData& markerData,
+        vector<MarkerTask>& markerTasks, vector<string>& observationOrder) {
     for (int i = 0; i < markerData.getNumMarkers(); ++i) {
         auto markerName = markerData.getMarkerNames()[i];
         if (model.getMarkerSet().getIndex(markerName) >= 0) {
@@ -134,10 +127,8 @@ void InverseKinematics::createMarkerTasksFromMarkerData(
 }
 
 void InverseKinematics::createMarkerTasksFromMarkerNames(
-    const Model& model,
-    const vector<string>& markerNames,
-    vector<MarkerTask>& markerTasks,
-    vector<string>& observationOrder) {
+        const Model& model, const vector<string>& markerNames,
+        vector<MarkerTask>& markerTasks, vector<string>& observationOrder) {
     for (int i = 0; i < markerNames.size(); ++i) {
         auto markerName = markerNames[i];
         if (model.getMarkerSet().getIndex(markerName) >= 0) {
@@ -152,10 +143,8 @@ void InverseKinematics::createMarkerTasksFromMarkerNames(
 }
 
 void InverseKinematics::createIMUTasksFromMarkerData(
-    const Model& model,
-    const MarkerData& markerData,
-    vector<IMUTask>& imuTasks,
-    vector<string>& observationOrder) {
+        const Model& model, const MarkerData& markerData,
+        vector<IMUTask>& imuTasks, vector<string>& observationOrder) {
     for (int i = 0; i < markerData.getNumMarkers(); ++i) {
         auto body = markerData.getMarkerNames()[i];
         if (model.getBodySet().getIndex(body) >= 0) {
@@ -170,9 +159,8 @@ void InverseKinematics::createIMUTasksFromMarkerData(
 }
 
 void InverseKinematics::createIMUTasksFromObservationOrder(
-    const Model& model,
-    const vector<string>& observationOrder,
-    vector<IMUTask>& imuTasks) {
+        const Model& model, const vector<string>& observationOrder,
+        vector<IMUTask>& imuTasks) {
     for (auto body : observationOrder) {
         if (model.getBodySet().getIndex(body) >= 0) {
             imuTasks.push_back({body, body, Rotation(), 1.0});
@@ -185,10 +173,8 @@ void InverseKinematics::createIMUTasksFromObservationOrder(
 }
 
 InverseKinematics::Input InverseKinematics::getFrameFromMarkerData(
-    int i,
-    MarkerData& markerData,
-    const vector<string>& observationOrder,
-    bool isIMU) {
+        int i, MarkerData& markerData, const vector<string>& observationOrder,
+        bool isIMU) {
     // ensure results are in meters
     if (!isIMU && markerData.getUnits().getType() != Units::Meters) {
         markerData.convertToUnits(Units::Meters);
@@ -207,11 +193,9 @@ InverseKinematics::Input InverseKinematics::getFrameFromMarkerData(
         if (!isIMU) {
             input.markerObservations.push_back(vec);
         } else {
-            input.imuObservations.push_back(
-                Rotation(BodyOrSpaceType::SpaceRotationSequence,
-                         vec[0], SimTK::XAxis,
-                         vec[1], SimTK::YAxis,
-                         vec[2], SimTK::ZAxis));
+            input.imuObservations.push_back(Rotation(
+                    BodyOrSpaceType::SpaceRotationSequence, vec[0],
+                    SimTK::XAxis, vec[1], SimTK::YAxis, vec[2], SimTK::ZAxis));
         }
     }
     return input;

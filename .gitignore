@@ -5,3 +5,4 @@ build/
 /OpenSimRT/Settings.h
 .clangd/
 /compile_commands.json
+*.log

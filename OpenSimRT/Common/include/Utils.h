@@ -1,3 +1,10 @@
+/**
+ * @file Utils.h
+ *
+ * \brief Useful utilities.
+ *
+ * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ */
 #ifndef UTILS_H
 #define UTILS_H
 

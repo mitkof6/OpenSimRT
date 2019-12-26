@@ -1,3 +1,10 @@
+/**
+ * @file CircularBuffer.h
+ *
+ * \brief Implementation of a thread safe circular buffer.
+ *
+ * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ */
 #ifndef CIRCULAR_BUFFER_H
 #define CIRCULAR_BUFFER_H
 
