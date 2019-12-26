@@ -9,21 +9,19 @@ namespace OpenSimRT {
 struct Common_API ModelUtils {
     // Generates a unique identifier
     static int generateUID();
-    /**
-     * Extract model's coordinate names.
-     */
+    // Extract model's coordinate names.
     static std::vector<std::string>
     getCoordinateNames(const OpenSim::Model &model);
-    /**
-     * Extract model's muscle names.
-     */
+    //Extract model's muscle names.
     static std::vector<std::string>
     getMuscleNames(const OpenSim::Model &model);
-    /**
-     * Extract model's actuator names.
-     */
+    // Extract model's actuator names.
     static std::vector<std::string>
     getActuatorNames(const OpenSim::Model &model);
+    // Disable actuators.
+    static void disableActuators(OpenSim::Model &model);
+    // Remove actuators.
+    static void removeActuators(OpenSim::Model &model);
 };
 
 } // namespace OpenSimRT

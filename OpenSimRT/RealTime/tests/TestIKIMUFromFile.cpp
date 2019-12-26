@@ -6,11 +6,11 @@
  * @author Dimitar Stanev dimitar.stanev@epfl.ch
  */
 #include <iostream>
-#include <thread>
+#include <OpenSim/Common/TimeSeriesTable.h>
+#include <OpenSim/Common/STOFileAdapter.h>
 #include "Simulation.h"
 #include "INIReader.h"
 #include "Visualization.h"
-#include "CSVLogger.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
 
@@ -39,8 +39,8 @@ void run() {
 
     // initialize loggers
     auto coordinateColumnNames = ModelUtils::getCoordinateNames(model);
-    coordinateColumnNames.insert(coordinateColumnNames.begin(), "time");
-    CSVLogger q(coordinateColumnNames);
+    TimeSeriesTable q;
+    q.setColumnLabels(coordinateColumnNames);
 
     // initialize ik
     InverseKinematics ik(model,
@@ -49,7 +49,7 @@ void run() {
                          100);
 
     // visualizer
-    BasicModelVisualizer visualizer(modelFile);
+    BasicModelVisualizer visualizer(model);
 
     // loop through marker frames
     for (int i = 0; i < markerData.getNumFrames(); ++i) {
@@ -61,15 +61,16 @@ void run() {
 
         // perform ik
         auto pose = ik.solve(frame);
-        q.addRow(pose.t, pose.q);
 
         // visualize
         visualizer.update(pose.q);
-        this_thread::sleep_for(chrono::milliseconds(10));
+
+        // record
+	q.appendRow(pose.t, ~pose.q);
     }
 
     // store results
-    q.exportToFile(subjectDir + "results_rt/q.csv");
+    STOFileAdapter::write(q, subjectDir + "real_time/q.sto");
 }
 
 int main(int argc, char *argv[]) {

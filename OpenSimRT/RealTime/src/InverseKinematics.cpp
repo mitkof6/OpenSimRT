@@ -12,11 +12,11 @@ using namespace OpenSimRT;
 
 /******************************************************************************/
 
-InverseKinematics::InverseKinematics(const OpenSim::Model& initialModel,
+InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
                                      const vector<MarkerTask>& markerTasks,
                                      const vector<IMUTask>& imuTasks,
                                      double constraintsWeight)
-    : model(*initialModel.clone()), assembled(false) {
+    : model(*otherModel.clone()), assembled(false) {
     // initialize model and assembler  
     state = model.initSystem();
     assembler = new Assembler(model.getMultibodySystem());

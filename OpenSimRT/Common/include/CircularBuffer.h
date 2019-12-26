@@ -2,6 +2,7 @@
 #define CIRCULAR_BUFFER_H
 
 #include <vector>
+#include <algorithm>
 #include <mutex>
 #include <condition_variable>
 #include <functional>
@@ -11,7 +12,8 @@ namespace OpenSimRT {
 /**
  * \brief A thread safe circular buffer.
  */
-template<int history, typename T> class CircularBuffer {
+template<int history, typename T>
+class CircularBuffer {
  public:
     CircularBuffer() {
         current = 0;
@@ -45,7 +47,7 @@ template<int history, typename T> class CircularBuffer {
         bufferNotEmpty.notify_one();
     }
 
-    std::vector<T> get(int M, bool reverse = false) {
+    std::vector<T> get(int M, bool reverseOrder = false) {
         if (M <= 0 || M > history) {
             THROW_EXCEPTION("M should be between [1, history]");
         }
@@ -65,7 +67,7 @@ template<int history, typename T> class CircularBuffer {
             result[i] = buffer[index];
             index--;
         }
-        if (reverse) {
+        if (reverseOrder) {
             std::reverse(result.begin(), result.end());
         }
         return result;
@@ -77,7 +79,7 @@ template<int history, typename T> class CircularBuffer {
     std::mutex monitor;
     std::condition_variable bufferNotEmpty;
 };
- 
+
 } // namespace OpenSimRT
 
 #endif

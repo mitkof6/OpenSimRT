@@ -19,7 +19,7 @@ void FPSDecorator::generateDecorations(const State& state,
     geometry.push_back(info);
 }
 
-void FPSDecorator::measureFPS() {
+milliseconds FPSDecorator::calculateLoopDelay() {
     static int counter = 0;
     static high_resolution_clock::time_point previousTime = high_resolution_clock::now();
     counter++;
@@ -31,6 +31,7 @@ void FPSDecorator::measureFPS() {
             " | Delay: " + toString(1000.0 / counter, 2) + "ms";
         counter = 0;
     }
+    return duration;
 }
 
 /******************************************************************************/
@@ -53,8 +54,8 @@ void ForceDecorator::generateDecorations(const State& state,
 
 /******************************************************************************/
 
-BasicModelVisualizer::BasicModelVisualizer(string modelFile)
-    : model(modelFile), shouldTerminate(false) {
+BasicModelVisualizer::BasicModelVisualizer(const OpenSim::Model& otherModel)
+    : model(*otherModel.clone()), shouldTerminate(false) {
 #ifndef CONTINUOUS_INTEGRATION
     model.setUseVisualizer(true);
 #endif
@@ -76,14 +77,11 @@ BasicModelVisualizer::BasicModelVisualizer(string modelFile)
 
 void BasicModelVisualizer::update(const Vector& q,
                                   const Vector& muscleActivations) {
-
 #ifndef CONTINUOUS_INTEGRATION
-    fps->measureFPS();
+    fps->calculateLoopDelay();
 #endif
-
     // kinematics
     state.updQ() = q;
-
     // muscle activations
     // TODO handle path actuators
     if (muscleActivations.size() == model.getMuscles().getSize()) {
@@ -91,7 +89,6 @@ void BasicModelVisualizer::update(const Vector& q,
             model.getMuscles()[i].setActivation(state, muscleActivations[i]);
         }
     }
-
 #ifndef CONTINUOUS_INTEGRATION
     visualizer->report(state);
     // terminate if ESC key is pressed

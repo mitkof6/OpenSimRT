@@ -1,7 +1,7 @@
 # global files
 file(GLOB includes include/*.h)
 file(GLOB sources src/*.cpp)
-# file(GLOB tests tests/*.cpp)
+file(GLOB tests tests/*.cpp)
 
 # dependencies
 include_directories(include/)
@@ -18,8 +18,8 @@ addLibrary(
     # UNITY_EXCLUDED_SOURCES ${exclude_sources}
 )
 
-# # tests
-# addTests(
-#     TESTPROGRAMS ${tests}
-#     LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
-# )
+# tests
+addTests(
+    TESTPROGRAMS ${tests}
+    LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
+)

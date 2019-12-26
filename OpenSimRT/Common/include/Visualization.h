@@ -34,7 +34,7 @@ class Common_API FPSDecorator : public SimTK::DecorationGenerator {
     FPSDecorator();
     void generateDecorations(const SimTK::State& state,
                              SimTK::Array_<SimTK::DecorativeGeometry>& geometry) override;
-    void measureFPS();
+    std::chrono::milliseconds calculateLoopDelay();
  private:
     std::string text;
 };
@@ -64,7 +64,7 @@ class Common_API ForceDecorator : public SimTK::DecorationGenerator {
  */
 class Common_API BasicModelVisualizer {
  public:
-    BasicModelVisualizer(std::string modelFile);
+ BasicModelVisualizer(const OpenSim::Model& model);
     void update(const SimTK::Vector& q,
                 const SimTK::Vector& muscleActivations = SimTK::Vector());
  private:
