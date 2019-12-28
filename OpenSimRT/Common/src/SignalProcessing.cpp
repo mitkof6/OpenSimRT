@@ -3,8 +3,10 @@
 #include "Exception.h"
 #include "Utils.h"
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <OpenSim/Common/GCVSpline.h>
+#include <OpenSim/Common/Signal.h>
 #include <map>
+#include <math.h>
 
 using namespace std;
 using namespace SimTK;
@@ -44,6 +46,90 @@ void shiftColumnsRight(const Vector& column, Matrix& shifted) {
     shifted(0) = column;
 }
 
+void shiftColumnsLeft(const Vector& column, Matrix& shifted) {
+    if (column.size() != shifted.nrow()) {
+        THROW_EXCEPTION("column vector and matrix have different dimentions" +
+                        toString(column.size()) +
+                        " != " + toString(shifted.nrow()));
+    }
+    for (int j = 1; j < shifted.ncol(); j++) { shifted(j - 1) = shifted(j); }
+    shifted(shifted.ncol() - 1) = column;
+}
+
+/******************************************************************************/
+
+LowPassSmoothFilter::LowPassSmoothFilter(const Parameters& parameters)
+        : parameters(parameters),
+          initializationCounter(parameters.history - 1) {
+    ENSURE_POSITIVE(parameters.numSignals);
+    ENSURE_BOUNDS(parameters.history, 2 * parameters.filterOrder,
+                  100 * parameters.filterOrder);
+    ENSURE_BOUNDS(parameters.delay, 2, parameters.history - 2);
+    ENSURE_POSITIVE(parameters.cutoffFrequency);
+    ENSURE_POSITIVE(parameters.filterOrder);
+    ENSURE_POSITIVE(parameters.splineOrder);
+    time = Matrix(1, parameters.history, 0.0);
+    data = Matrix(parameters.numSignals, parameters.history, 0.0);
+}
+
+LowPassSmoothFilter::Output
+LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
+    // shift data column left and set last column as the new data
+    shiftColumnsLeft(Vector(1, input.t), time);
+    shiftColumnsLeft(input.x, data);
+
+    // initialize variables
+    int N = parameters.numSignals;
+    int M = parameters.history;
+    int D = parameters.delay;
+    double dt = time[0][M - 1] - time[0][M - 2]; // assume constant dt
+    assert(dt == 0.01);
+    Output output;
+    output.t = time[0][M - D - 1];
+    output.x = Vector(N);
+    output.xDot = Vector(N);
+    output.xDDot = Vector(N);
+    output.isValid = true;
+
+    // check if initialized
+    if (initializationCounter > 0) {
+        initializationCounter--;
+        output.isValid = false;
+        return output;
+    }
+
+    // filter
+    for (int i = 0; i < N; i++) {
+        // get raw signal
+        double* xRaw = new double[M];
+        double* xFiltered = new double[M];
+        for (int j = 0; j < M; j++) { xRaw[j] = data[i][j]; }
+
+        // apply a low pass filter
+        OpenSim::Signal::LowpassFIR(parameters.filterOrder, dt,
+                                    parameters.cutoffFrequency, M, xRaw,
+                                    xFiltered);
+
+        // calculate smooth splines
+        if (parameters.calculateDerivatives) {
+            OpenSim::GCVSpline spline(parameters.splineOrder, M, &time[0][0],
+                                      xFiltered);
+            output.x[i] = spline.calcValue(Vector(1, output.t));
+            output.xDot[i] = spline.calcDerivative({0}, Vector(1, output.t));
+            output.xDDot[i] =
+                    spline.calcDerivative({0, 0}, Vector(1, output.t));
+        } else {
+            output.x[i] = xFiltered[M - D - 1];
+        }
+
+        // free allocated memory
+        delete[] xRaw;
+        delete[] xFiltered;
+    }
+
+    return output;
+}
+
 /******************************************************************************/
 
 StateSpaceFilter::StateSpaceFilter(int nc, double fc)
@@ -51,7 +137,8 @@ StateSpaceFilter::StateSpaceFilter(int nc, double fc)
           state(FilterState{numeric_limits<double>::infinity(), Vector(nc, 0.0),
                             Vector(nc, 0.0), Vector(nc, 0.0)}) {}
 
-StateSpaceFilter::FilterState StateSpaceFilter::filter(double t, Vector x) {
+StateSpaceFilter::FilterState StateSpaceFilter::filter(double t,
+                                                       const Vector& x) {
     if (t < state.t) {
         state.x = x;
         state.xDot = 0.0;
@@ -156,7 +243,7 @@ NumericalDifferentiator::NumericalDifferentiator(int n, int m)
                     Zero),
           t(0.0) {}
 
-Vector NumericalDifferentiator::diff(double tn, Vector xn) {
+Vector NumericalDifferentiator::diff(double tn, const Vector& xn) {
     Vector dx;
     if (t < tn) {
         dx = filter(xn) / (tn - t);

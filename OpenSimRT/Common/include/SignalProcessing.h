@@ -15,6 +15,46 @@
 namespace OpenSimRT {
 
 /**
+ * \brief A filter that uses low pass IIR filter for removing the
+ * noise GCV splines for calculating higher order derivatives.
+ *
+ * TODO 
+ */
+class Common_API LowPassSmoothFilter {
+ public:
+    struct Parameters {
+        int numSignals;
+        int history;
+        int delay;
+        double cutoffFrequency;
+        int filterOrder;
+        int splineOrder;
+        bool calculateDerivatives;
+    };
+    struct Input {
+        double t;
+        SimTK::Vector x;
+    };
+    struct Output {
+        double t;
+        SimTK::Vector x;
+        SimTK::Vector xDot;
+        SimTK::Vector xDDot;
+        bool isValid;
+    };
+
+ public:
+    LowPassSmoothFilter(const Parameters& parameters);
+    Output filter(const Input& input);
+
+ private:
+    Parameters parameters;
+    SimTK::Matrix time;
+    SimTK::Matrix data;
+    int initializationCounter;
+};
+
+/**
  * \brief A low pass filter that calculates the first and second derivative of
  * the signal.
  *
@@ -37,10 +77,8 @@ class Common_API StateSpaceFilter {
 
  public:
     StateSpaceFilter(int nc, double fc);
-    FilterState filter(double t, SimTK::Vector x);
-}
-
-;
+    FilterState filter(double t, const SimTK::Vector& x);
+};
 
 /**
  * \brief A multidimensional IIR filter.
@@ -110,7 +148,7 @@ class Common_API NumericalDifferentiator : public FIRFilter {
 
  public:
     NumericalDifferentiator(int n, int m);
-    SimTK::Vector diff(double tn, SimTK::Vector xn);
+    SimTK::Vector diff(double tn, const SimTK::Vector& xn);
 };
 
 } // namespace OpenSimRT

@@ -57,9 +57,9 @@ void ExternalWrench::computeForce(const State& state,
     const auto& appliedToBody =
             getModel().getBodySet().get(parameters.appliedToBody);
     const auto& forceExpressedInBody =
-            getModel().getBodySet().get(parameters.forceExpressedInBody);
+        getModel().getComponent<PhysicalFrame>(parameters.forceExpressedInBody);
     const auto& pointExpressedInBody =
-            getModel().getBodySet().get(parameters.pointExpressedInBody);
+        getModel().getComponent<PhysicalFrame>(parameters.pointExpressedInBody);
 
     // re-express point in applied body frame
     Vec3 point = input.point;

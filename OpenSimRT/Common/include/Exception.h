@@ -32,6 +32,10 @@ class FileLineException : public std::exception {
 // used as macro in order to insert __FILE__ and __LINE__
 #define THROW_EXCEPTION(msg) throw FileLineException(msg, __FILE__, __LINE__)
 
+// ensure that a value is positive
+#define ENSURE_POSITIVE(i)                                  \
+    (i > 0) ? i : THROW_EXCEPTION("ENSURE_POSITIVE failed")
+
 // ensure that i is within a range to avoid segmentation fault
 #define ENSURE_BOUNDS(i, min, max)	                                	\
     (i >= min && i <= max ) ? i : THROW_EXCEPTION("ENSURE_BOUNDS failed")

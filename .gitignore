@@ -6,3 +6,4 @@ build/
 .clangd/
 /compile_commands.json
 *.log
+*__pycache__*

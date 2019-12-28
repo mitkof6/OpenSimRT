@@ -10,9 +10,9 @@
 #include "INIReader.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
+#include "SignalProcessing.h"
 #include "Simulation.h"
 #include "Utils.h"
-#include "SignalProcessing.h"
 #include "Visualization.h"
 
 #include <iostream>
@@ -29,41 +29,42 @@ using namespace OpenSimRT;
 void run() {
     // subject data
     INIReader ini(INI_FILE);
-    auto subjectDir = DATA_DIR + ini.getString("TESTS", "SUBJECT_DIR", "");
-    auto modelFile = subjectDir + ini.getString("TESTS", "MODEL_FILE", "");
-    auto grfMotFile = subjectDir + ini.getString("TESTS", "GRF_MOT_FILE", "");
-    auto ikFile = subjectDir + ini.getString("TESTS", "IK_FILE", "");
+    auto section = "RAJAGOPAL_2015";
+    auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+    auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+    auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
+    auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
     auto grfRightApplyBody =
-            ini.getString("TESTS", "GRF_RIGHT_APPLY_TO_BODY", "");
+            ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
     auto grfRightForceExpressed =
-            ini.getString("TESTS", "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
+            ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
     auto grfRightPointExpressed =
-            ini.getString("TESTS", "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
+            ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
     auto grfRightPointIdentifier =
-            ini.getString("TESTS", "GRF_RIGHT_POINT_IDENTIFIER", "");
+            ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
     auto grfRightForceIdentifier =
-            ini.getString("TESTS", "GRF_RIGHT_FORCE_IDENTIFIER", "");
+            ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
     auto grfRightTorqueIdentifier =
-            ini.getString("TESTS", "GRF_RIGHT_TORQUE_IDENTIFIER", "");
+            ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
 
     auto grfLeftApplyBody =
-            ini.getString("TESTS", "GRF_LEFT_APPLY_TO_BODY", "");
+            ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
     auto grfLeftForceExpressed =
-            ini.getString("TESTS", "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
+            ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
     auto grfLeftPointExpressed =
-            ini.getString("TESTS", "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
+            ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
     auto grfLeftPointIdentifier =
-            ini.getString("TESTS", "GRF_LEFT_POINT_IDENTIFIER", "");
+            ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
     auto grfLeftForceIdentifier =
-            ini.getString("TESTS", "GRF_LEFT_FORCE_IDENTIFIER", "");
+            ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
     auto grfLeftTorqueIdentifier =
-            ini.getString("TESTS", "GRF_LEFT_TORQUE_IDENTIFIER", "");
+            ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
 
     // setup model
     Model model(modelFile);
-    // ModelUtils::removeActuators(model);
-    // model.finalizeConnections();
+    ModelUtils::removeActuators(model);
+    model.initSystem();
 
     // read external forces
     Storage grfMotion(grfMotFile);
@@ -85,8 +86,14 @@ void run() {
     // prepare results from inverse kinematics
     Storage ikQ(ikFile);
     ikQ.resampleLinear(0.01);
-    // model.getSimbodyEngine().convertDegreesToRadians(ikQ);
+    if (ikQ.isInDegrees()) {
+        model.getSimbodyEngine().convertDegreesToRadians(ikQ);
+    }
 
+    for (auto coord : model.getComponentList<Coordinate>()) {
+        cout << coord.getName() << endl;
+    }
+    
     // filters and differentiator
 #ifdef IIR_FILTER
     IIRFilter ikFilter(model.getNumCoordinates(),
@@ -120,7 +127,7 @@ void run() {
     visualizer.getVisualizer()->addDecorationGenerator(leftGRFDecorator);
 
     // loop through ik storage
-    for (int i = 0; i < ikQ.getSize(); ++i) {
+    for (int i = 0; i < ikQ.getSize(); i++) {
         // read storage entry
         auto stateVector = ikQ.getStateVector(i);
         double t = stateVector->getTime();
@@ -135,14 +142,14 @@ void run() {
         // filter and differentiate results
 #ifdef IIR_FILTER
         // filter kinematics
-        q = ikFilter.filter(q);
+        // q = ikFilter.filter(q);
         auto qDot = dq.diff(t, q);
         auto qDDot = ddq.diff(t, qDot);
         // filter external loads
-        grfRightWrench.fromVector(
-                grfRightFilter.filter(grfRightWrench.toVector()));
-        grfLeftWrench.fromVector(
-                grfLeftFilter.filter(grfLeftWrench.toVector()));
+        // grfRightWrench.fromVector(
+        //         grfRightFilter.filter(grfRightWrench.toVector()));
+        // grfLeftWrench.fromVector(
+        //         grfLeftFilter.filter(grfLeftWrench.toVector()));
 #else
         // filter kinematics
         auto filterState = ikFilter.filter(t, q);
