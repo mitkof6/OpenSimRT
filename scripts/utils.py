@@ -43,7 +43,9 @@ def read_from_storage(file_name):
         temp.insert(0, time[i])
         data.append(temp)
 
-    return pd.DataFrame(data, columns=labels)
+    df = pd.DataFrame(data, columns=labels)
+    df.index = df.time
+    return df
 
 
 def index_containing_substring(list_str, pattern):
