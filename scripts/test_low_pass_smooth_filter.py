@@ -20,35 +20,31 @@ def similarity(s1, s2):
     y = s2[(s2.index >= t_0) & (s2.index <= t_f)].to_list()
     return np.round(np.corrcoef(x, y)[0, 1], 2)
 
+
 ##
 # data
 
-activity = 'run'
 subject_dir = os.path.abspath('../data/gait2392_new')
 
 q_reference_file = os.path.join(subject_dir,
-                                'residual_reduction_algorithm/task_Kinematics_q.sto')
+                                'computed_muscle_controls/task_Kinematics_q.sto')
 q_dot_reference_file = os.path.join(subject_dir,
-                                    'residual_reduction_algorithm/task_Kinematics_u.sto')
+                                    'computed_muscle_controls/task_Kinematics_u.sto')
 q_ddot_reference_file = os.path.join(subject_dir,
-                                     'residual_reduction_algorithm/task_Kinematics_dudt.sto')
+                                     'computed_muscle_controls/task_Kinematics_dudt.sto')
 
-q_filtered_file = os.path.join(subject_dir,
-                               'real_time/q_filtered.sto')
-q_dot_filtered_file = os.path.join(subject_dir,
-                                   'real_time/qDot_filtered.sto')
-q_ddot_filtered_file = os.path.join(subject_dir,
-                                    'real_time/qDDot_filtered.sto')
+q_filtered_file = os.path.join(subject_dir, 'real_time/q_filtered.sto')
+q_dot_filtered_file = os.path.join(subject_dir, 'real_time/qDot_filtered.sto')
+q_ddot_filtered_file = os.path.join(subject_dir, 'real_time/qDDot_filtered.sto')
 
-output_file = os.path.join(subject_dir,
-                           'real_time/filter_comparison.pdf')
+output_file = os.path.join(subject_dir, 'real_time/filter_comparison.pdf')
 
 ##
 # read data
 
-q_reference = read_from_storage(q_reference_file)
-q_dot_reference = read_from_storage(q_dot_reference_file)
-q_ddot_reference = read_from_storage(q_ddot_reference_file)
+q_reference = read_from_storage(q_reference_file, True)
+q_dot_reference = read_from_storage(q_dot_reference_file, True)
+q_ddot_reference = read_from_storage(q_ddot_reference_file, True)
 
 q_filtered = read_from_storage(q_filtered_file)
 q_dot_filtered = read_from_storage(q_dot_filtered_file)
@@ -60,8 +56,19 @@ q_ddot_filtered = read_from_storage(q_ddot_filtered_file)
 ##
 # compare
 
+p_q_total = []
+p_u_total = []
+p_a_total = []
 with PdfPages(output_file) as pdf:
     for i in range(1, q_reference.shape[1]):
+        p_q = similarity(q_reference.iloc[:, i], q_filtered.iloc[:, i])
+        p_u = similarity(q_dot_reference.iloc[:, i], q_dot_filtered.iloc[:, i])
+        p_a = similarity(q_ddot_reference.iloc[:, i], q_ddot_filtered.iloc[:, i])
+        if not np.isnan(p_q):     # NaN when siganl is zero
+            p_q_total.append(p_q)
+            p_u_total.append(p_u)
+            p_a_total.append(p_a)
+
         fig, ax = plt.subplots(nrows=1, ncols=3,
                                figsize=(8, 3))
 
@@ -69,31 +76,29 @@ with PdfPages(output_file) as pdf:
         ax[0].plot(q_filtered.time, q_filtered.iloc[:, i], label='filtered')
         ax[0].set_xlabel('time')
         ax[0].set_ylabel('generalized coordinates')
-        ax[0].set_title(q_reference.columns[i] + ' - $R^2 = $: ' +
-                        str(similarity(q_reference.iloc[:, i],
-                                       q_filtered.iloc[:, i])))
+        ax[0].set_title(q_reference.columns[i] + ' $p = $ ' + str(p_q))
         ax[0].legend()
 
         ax[1].plot(q_dot_reference.time, q_dot_reference.iloc[:, i], label='OpenSim')
         ax[1].plot(q_dot_filtered.time, q_dot_filtered.iloc[:, i], label='filtered')
         ax[1].set_xlabel('time')
         ax[1].set_ylabel('generalized speeds')
-        ax[1].set_title(q_dot_reference.columns[i] + ' - $R^2 = $: ' +
-                        str(similarity(q_dot_reference.iloc[:, i],
-                                       q_dot_filtered.iloc[:, i])))
+        ax[1].set_title(q_dot_reference.columns[i] + ' $p = $ ' +  str(p_u))
         ax[0].legend()
 
         ax[2].plot(q_ddot_reference.time, q_ddot_reference.iloc[:, i], label='OpenSim')
         ax[2].plot(q_ddot_filtered.time, q_ddot_filtered.iloc[:, i], label='filtered')
         ax[2].set_xlabel('time')
         ax[2].set_ylabel('generalized accelerations')
-        ax[2].set_title(q_ddot_reference.columns[i]+ ' - $R^2 =$ ' +
-                        str(similarity(q_ddot_reference.iloc[:, i],
-                                       q_ddot_filtered.iloc[:, i])))
+        ax[2].set_title(q_ddot_reference.columns[i] + ' $p = $ ' + str(p_a))
         ax[0].legend()
 
         fig.tight_layout()
         pdf.savefig(fig)
         plt.close()
+
+print('p_q', np.mean(p_q_total), np.std(p_q_total, ddof=1))
+print('p_u', np.mean(p_u_total), np.std(p_u_total, ddof=1))
+print('p_a', np.mean(p_a_total), np.std(p_a_total, ddof=1))
 
 ##

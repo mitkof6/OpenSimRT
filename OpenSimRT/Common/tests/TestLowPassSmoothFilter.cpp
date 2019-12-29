@@ -28,6 +28,12 @@ void run() {
     auto section = "TEST_LOW_PASS_SMOOTH_FILTER";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
+    auto history = ini.getInteger(section, "HISTORY", 0);
+    auto delay = ini.getInteger(section, "DELAY", 0);
+    auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
+    auto filterOrder = ini.getInteger(section, "FILTER_ORDER", 0);
+    auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
+    auto calcDer = ini.getBoolean(section, "CALC_DER", true);
 
     // read the motion file
     Storage ikQ(ikFile);
@@ -36,12 +42,12 @@ void run() {
     // initialize filter
     LowPassSmoothFilter::Parameters parameters;
     parameters.numSignals = ikQ.getStateVector(0)->getSize();
-    parameters.history = 50;
-    parameters.delay = 10;
-    parameters.cutoffFrequency = 6;
-    parameters.filterOrder = 25;
-    parameters.splineOrder = 3;
-    parameters.calculateDerivatives = true;
+    parameters.history = history;
+    parameters.delay = delay;
+    parameters.cutoffFrequency = cutoffFreq;
+    parameters.filterOrder = filterOrder;
+    parameters.splineOrder = splineOrder;
+    parameters.calculateDerivatives = calcDer;
     LowPassSmoothFilter filter(parameters);
 
     // logger

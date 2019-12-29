@@ -20,7 +20,7 @@ def osim_array_to_list(array):
     return temp
 
 
-def read_from_storage(file_name):
+def read_from_storage(file_name, to_filter=False):
     """Read OpenSim.Storage files.
 
     Parameters
@@ -32,7 +32,10 @@ def read_from_storage(file_name):
     tuple: (labels, time, data)
     """
     sto = opensim.Storage(file_name)
-    sto.resample(0.001, 3)
+    sto.resample(0.01, 3)
+    if to_filter:
+        sto.lowpassFIR(4, 6)
+
     labels = osim_array_to_list(sto.getColumnLabels())
     time = opensim.ArrayDouble()
     sto.getTimeColumn(time)
