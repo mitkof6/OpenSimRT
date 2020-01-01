@@ -60,16 +60,20 @@ void shiftColumnsLeft(const Vector& column, Matrix& shifted) {
 
 LowPassSmoothFilter::LowPassSmoothFilter(const Parameters& parameters)
         : parameters(parameters),
-          initializationCounter(parameters.history - 1) {
+          initializationCounter(parameters.memory - 1) {
     ENSURE_POSITIVE(parameters.numSignals);
-    ENSURE_BOUNDS(parameters.history, 2 * parameters.filterOrder,
-                  100 * parameters.filterOrder);
-    ENSURE_BOUNDS(parameters.delay, 2, parameters.history - 2);
+    // at least 5 slots to define derivatives (5 - 4 > 0)
+    ENSURE_POSITIVE(parameters.memory - 4);
     ENSURE_POSITIVE(parameters.cutoffFrequency);
-    ENSURE_POSITIVE(parameters.filterOrder);
-    ENSURE_POSITIVE(parameters.splineOrder);
-    time = Matrix(1, parameters.history, 0.0);
-    data = Matrix(parameters.numSignals, parameters.history, 0.0);
+    // if we need time derivatives then we are between [2, M - 2]
+    ENSURE_BOUNDS(parameters.delay, 2, parameters.memory - 2);
+    ENSURE_BOUNDS(parameters.splineOrder, 1, 7);
+    if (parameters.splineOrder % 2 == 0) {
+        THROW_EXCEPTION("spline order should be an odd number between 1 and 7");
+    }
+
+    time = Matrix(1, parameters.memory, 0.0);
+    data = Matrix(parameters.numSignals, parameters.memory, 0.0);
 }
 
 LowPassSmoothFilter::Output
@@ -80,10 +84,9 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
 
     // initialize variables
     int N = parameters.numSignals;
-    int M = parameters.history;
+    int M = parameters.memory;
     int D = parameters.delay;
     double dt = time[0][M - 1] - time[0][M - 2]; // assume constant dt
-    assert(dt == 0.01);
     Output output;
     output.t = time[0][M - D - 1];
     output.x = Vector(N);
@@ -106,7 +109,7 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
         for (int j = 0; j < M; j++) { xRaw[j] = data[i][j]; }
 
         // apply a low pass filter
-        OpenSim::Signal::LowpassFIR(parameters.filterOrder, dt,
+        OpenSim::Signal::LowpassFIR(parameters.memory / 2, dt,
                                     parameters.cutoffFrequency, M, xRaw,
                                     xFiltered);
 
@@ -116,8 +119,7 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
                                       xFiltered);
             output.x[i] = spline.calcValue(Vector(1, output.t));
             output.xDot[i] = spline.calcDerivative({0}, Vector(1, output.t));
-            output.xDDot[i] =
-                    spline.calcDerivative({0, 0}, Vector(1, output.t));
+            output.xDDot[i] = spline.calcDerivative({0, 0}, Vector(1, output.t));
         } else {
             output.x[i] = xFiltered[M - D - 1];
         }

@@ -23,12 +23,11 @@ namespace OpenSimRT {
 class Common_API LowPassSmoothFilter {
  public:
     struct Parameters {
-        int numSignals;
-        int history;
-        int delay;
+        int numSignals;   // number of signals that are to be filtered
+        int memory;       // memory buffer of the filter
         double cutoffFrequency;
-        int filterOrder;
-        int splineOrder;
+        int delay;              // sample delay to evaluate the result
+        int splineOrder;        // spline order use 3
         bool calculateDerivatives;
     };
     struct Input {

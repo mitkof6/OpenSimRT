@@ -1,6 +1,6 @@
 # Utility functions.
 #
-# author: Dimitar Stanev dimitar.stanev@epfl.ch
+# author: Dimitar Stanev jimstanev@gmail.com
 ##
 import re
 import opensim
