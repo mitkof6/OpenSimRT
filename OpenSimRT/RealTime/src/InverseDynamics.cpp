@@ -45,9 +45,7 @@ int ExternalWrench::Input::size() { return 9; }
 ExternalWrench::ExternalWrench(const ExternalWrench::Parameters& parameters)
         : Force(), parameters(parameters) {}
 
-ExternalWrench::Input& ExternalWrench::getInput() {
-    return input;
-}
+ExternalWrench::Input& ExternalWrench::getInput() { return input; }
 
 void ExternalWrench::computeForce(const State& state,
                                   Vector_<SpatialVec>& bodyForces,
@@ -56,10 +54,10 @@ void ExternalWrench::computeForce(const State& state,
     const auto& engine = getModel().getSimbodyEngine();
     const auto& appliedToBody =
             getModel().getBodySet().get(parameters.appliedToBody);
-    const auto& forceExpressedInBody =
-        getModel().getComponent<PhysicalFrame>(parameters.forceExpressedInBody);
-    const auto& pointExpressedInBody =
-        getModel().getComponent<PhysicalFrame>(parameters.pointExpressedInBody);
+    const auto& forceExpressedInBody = getModel().getComponent<PhysicalFrame>(
+            parameters.forceExpressedInBody);
+    const auto& pointExpressedInBody = getModel().getComponent<PhysicalFrame>(
+            parameters.pointExpressedInBody);
 
     // re-express point in applied body frame
     Vec3 point = input.point;

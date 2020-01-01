@@ -3,7 +3,7 @@
  *
  * \brief Utilities for filtering signals.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef SIGNAL_PROCESSING_H
 #define SIGNAL_PROCESSING_H
@@ -18,7 +18,7 @@ namespace OpenSimRT {
  * \brief A filter that uses low pass IIR filter for removing the
  * noise GCV splines for calculating higher order derivatives.
  *
- * TODO 
+ * TODO description
  */
 class Common_API LowPassSmoothFilter {
  public:

@@ -3,7 +3,7 @@
  *
  * \brief Utilities for performing inverse kinematics.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef INVERSE_KINEMATICS_H
 #define INVERSE_KINEMATICS_H

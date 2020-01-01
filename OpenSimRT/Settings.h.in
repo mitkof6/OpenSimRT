@@ -1,3 +1,10 @@
+/**
+ * @file Settings.h
+ *
+ * \brief Global definitions set externally by CMake
+ *
+ * @author Dimitar Stanev <jimstanev@gmail.com>
+ */
 #ifndef SETTINGS_H
 #define SETTINGS_H
 

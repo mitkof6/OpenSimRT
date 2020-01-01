@@ -4,7 +4,6 @@ using OpenSim::Model, OpenSim::Actuator;
 using std::vector, std::string;
 using namespace OpenSimRT;
 
-
 int ModelUtils::generateUID() {
     static int id = 0;
     return id++;
@@ -26,21 +25,21 @@ vector<string> ModelUtils::getMuscleNames(const Model& model) {
     return muscleColumnNames;
 }
 
-vector<string>  ModelUtils::getActuatorNames(const Model& model) {
+vector<string> ModelUtils::getActuatorNames(const Model& model) {
     vector<string> actuatorColumnNames;
     for (int i = 0; i < model.getActuators().getSize(); ++i) {
-       actuatorColumnNames.push_back(model.getActuators()[i].getName());
+        actuatorColumnNames.push_back(model.getActuators()[i].getName());
     }
     return actuatorColumnNames;
 }
 
-void ModelUtils::disableActuators(OpenSim::Model &model) {
+void ModelUtils::disableActuators(OpenSim::Model& model) {
     for (int i = 0; i < model.updActuators().getSize(); i++) {
-	model.updActuators()[i].set_appliesForce(false);
+        model.updActuators()[i].set_appliesForce(false);
     }
 }
 
-void ModelUtils::removeActuators(OpenSim::Model &model) {
+void ModelUtils::removeActuators(OpenSim::Model& model) {
     // save a list of pointers of the actuators to delete
     std::vector<Actuator*> actuatorsToDelete;
     auto& actuatorSet = model.updActuators();

@@ -3,16 +3,18 @@
  *
  * \brief Perform inverse kinematics using IMU orientations from file.
  *
- * @author Dimitar Stanev dimitar.stanev@epfl.ch
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
-#include <iostream>
-#include <OpenSim/Common/TimeSeriesTable.h>
-#include <OpenSim/Common/STOFileAdapter.h>
-#include "Simulation.h"
 #include "INIReader.h"
-#include "Visualization.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
+#include "Simulation.h"
+#include "Visualization.h"
+
+#include <OpenSim/Common/STOFileAdapter.h>
+#include <OpenSim/Common/TimeSeriesTable.h>
+#include <chrono>
+#include <iostream>
 
 using namespace std;
 using namespace OpenSim;
@@ -23,8 +25,8 @@ void run() {
     // subject data
     INIReader ini(INI_FILE);
     auto subjectDir = DATA_DIR + ini.getString("NGIMU", "SUBJECT_DIR", "");
-    auto modelFile = subjectDir +  ini.getString("NGIMU", "MODEL_FILE", "");
-    auto trcFile = subjectDir +  ini.getString("NGIMU", "TRC_FILE", "");
+    auto modelFile = subjectDir + ini.getString("NGIMU", "MODEL_FILE", "");
+    auto trcFile = subjectDir + ini.getString("NGIMU", "TRC_FILE", "");
 
     Model model(modelFile);
 
@@ -32,9 +34,7 @@ void run() {
     MarkerData markerData(trcFile);
     vector<InverseKinematics::IMUTask> imuTasks;
     vector<string> observationOrder;
-    InverseKinematics::createIMUTasksFromMarkerData(model,
-                                                    markerData,
-                                                    imuTasks,
+    InverseKinematics::createIMUTasksFromMarkerData(model, markerData, imuTasks,
                                                     observationOrder);
 
     // initialize loggers
@@ -43,40 +43,50 @@ void run() {
     q.setColumnLabels(coordinateColumnNames);
 
     // initialize ik
-    InverseKinematics ik(model,
-                         vector<InverseKinematics::MarkerTask>{},
-                         imuTasks,
-                         100);
+    InverseKinematics ik(model, vector<InverseKinematics::MarkerTask>{},
+                         imuTasks, 100);
 
     // visualizer
     BasicModelVisualizer visualizer(model);
 
+    // mean delay
+    int sumDelayMS = 0;
+
     // loop through marker frames
     for (int i = 0; i < markerData.getNumFrames(); ++i) {
         // get frame data
-        auto frame = InverseKinematics::getFrameFromMarkerData(i,
-                                                               markerData,
-                                                               observationOrder,
-                                                               true);
+        auto frame = InverseKinematics::getFrameFromMarkerData(
+                i, markerData, observationOrder, true);
 
         // perform ik
+        chrono::high_resolution_clock::time_point t1;
+        t1 = chrono::high_resolution_clock::now();
+
         auto pose = ik.solve(frame);
+
+        chrono::high_resolution_clock::time_point t2;
+        t2 = chrono::high_resolution_clock::now();
+        sumDelayMS +=
+                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
         // visualize
         visualizer.update(pose.q);
 
         // record
-	q.appendRow(pose.t, ~pose.q);
+        q.appendRow(pose.t, ~pose.q);
     }
 
+    cout << "Mean delay: " << (double) sumDelayMS / markerData.getNumFrames()
+         << " ms" << endl;
+
     // store results
-    STOFileAdapter::write(q, subjectDir + "real_time/q.sto");
+    STOFileAdapter::write(q, subjectDir + "real_time/inverse_kinematics/q.sto");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     try {
         run();
-    } catch (exception &e) {
+    } catch (exception& e) {
         cout << e.what() << endl;
         return -1;
     }

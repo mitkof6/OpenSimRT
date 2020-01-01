@@ -3,7 +3,7 @@
  *
  * \brief Utilities for performing inverse dynamics.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef INVERSE_DYNAMICS_H
 #define INVERSE_DYNAMICS_H
@@ -42,6 +42,7 @@ class RealTime_API ExternalWrench : public OpenSim::Force {
  public:
     ExternalWrench(const Parameters& parameters);
     Input& getInput();
+
  protected:
     void computeForce(const SimTK::State& state,
                       SimTK::Vector_<SimTK::SpatialVec>& bodyForces,

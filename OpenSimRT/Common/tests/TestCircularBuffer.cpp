@@ -3,7 +3,7 @@
  *
  * \brief Tests the utilization of the thread safe circular buffer.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "CircularBuffer.h"
 

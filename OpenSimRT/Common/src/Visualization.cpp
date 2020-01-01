@@ -1,6 +1,8 @@
 #include "Visualization.h"
-#include <OpenSim/Simulation/Model/Muscle.h>
+
 #include "Utils.h"
+
+#include <OpenSim/Simulation/Model/Muscle.h>
 
 using namespace std;
 using namespace chrono;
@@ -9,7 +11,7 @@ using namespace OpenSimRT;
 
 /******************************************************************************/
 
-FPSDecorator::FPSDecorator() : text("") { }
+FPSDecorator::FPSDecorator() : text("") {}
 
 void FPSDecorator::generateDecorations(const State& state,
                                        Array_<DecorativeGeometry>& geometry) {
@@ -21,14 +23,15 @@ void FPSDecorator::generateDecorations(const State& state,
 
 milliseconds FPSDecorator::calculateLoopDelay() {
     static int counter = 0;
-    static high_resolution_clock::time_point previousTime = high_resolution_clock::now();
+    static high_resolution_clock::time_point previousTime =
+            high_resolution_clock::now();
     counter++;
     auto currentTime = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(currentTime - previousTime);
     if (duration > milliseconds(1000)) {
         previousTime = currentTime;
         text = "FPS: " + to_string(counter) +
-            " | Delay: " + toString(1000.0 / counter, 2) + "ms";
+               " | Delay: " + toString(1000.0 / counter, 2) + "ms";
         counter = 0;
     }
     return duration;
@@ -37,7 +40,7 @@ milliseconds FPSDecorator::calculateLoopDelay() {
 /******************************************************************************/
 
 ForceDecorator::ForceDecorator(Vec3 color, double scaleFactor, int lineThikness)
-    : color(color), scaleFactor(scaleFactor), lineThikness(lineThikness) { }
+        : color(color), scaleFactor(scaleFactor), lineThikness(lineThikness) {}
 
 void ForceDecorator::update(SimTK::Vec3 point, SimTK::Vec3 force) {
     this->point = point;
@@ -55,7 +58,7 @@ void ForceDecorator::generateDecorations(const State& state,
 /******************************************************************************/
 
 BasicModelVisualizer::BasicModelVisualizer(const OpenSim::Model& otherModel)
-    : model(*otherModel.clone()), shouldTerminate(false) {
+        : model(*otherModel.clone()), shouldTerminate(false) {
 #ifndef CONTINUOUS_INTEGRATION
     model.setUseVisualizer(true);
 #endif
@@ -75,9 +78,7 @@ BasicModelVisualizer::BasicModelVisualizer(const OpenSim::Model& otherModel)
 #endif
 }
 
-SimTK::Visualizer* BasicModelVisualizer::getVisualizer() {
-    return visualizer;
-}
+SimTK::Visualizer* BasicModelVisualizer::getVisualizer() { return visualizer; }
 
 void BasicModelVisualizer::update(const Vector& q,
                                   const Vector& muscleActivations) {

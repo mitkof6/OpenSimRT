@@ -3,7 +3,7 @@
  *
  * \brief Common OpenSim operations and functions.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef OPENSIM_UTILS_H
 #define OPENSIM_UTILS_H

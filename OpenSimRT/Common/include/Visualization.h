@@ -3,7 +3,7 @@
  *
  * \brief OpenSim basic visualization primitives.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef VISUALIZATION_H
 #define VISUALIZATION_H

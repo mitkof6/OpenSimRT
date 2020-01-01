@@ -4,7 +4,7 @@
  * \brief Loads the marker trajectories and executes inverse kinematics in an
  * iterative manner in order to determine the model kinematics.
  *
- * @author Dimitar Stanev dimitar.stanev@epfl.ch
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "INIReader.h"
 #include "OpenSimUtils.h"
@@ -15,6 +15,7 @@
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
 #include <iostream>
+#include <chrono>
 
 using namespace std;
 using namespace OpenSim;
@@ -24,12 +25,12 @@ using namespace OpenSimRT;
 void run() {
     // subject data
     INIReader ini(INI_FILE);
-    auto section = "RAJAGOPAL_2015";
+    // auto section = "RAJAGOPAL_2015";
+    auto section = "TEST_IK_GAIT2392";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto trcFile = subjectDir + ini.getString(section, "TRC_FILE", "");
-    auto ikTaskSetFile =
-            subjectDir + ini.getString(section, "IK_TASK_SET_FILE", "");
+    auto ikTaskSetFile = subjectDir + ini.getString(section, "IK_TASK_SET_FILE", "");
 
     // setup model
     Model model(modelFile);
@@ -55,6 +56,9 @@ void run() {
     // visualizer
     BasicModelVisualizer visualizer(model);
 
+    // mean delay
+    int sumDelayMS = 0;
+
     // loop through marker frames
     for (int i = 0; i < markerData.getNumFrames(); ++i) {
         // get frame data
@@ -62,7 +66,15 @@ void run() {
                 i, markerData, observationOrder, false);
 
         // perform ik
+        chrono::high_resolution_clock::time_point t1;
+        t1 = chrono::high_resolution_clock::now();
+
         auto pose = ik.solve(frame);
+
+        chrono::high_resolution_clock::time_point t2;
+        t2 = chrono::high_resolution_clock::now();
+        sumDelayMS +=
+                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
         // visualize
         visualizer.update(pose.q);
@@ -71,8 +83,11 @@ void run() {
         q.appendRow(pose.t, ~pose.q);
     }
 
+    cout << "Mean delay: " << (double) sumDelayMS / markerData.getNumFrames()
+         << " ms" << endl;
+
     // store results
-    STOFileAdapter::write(q, subjectDir + "real_time/q.sto");
+    STOFileAdapter::write(q, subjectDir + "real_time/inverse_kinematics/q.sto");
 }
 
 int main(int argc, char* argv[]) {

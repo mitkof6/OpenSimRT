@@ -5,7 +5,7 @@
  * executes the inverse dynamics analysis in an iterative manner in order to
  * determine the generalized forces.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "INIReader.h"
 #include "OpenSimUtils.h"
@@ -93,7 +93,7 @@ void run() {
     for (auto coord : model.getComponentList<Coordinate>()) {
         cout << coord.getName() << endl;
     }
-    
+
     // filters and differentiator
 #ifdef IIR_FILTER
     IIRFilter ikFilter(model.getNumCoordinates(),

@@ -1,42 +1,42 @@
 // Read an INI file into easy-to-access name/value pairs.
+#include "INIReader.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
-#include <stdio.h>
 #include <cstring>
-
-#include "INIReader.h"
+#include <stdio.h>
 
 /* Nonzero to allow multi-line value parsing, in the style of Python's
    ConfigParser. If allowed, ini_parse() will call the handler with the same
    name for each subsequent line parsed. */
 #ifndef INI_ALLOW_MULTILINE
-#define INI_ALLOW_MULTILINE 1
+#    define INI_ALLOW_MULTILINE 1
 #endif
 
 /* Nonzero to allow a UTF-8 BOM sequence (0xEF 0xBB 0xBF) at the start of the
    file. See http://code.google.com/p/inih/issues/detail?id=21 */
 #ifndef INI_ALLOW_BOM
-#define INI_ALLOW_BOM 1
+#    define INI_ALLOW_BOM 1
 #endif
 
 /* Nonzero to use stack, zero to use heap (malloc/free). */
 #ifndef INI_USE_STACK
-#define INI_USE_STACK 1
+#    define INI_USE_STACK 1
 #endif
 
 #if !INI_USE_STACK
-#include <stdlib.h>
+#    include <stdlib.h>
 #endif
 
 /* Stop parsing on first error (default is to keep parsing). */
 #ifndef INI_STOP_ON_FIRST_ERROR
-#define INI_STOP_ON_FIRST_ERROR 0
+#    define INI_STOP_ON_FIRST_ERROR 0
 #endif
 
 /* Maximum line length for any line in INI file. */
 #ifndef INI_MAX_LINE
-#define INI_MAX_LINE 400
+#    define INI_MAX_LINE 400
 #endif
 
 #define MAX_SECTION 50
@@ -46,15 +46,10 @@ using std::string;
 
 INIReader::INIReader(string filename) {
     _error = ini_parse(filename.c_str(), valueHandler, this);
-    if (_error == -1)
-    {
-        throw std::runtime_error("Could not open ini file");
-    }
+    if (_error == -1) { throw std::runtime_error("Could not open ini file"); }
 }
 
-int INIReader::parseError() {
-    return _error;
-}
+int INIReader::parseError() { return _error; }
 
 string INIReader::getString(string section, string name, string default_value) {
     string key = makeKey(section, name);
@@ -84,7 +79,8 @@ bool INIReader::getBoolean(string section, string name, bool default_value) {
     std::transform(valstr.begin(), valstr.end(), valstr.begin(), ::tolower);
     if (valstr == "true" || valstr == "yes" || valstr == "on" || valstr == "1")
         return true;
-    else if (valstr == "false" || valstr == "no" || valstr == "off" || valstr == "0")
+    else if (valstr == "false" || valstr == "no" || valstr == "off" ||
+             valstr == "0")
         return false;
     else
         return default_value;
@@ -99,10 +95,9 @@ string INIReader::makeKey(string section, string name) {
 
 int INIReader::valueHandler(void* user, const char* section, const char* name,
                             const char* value) {
-    INIReader* reader = (INIReader*)user;
+    INIReader* reader = (INIReader*) user;
     string key = makeKey(section, name);
-    if (reader->_values[key].size() > 0)
-        reader->_values[key] += "\n";
+    if (reader->_values[key].size() > 0) reader->_values[key] += "\n";
     reader->_values[key] += value;
     return 1;
 }
@@ -110,16 +105,14 @@ int INIReader::valueHandler(void* user, const char* section, const char* name,
 /* Strip whitespace chars off end of given string, in place. Return s. */
 static char* rstrip(char* s) {
     char* p = s + strlen(s);
-    while (p > s && isspace((unsigned char)(*--p)))
-        *p = '\0';
+    while (p > s && isspace((unsigned char) (*--p))) *p = '\0';
     return s;
 }
 
 /* Return pointer to first non-whitespace char in given string. */
 static char* lskip(const char* s) {
-    while (*s && isspace((unsigned char)(*s)))
-        s++;
-    return (char*)s;
+    while (*s && isspace((unsigned char) (*s))) s++;
+    return (char*) s;
 }
 
 /* Return pointer to first char c or ';' comment in given string, or pointer to
@@ -127,26 +120,25 @@ static char* lskip(const char* s) {
    character to register as a comment. */
 static char* find_char_or_comment(const char* s, char c) {
     int was_whitespace = 0;
-    while (*s && *s != c && !(was_whitespace && *s == ';'))
-    {
-        was_whitespace = isspace((unsigned char)(*s));
+    while (*s && *s != c && !(was_whitespace && *s == ';')) {
+        was_whitespace = isspace((unsigned char) (*s));
         s++;
     }
-    return (char*)s;
+    return (char*) s;
 }
 
 /* Version of strncpy that ensures dest (size bytes) is null-terminated. */
 static char* strncpy0(char* dest, const char* src, size_t size) {
     strcpy(dest, src);
-    //strncpy(dest, src, size);
+    // strncpy(dest, src, size);
     dest[size - 1] = '\0';
     return dest;
 }
 
 /* See documentation in header file. */
 int INIReader::ini_parse_file(FILE* file,
-                              int(*handler)(void*, const char*, const char*,
-                                            const char*),
+                              int (*handler)(void*, const char*, const char*,
+                                             const char*),
                               void* user) {
     /* Uses a fair bit of stack (use heap instead if you need to) */
 #if INI_USE_STACK
@@ -165,91 +157,70 @@ int INIReader::ini_parse_file(FILE* file,
     int error = 0;
 
 #if !INI_USE_STACK
-    line = (char*)malloc(INI_MAX_LINE);
-    if (!line)
-    {
-        return -2;
-    }
+    line = (char*) malloc(INI_MAX_LINE);
+    if (!line) { return -2; }
 #endif
 
     /* Scan through file line by line */
-    while (fgets(line, INI_MAX_LINE, file) != NULL)
-    {
+    while (fgets(line, INI_MAX_LINE, file) != NULL) {
         lineno++;
 
         start = line;
 #if INI_ALLOW_BOM
-        if (lineno == 1 && (unsigned char)start[0] == 0xEF &&
-            (unsigned char)start[1] == 0xBB &&
-            (unsigned char)start[2] == 0xBF)
-        {
+        if (lineno == 1 && (unsigned char) start[0] == 0xEF &&
+            (unsigned char) start[1] == 0xBB &&
+            (unsigned char) start[2] == 0xBF) {
             start += 3;
         }
 #endif
         start = lskip(rstrip(start));
 
-        if (*start == ';' || *start == '#')
-        {
+        if (*start == ';' || *start == '#') {
             /* Per Python ConfigParser, allow '#' comments at start of line */
         }
 #if INI_ALLOW_MULTILINE
-        else if (*prev_name && *start && start > line)
-        {
+        else if (*prev_name && *start && start > line) {
             /* Non-black line with leading whitespace, treat as continuation
                of previous name's value (as per Python ConfigParser). */
             if (!handler(user, section, prev_name, start) && !error)
                 error = lineno;
         }
 #endif
-        else if (*start == '[')
-        {
+        else if (*start == '[') {
             /* A "[section]" line */
             end = find_char_or_comment(start + 1, ']');
-            if (*end == ']')
-            {
+            if (*end == ']') {
                 *end = '\0';
                 strncpy0(section, start + 1, sizeof(section));
                 *prev_name = '\0';
-            }
-            else if (!error)
-            {
+            } else if (!error) {
                 /* No ']' found on section line */
                 error = lineno;
             }
-        }
-        else if (*start && *start != ';')
-        {
+        } else if (*start && *start != ';') {
             /* Not a comment, must be a name[=:]value pair */
             end = find_char_or_comment(start, '=');
-            if (*end != '=')
-            {
-                end = find_char_or_comment(start, ':');
-            }
-            if (*end == '=' || *end == ':')
-            {
+            if (*end != '=') { end = find_char_or_comment(start, ':'); }
+            if (*end == '=' || *end == ':') {
                 *end = '\0';
                 name = rstrip(start);
                 value = lskip(end + 1);
                 end = find_char_or_comment(value, '\0');
-                if (*end == ';')
-                    *end = '\0';
+                if (*end == ';') *end = '\0';
                 rstrip(value);
 
                 /* Valid name[=:]value pair found, call handler */
                 strncpy0(prev_name, name, sizeof(prev_name));
                 if (!handler(user, section, name, value) && !error)
                     error = lineno;
-            }
-            else if (!error)
-            {
+            } else if (!error) {
                 /* No '=' or ':' found on name[=:]value line */
                 error = lineno;
             }
         }
 
 #if INI_STOP_ON_FIRST_ERROR
-        if (error)
-            break;
+        if (error) break;
 #endif
     }
 
@@ -262,14 +233,14 @@ int INIReader::ini_parse_file(FILE* file,
 
 /* See documentation in header file. */
 int INIReader::ini_parse(const char* filename,
-                         int(*handler)(void*, const char*, const char*, const char*),
+                         int (*handler)(void*, const char*, const char*,
+                                        const char*),
                          void* user) {
     FILE* file;
     int error;
 
     file = fopen(filename, "r");
-    if (!file)
-        return -1;
+    if (!file) return -1;
     error = ini_parse_file(file, handler, user);
     fclose(file);
     return error;

@@ -3,13 +3,13 @@
  *
  * \brief Includes all modules.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef REAL_TIME_H
 #define REAL_TIME_H
 
-#include "InverseKinematics.h"
 #include "InverseDynamics.h"
+#include "InverseKinematics.h"
 /* #include "MuscleOptimization.h" */
 /* #include "JointReaction.h" */
 /* #include "SignalProcessing.h" */

@@ -3,13 +3,15 @@
  *
  * \brief Exception utilities.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
 #include <string>
 #include <sstream>
+
+namespace OpenSimRT {
 
 /**
  * \brief An exception that prints the file and line number along with
@@ -39,5 +41,7 @@ class FileLineException : public std::exception {
 // ensure that i is within a range to avoid segmentation fault
 #define ENSURE_BOUNDS(i, min, max)	                                	\
     (i >= min && i <= max ) ? i : THROW_EXCEPTION("ENSURE_BOUNDS failed")
+
+} // namespace OpenSimRT
 
 #endif

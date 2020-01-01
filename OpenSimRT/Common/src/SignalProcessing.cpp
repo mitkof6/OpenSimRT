@@ -59,8 +59,7 @@ void shiftColumnsLeft(const Vector& column, Matrix& shifted) {
 /******************************************************************************/
 
 LowPassSmoothFilter::LowPassSmoothFilter(const Parameters& parameters)
-        : parameters(parameters),
-          initializationCounter(parameters.memory - 1) {
+        : parameters(parameters), initializationCounter(parameters.memory - 1) {
     ENSURE_POSITIVE(parameters.numSignals);
     // at least 5 slots to define derivatives (5 - 4 > 0)
     ENSURE_POSITIVE(parameters.memory - 4);
@@ -119,7 +118,8 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
                                       xFiltered);
             output.x[i] = spline.calcValue(Vector(1, output.t));
             output.xDot[i] = spline.calcDerivative({0}, Vector(1, output.t));
-            output.xDDot[i] = spline.calcDerivative({0, 0}, Vector(1, output.t));
+            output.xDDot[i] =
+                    spline.calcDerivative({0, 0}, Vector(1, output.t));
         } else {
             output.x[i] = xFiltered[M - D - 1];
         }

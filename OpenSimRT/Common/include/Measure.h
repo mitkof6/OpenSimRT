@@ -3,7 +3,7 @@
  *
  * \brief Utilities for measuring time.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef MEASURE_H
 #define MEASURE_H

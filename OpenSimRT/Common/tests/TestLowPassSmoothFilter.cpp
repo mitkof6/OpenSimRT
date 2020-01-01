@@ -3,20 +3,19 @@
  *
  * \brief Tests the LowPassSmoothFilter.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
-#include "Settings.h"
 #include "INIReader.h"
-
-#include "Utils.h"
+#include "Settings.h"
 #include "SignalProcessing.h"
+#include "Utils.h"
 
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/Storage.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
+#include <chrono>
 #include <iostream>
 #include <vector>
-#include <chrono>
 
 using namespace std;
 using namespace OpenSim;
@@ -59,7 +58,7 @@ void run() {
     qDot.setColumnLabels(columns);
     qDDot.setColumnLabels(columns);
 
-    // delay
+    // mean delay
     int sumDelayMS = 0;
 
     // loop through ik storage
@@ -77,7 +76,8 @@ void run() {
 
         chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();
-        sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+        sumDelayMS +=
+                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
         // record
         if (output.isValid) {
@@ -87,12 +87,15 @@ void run() {
         }
     }
 
-    cout << "Mean delay: " << (double) sumDelayMS / ikQ.getSize() << " ms" << endl;
+    cout << "Mean delay: " << (double) sumDelayMS / ikQ.getSize() << " ms"
+         << endl;
 
     // store results
     STOFileAdapter::write(q, subjectDir + "real_time/filtering/q_filtered.sto");
-    STOFileAdapter::write(qDot, subjectDir + "real_time/filtering/qDot_filtered.sto");
-    STOFileAdapter::write(qDDot, subjectDir + "real_time/filtering/qDDot_filtered.sto");
+    STOFileAdapter::write(qDot,
+                          subjectDir + "real_time/filtering/qDot_filtered.sto");
+    STOFileAdapter::write(
+            qDDot, subjectDir + "real_time/filtering/qDDot_filtered.sto");
 }
 
 int main(int argc, char* argv[]) {
