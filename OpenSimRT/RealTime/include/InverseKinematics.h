@@ -74,6 +74,11 @@ class RealTime_API InverseKinematics {
      * Track an input frame (marker and/or IMU target positions/orientation).
      */
     Output solve(const Input& input);
+    /**
+     * Initialize inverse kinematics log storage. Use this to create a
+     * TimeSeriesTable that can be appended with the computed kinematics.
+     */
+    OpenSim::TimeSeriesTable initializeLogger();
 
  public: /* static methods */
     /**

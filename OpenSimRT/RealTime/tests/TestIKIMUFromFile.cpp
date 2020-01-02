@@ -32,8 +32,7 @@ void run() {
 
     // setup model
     Model model(modelFile);
-    ModelUtils::removeActuators(model);
-    model.initSystem();
+    OpenSimUtils::removeActuators(model);
 
     // create IMU tasks from marker data (.trc)
     MarkerData markerData(trcFile);
@@ -42,14 +41,10 @@ void run() {
     InverseKinematics::createIMUTasksFromMarkerData(model, markerData, imuTasks,
                                                     observationOrder);
 
-    // initialize loggers
-    auto coordinateColumnNames = ModelUtils::getCoordinateNames(model);
-    TimeSeriesTable q;
-    q.setColumnLabels(coordinateColumnNames);
-
     // initialize ik (lower constraint weight and accuracy -> faster tracking)
     InverseKinematics ik(model, vector<InverseKinematics::MarkerTask>{},
                          imuTasks, SimTK::Infinity, 1e-5);
+    auto qLogger = ik.initializeLogger();
 
     // visualizer
     BasicModelVisualizer visualizer(model);
@@ -78,14 +73,15 @@ void run() {
         visualizer.update(pose.q);
 
         // record
-        q.appendRow(pose.t, ~pose.q);
+        qLogger.appendRow(pose.t, ~pose.q);
     }
 
     cout << "Mean delay: " << (double) sumDelayMS / markerData.getNumFrames()
          << " ms" << endl;
 
     // store results
-    STOFileAdapter::write(q, subjectDir + "real_time/inverse_kinematics/q.sto");
+    STOFileAdapter::write(qLogger,
+                          subjectDir + "real_time/inverse_kinematics/q.sto");
 }
 
 int main(int argc, char* argv[]) {

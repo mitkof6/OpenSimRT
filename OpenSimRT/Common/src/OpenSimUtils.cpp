@@ -1,46 +1,63 @@
 #include "OpenSimUtils.h"
 
-using OpenSim::Model, OpenSim::Actuator;
+#include <Common/TimeSeriesTable.h>
+
+using OpenSim::Model, OpenSim::Actuator, OpenSim::Storage,
+        OpenSim::TimeSeriesTable;
 using std::vector, std::string;
 using namespace OpenSimRT;
 
-int ModelUtils::generateUID() {
+int OpenSimUtils::generateUID() {
     static int id = 0;
     return id++;
 }
 
-vector<string> ModelUtils::getCoordinateNames(const Model& model) {
-    vector<string> coordinateColumnNames;
+vector<string>
+OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(const Model& modelOther) {
+    // get a working copy
+    Model model(modelOther);
+    model.initSystem();
+    // get coordinates (model must be realized)
+    vector<string> coordinateNames;
     const auto& coordinates = model.getCoordinatesInMultibodyTreeOrder();
     for (const auto& coordinate : coordinates) {
-        coordinateColumnNames.push_back(coordinate->getName());
+        coordinateNames.push_back(coordinate->getName());
     }
-    return coordinateColumnNames;
+    return coordinateNames;
 }
 
-vector<string> ModelUtils::getMuscleNames(const Model& model) {
-    vector<string> muscleColumnNames;
+std::vector<std::string> OpenSimUtils::getCoordinateNames(const Model& model) {
+    vector<string> coordinateNames;
+    const auto& coordinateSet = model.getCoordinateSet();
+    for (int i = 0; i < coordinateSet.getSize(); i++) {
+        coordinateNames.push_back(coordinateSet[i].getName());
+    }
+    return coordinateNames;
+}
+
+vector<string> OpenSimUtils::getMuscleNames(const Model& model) {
+    vector<string> muscleNames;
     for (int i = 0; i < model.getMuscles().getSize(); ++i) {
-        muscleColumnNames.push_back(model.getMuscles()[i].getName());
+        muscleNames.push_back(model.getMuscles()[i].getName());
     }
-    return muscleColumnNames;
+    return muscleNames;
 }
 
-vector<string> ModelUtils::getActuatorNames(const Model& model) {
-    vector<string> actuatorColumnNames;
+vector<string> OpenSimUtils::getActuatorNames(const Model& model) {
+    vector<string> actuatorNames;
     for (int i = 0; i < model.getActuators().getSize(); ++i) {
-        actuatorColumnNames.push_back(model.getActuators()[i].getName());
+        actuatorNames.push_back(model.getActuators()[i].getName());
     }
-    return actuatorColumnNames;
+    return actuatorNames;
 }
 
-void ModelUtils::disableActuators(OpenSim::Model& model) {
+void OpenSimUtils::disableActuators(OpenSim::Model& model) {
     for (int i = 0; i < model.updActuators().getSize(); i++) {
         model.updActuators()[i].set_appliesForce(false);
     }
 }
 
-void ModelUtils::removeActuators(OpenSim::Model& model) {
+void OpenSimUtils::removeActuators(OpenSim::Model& model) {
     // save a list of pointers of the actuators to delete
     std::vector<Actuator*> actuatorsToDelete;
     auto& actuatorSet = model.updActuators();
@@ -52,4 +69,37 @@ void ModelUtils::removeActuators(OpenSim::Model& model) {
         int index = model.getForceSet().getIndex(act, 0);
         model.updForceSet().remove(index);
     }
+}
+
+TimeSeriesTable OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
+        const Model& model, const std::string stoFilePath,
+        double samplingInterval) {
+    // load storage, convert to radians and re-sample
+    Storage q(stoFilePath);
+    if (q.isInDegrees()) {
+        std::cout << "convert storage to radians" << std::endl;
+        model.getSimbodyEngine().convertDegreesToRadians(q);
+    }
+    // re-sample after conversation, because Storage metadata (isInDegrees) are
+    // lost afterwards (OpenSim bug)
+    q.resampleLinear(samplingInterval);
+
+    // set time column
+    double* timeData = new double[q.getSize()];
+    q.getTimeColumn(timeData);
+    TimeSeriesTable table(
+            std::vector<double>(timeData, timeData + q.getSize()));
+    delete[] timeData;
+
+    // build table columns
+    auto coordinateNmaes =
+            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
+    for (auto coordinate : coordinateNmaes) {
+        double* columnData = new double[q.getSize()];
+        q.getDataColumn(coordinate, columnData);
+        table.appendColumn(coordinate, SimTK::Vector(q.getSize(), columnData));
+        delete[] columnData;
+    }
+
+    return table;
 }

@@ -15,6 +15,7 @@
 #include "Utils.h"
 #include "Visualization.h"
 
+#include <OpenSim/Common/STOFileAdapter.h>
 #include <iostream>
 #include <thread>
 
@@ -23,13 +24,10 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-// test the alternative smoothing filter and differentiation scheme
-#define IIR_FILTER
-
 void run() {
     // subject data
     INIReader ini(INI_FILE);
-    auto section = "RAJAGOPAL_2015";
+    auto section = "TEST_ID_FROM_FILE";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
@@ -61,64 +59,65 @@ void run() {
     auto grfLeftTorqueIdentifier =
             ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
 
+    auto memory = ini.getInteger(section, "MEMORY", 0);
+    auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
+    auto delay = ini.getInteger(section, "DELAY", 0);
+    auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
+
     // setup model
     Model model(modelFile);
-    ModelUtils::removeActuators(model);
+    OpenSimUtils::removeActuators(model);
     model.initSystem();
 
-    // read external forces
+    // setup external forces
     Storage grfMotion(grfMotFile);
+
     ExternalWrench::Parameters grfRightFootPar{
             grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
-    auto grfRightLabels = InverseDynamics::createGRFLabelsFromIdentifiers(
+    auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
             grfRightPointIdentifier, grfRightForceIdentifier,
             grfRightTorqueIdentifier);
+    auto grfRightLogger = ExternalWrench::initializeLogger();
+    
     ExternalWrench::Parameters grfLeftFootPar{
             grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
-    auto grfLeftLabels = InverseDynamics::createGRFLabelsFromIdentifiers(
+    auto grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
             grfLeftPointIdentifier, grfLeftForceIdentifier,
             grfLeftTorqueIdentifier);
+    auto grfLeftLogger = ExternalWrench::initializeLogger();
 
     vector<ExternalWrench::Parameters> wrenchParameters;
     wrenchParameters.push_back(grfRightFootPar);
     wrenchParameters.push_back(grfLeftFootPar);
 
-    // prepare results from inverse kinematics
-    Storage ikQ(ikFile);
-    ikQ.resampleLinear(0.01);
-    if (ikQ.isInDegrees()) {
-        model.getSimbodyEngine().convertDegreesToRadians(ikQ);
-    }
+    // get kinematics as a table with ordered coordinates
+    auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
+            model, ikFile, 0.01);
 
-    for (auto coord : model.getComponentList<Coordinate>()) {
-        cout << coord.getName() << endl;
-    }
+    // setup filters
+    LowPassSmoothFilter::Parameters ikFilterParam;
+    ikFilterParam.numSignals = model.getNumCoordinates();
+    ikFilterParam.memory = memory;
+    ikFilterParam.delay = delay;
+    ikFilterParam.cutoffFrequency = cutoffFreq;
+    ikFilterParam.splineOrder = splineOrder;
+    ikFilterParam.calculateDerivatives = true;
+    LowPassSmoothFilter ikFilter(ikFilterParam);
 
-    // filters and differentiator
-#ifdef IIR_FILTER
-    IIRFilter ikFilter(model.getNumCoordinates(),
-                       Vector(Vec3(1., -1.1429805, 0.4128016)),
-                       Vector(Vec3(0.06745527, 0.13491055, 0.06745527)),
-                       IIRFilter::Signal);
-    // SavitzkyGolay ikFilter(model.getNumCoordinates(), 7);
-    NumericalDifferentiator dq(model.getNumCoordinates(), 2);
-    NumericalDifferentiator ddq(model.getNumCoordinates(), 2);
-    IIRFilter grfRightFilter(9, Vector(Vec3(1., -1.1429805, 0.4128016)),
-                             Vector(Vec3(0.06745527, 0.13491055, 0.06745527)),
-                             IIRFilter::Signal);
-    IIRFilter grfLeftFilter(9, Vector(Vec3(1., -1.1429805, 0.4128016)),
-                            Vector(Vec3(0.06745527, 0.13491055, 0.06745527)),
-                            IIRFilter::Signal);
+    LowPassSmoothFilter::Parameters grfFilterParam;
+    grfFilterParam.numSignals = 9;
+    grfFilterParam.memory = memory;
+    grfFilterParam.delay = delay;
+    grfFilterParam.cutoffFrequency = cutoffFreq;
+    grfFilterParam.splineOrder = splineOrder;
+    grfFilterParam.calculateDerivatives = false;
+    LowPassSmoothFilter grfRightFilter(grfFilterParam),
+            grfLeftFilter(grfFilterParam);
 
-#else
-    StateSpaceFilter ikFilter(model.getNumCoordinates(), 6);
-    StateSpaceFilter grfRightFilter(9, 6);
-    StateSpaceFilter grfLeftFilter(9, 6);
-#endif
-
-    // initialize id
+    // initialize id and logger
     InverseDynamics id(model, wrenchParameters);
-
+    auto tauLogger = id.initializeLogger();
+    
     // visualizer
     BasicModelVisualizer visualizer(model);
     auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
@@ -126,62 +125,77 @@ void run() {
     auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
     visualizer.getVisualizer()->addDecorationGenerator(leftGRFDecorator);
 
-    // loop through ik storage
-    for (int i = 0; i < ikQ.getSize(); i++) {
-        // read storage entry
-        auto stateVector = ikQ.getStateVector(i);
-        double t = stateVector->getTime();
-        auto q = Vector(stateVector->getSize(), &stateVector->getData()[0]);
+    // mean delay
+    int sumDelayMS = 0;
 
-        // get grf force
-        auto grfRightWrench = InverseDynamics::getWrenchFromStorage(
+    // loop through kinematic frames
+    for (int i = 0; i < qTable.getNumRows(); i++) {
+        // get raw pose from table
+        double t = qTable.getIndependentColumn()[i];
+        auto qRaw = qTable.getRowAtIndex(i).getAsVector();
+
+        // get grf forces
+        auto grfRightWrench = ExternalWrench::getWrenchFromStorage(
                 t, grfRightLabels, grfMotion);
-        auto grfLeftWrench = InverseDynamics::getWrenchFromStorage(
+        auto grfLeftWrench = ExternalWrench::getWrenchFromStorage(
                 t, grfLeftLabels, grfMotion);
 
-        // filter and differentiate results
-#ifdef IIR_FILTER
-        // filter kinematics
-        // q = ikFilter.filter(q);
-        auto qDot = dq.diff(t, q);
-        auto qDDot = ddq.diff(t, qDot);
-        // filter external loads
-        // grfRightWrench.fromVector(
-        //         grfRightFilter.filter(grfRightWrench.toVector()));
-        // grfLeftWrench.fromVector(
-        //         grfLeftFilter.filter(grfLeftWrench.toVector()));
-#else
-        // filter kinematics
-        auto filterState = ikFilter.filter(t, q);
-        q = filterState.x;
-        auto qDot = filterState.xDot;
-        auto qDDot = filterState.xDDot;
-        // filter external loads
-        grfRightWrench.fromVector(
-                grfRightFilter.filter(t, grfRightWrench.toVector()).x);
-        grfLeftWrench.fromVector(
-                grfLeftFilter.filter(t, grfLeftWrench.toVector()).x);
-#endif
+        // filter
+        auto ikFiltered = ikFilter.filter({t, qRaw});
+        auto q = ikFiltered.x;
+        auto qDot = ikFiltered.xDot;
+        auto qDDot = ikFiltered.xDDot;
 
-        // execute id
+        auto grfRightFiltered =
+                grfRightFilter.filter({t, grfRightWrench.toVector()});
+        grfRightWrench.fromVector(grfRightFiltered.x);
+        auto grfLeftFiltered =
+                grfLeftFilter.filter({t, grfLeftWrench.toVector()});
+        grfLeftWrench.fromVector(grfLeftFiltered.x);
+
+        if (!ikFiltered.isValid || !grfRightFiltered.isValid ||
+            !grfLeftFiltered.isValid) {
+            continue;
+        }
+
+        // perform id
+        chrono::high_resolution_clock::time_point t1;
+        t1 = chrono::high_resolution_clock::now();
+
         auto idOutput = id.solve(
                 {t, q, qDot, qDDot,
                  vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
+
+        chrono::high_resolution_clock::time_point t2;
+        t2 = chrono::high_resolution_clock::now();
+        sumDelayMS +=
+                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
         // visualization
         visualizer.update(q);
         rightGRFDecorator->update(grfRightWrench.point, grfRightWrench.force);
         leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
 
-        this_thread::sleep_for(chrono::milliseconds(10));
+        // log data (use filter time to align with delay)
+        tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
+        grfRightLogger.appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
+        grfLeftLogger.appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
+        
+        // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
+    cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
+         << endl;
+
     // store results
-    // id.logger->exportToFile(subjectDir + "results_rt/tau.csv");
-    // for (int i = 0; i < id.externalWrenches.size(); ++i) {
-    //     id.externalWrenches[i]->logger->exportToFile(
-    //             subjectDir + "results_rt/wrench_" + toString(i) + ".csv");
-    // }
+    STOFileAdapter::write(tauLogger,
+                          subjectDir + "real_time/inverse_dynamics/tau.sto");
+    STOFileAdapter::write(
+        grfRightLogger,
+        subjectDir + "real_time/inverse_dynamics/wrench_right.sto");
+    STOFileAdapter::write(
+        grfLeftLogger,
+        subjectDir + "real_time/inverse_dynamics/wrench_left.sto");
 }
 
 int main(int argc, char* argv[]) {

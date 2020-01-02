@@ -84,6 +84,80 @@ void ExternalWrench::computeForce(const State& state,
             state, appliedToBody.getMobilizedBodyIndex(), torque, bodyForces);
 }
 
+vector<string>
+ExternalWrench::createGRFLabelsFromIdentifiers(string pointIdentifier,
+                                               string forceIdentifier,
+                                               string torqueIdentifier) {
+    if (pointIdentifier.size() == 0 || forceIdentifier.size() == 0 ||
+        torqueIdentifier.size() == 0) {
+        THROW_EXCEPTION("empty identifiers not allowed");
+    }
+    vector<string> temp;
+    temp.push_back(pointIdentifier + "x");
+    temp.push_back(pointIdentifier + "y");
+    temp.push_back(pointIdentifier + "z");
+    temp.push_back(forceIdentifier + "x");
+    temp.push_back(forceIdentifier + "y");
+    temp.push_back(forceIdentifier + "z");
+    temp.push_back(torqueIdentifier + "x");
+    temp.push_back(torqueIdentifier + "y");
+    temp.push_back(torqueIdentifier + "z");
+    return temp;
+}
+
+ExternalWrench::Input
+ExternalWrench::getWrenchFromExternalForce(double t,
+                                           const ExternalForce& force) {
+    ExternalWrench::Input input;
+    input.point = force.getPointAtTime(t);
+    input.force = force.getForceAtTime(t);
+    input.torque = force.getTorqueAtTime(t);
+    return input;
+}
+
+ExternalWrench::Input
+ExternalWrench::getWrenchFromStorage(double t, const vector<string>& labels,
+                                     const Storage& storage) {
+    if (labels.size() != 9) {
+        THROW_EXCEPTION("labels dimension does not agree with ExternalWrench");
+    }
+
+    // assumes labels are pre-ordered (point, force, torque)
+    auto columns = storage.getColumnLabels();
+    Vector row(columns.getSize() - 1, 0.0);
+    storage.getDataAtTime(t, columns.getSize() - 1, row);
+
+    Vector collect(columns.getSize() - 1, 0.0);
+    for (int i = 0; i < labels.size(); ++i) {
+        int ind = columns.findIndex(labels[i]);
+        if (ind < 0) {
+            THROW_EXCEPTION("label: " + labels[i] +
+                            " does not exist in storage");
+        }
+        collect[i] = row[ind - 1];
+    }
+    ExternalWrench::Input input;
+    input.fromVector(collect);
+    return input;
+}
+
+TimeSeriesTable ExternalWrench::initializeLogger() {
+    vector<string> columnNames;
+    columnNames.push_back("p_x");
+    columnNames.push_back("p_y");
+    columnNames.push_back("p_z");
+    columnNames.push_back("f_x");
+    columnNames.push_back("f_y");
+    columnNames.push_back("f_z");
+    columnNames.push_back("tau_x");
+    columnNames.push_back("tau_y");
+    columnNames.push_back("tau_z");
+
+    TimeSeriesTable wrench;
+    wrench.setColumnLabels(columnNames);
+    return wrench;
+}
+
 /******************************************************************************/
 
 InverseDynamics::InverseDynamics(
@@ -148,63 +222,13 @@ InverseDynamics::solve(const InverseDynamics::Input& input) {
     return output;
 }
 
-/******************************************************************************/
-
-vector<string>
-InverseDynamics::createGRFLabelsFromIdentifiers(string pointIdentifier,
-                                                string forceIdentifier,
-                                                string torqueIdentifier) {
-    if (pointIdentifier.size() == 0 || forceIdentifier.size() == 0 ||
-        torqueIdentifier.size() == 0) {
-        THROW_EXCEPTION("empty identifiers not allowed");
-    }
-    vector<string> temp;
-    temp.push_back(pointIdentifier + "x");
-    temp.push_back(pointIdentifier + "y");
-    temp.push_back(pointIdentifier + "z");
-    temp.push_back(forceIdentifier + "x");
-    temp.push_back(forceIdentifier + "y");
-    temp.push_back(forceIdentifier + "z");
-    temp.push_back(torqueIdentifier + "x");
-    temp.push_back(torqueIdentifier + "y");
-    temp.push_back(torqueIdentifier + "z");
-    return temp;
-}
-
-ExternalWrench::Input
-InverseDynamics::getWrenchFromExternalForce(double t,
-                                            const ExternalForce& force) {
-    ExternalWrench::Input input;
-    input.point = force.getPointAtTime(t);
-    input.force = force.getForceAtTime(t);
-    input.torque = force.getTorqueAtTime(t);
-    return input;
-}
-
-ExternalWrench::Input
-InverseDynamics::getWrenchFromStorage(double t, const vector<string>& labels,
-                                      const Storage& storage) {
-    if (labels.size() != 9) {
-        THROW_EXCEPTION("labels dimension does not agree with ExternalWrench");
-    }
-
-    // assumes labels are pre-ordered (point, force, torque)
-    auto columns = storage.getColumnLabels();
-    Vector row(columns.getSize() - 1, 0.0);
-    storage.getDataAtTime(t, columns.getSize() - 1, row);
-
-    Vector collect(columns.getSize() - 1, 0.0);
-    for (int i = 0; i < labels.size(); ++i) {
-        int ind = columns.findIndex(labels[i]);
-        if (ind < 0) {
-            THROW_EXCEPTION("label: " + labels[i] +
-                            " does not exist in storage");
-        }
-        collect[i] = row[ind - 1];
-    }
-    ExternalWrench::Input input;
-    input.fromVector(collect);
-    return input;
+TimeSeriesTable InverseDynamics::initializeLogger() {
+    auto columnNames =
+            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
+    
+    TimeSeriesTable q;
+    q.setColumnLabels(columnNames);
+    return q;
 }
 
 /*******************************************************************************/

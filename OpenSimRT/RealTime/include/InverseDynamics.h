@@ -24,7 +24,7 @@ namespace OpenSimRT {
 class RealTime_API ExternalWrench : public OpenSim::Force {
     OpenSim_DECLARE_CONCRETE_OBJECT(ExternalWrench, OpenSim::Force);
 
- public:
+ public: /* public data structures */
     struct RealTime_API Parameters {
         std::string appliedToBody;
         std::string forceExpressedInBody;
@@ -39,44 +39,11 @@ class RealTime_API ExternalWrench : public OpenSim::Force {
         static int size();
     };
 
- public:
+ public: /* public interface */
     ExternalWrench(const Parameters& parameters);
     Input& getInput();
 
- protected:
-    void computeForce(const SimTK::State& state,
-                      SimTK::Vector_<SimTK::SpatialVec>& bodyForces,
-                      SimTK::Vector& generalizedForces) const override;
-
- private:
-    Parameters parameters;
-    Input input;
-};
-
-/**
- * \brief Performs inverse dynamics calculations.
- */
-class RealTime_API InverseDynamics {
- public:
-    struct Input {
-        double t;
-        SimTK::Vector q;
-        SimTK::Vector qDot;
-        SimTK::Vector qDDot;
-        std::vector<ExternalWrench::Input> externalWrenches;
-    };
-    struct Output {
-        double t;
-        SimTK::Vector tau;
-    };
-
- public:
-    InverseDynamics(
-            const OpenSim::Model& model,
-            const std::vector<ExternalWrench::Parameters>& wrenchParameters);
-    Output solve(const Input& inputState);
-
- public:
+ public: /* public static interface */
     /**
      * Creates the GRF labels (point, force, torque) required to parse
      * an .mot file. @see getWrenchFromStorage
@@ -97,8 +64,52 @@ class RealTime_API InverseDynamics {
     static ExternalWrench::Input
     getWrenchFromStorage(double t, const std::vector<std::string>& labels,
                          const OpenSim::Storage& storage);
+    /**
+     * Initialize wrench log storage. Use this to create a TimeSeriesTable that
+     * can be appended with the computed moments.
+     */
+    static OpenSim::TimeSeriesTable initializeLogger();
 
- private:
+ protected: /* protected interface */
+    void computeForce(const SimTK::State& state,
+                      SimTK::Vector_<SimTK::SpatialVec>& bodyForces,
+                      SimTK::Vector& generalizedForces) const override;
+
+ private: /* private data members */
+    Parameters parameters;
+    Input input;
+};
+
+/**
+ * \brief Performs inverse dynamics calculations.
+ */
+class RealTime_API InverseDynamics {
+ public: /* public data structures */
+    struct Input {
+        double t;
+        SimTK::Vector q;
+        SimTK::Vector qDot;
+        SimTK::Vector qDDot;
+        std::vector<ExternalWrench::Input> externalWrenches;
+    };
+    struct Output {
+        double t;
+        SimTK::Vector tau;
+    };
+
+ public: /* public interface */
+    InverseDynamics(
+            const OpenSim::Model& model,
+            const std::vector<ExternalWrench::Parameters>& wrenchParameters);
+    Output solve(const Input& input);
+    /**
+     * Initialize inverse dynamics log storage. Use this to create a
+     * TimeSeriesTable that can be appended with the computed generalized
+     * forces.
+     */
+    OpenSim::TimeSeriesTable initializeLogger();
+
+ private: /* private data members */
     OpenSim::Model model;
     SimTK::State state;
     std::vector<ExternalWrench*> externalWrenches;

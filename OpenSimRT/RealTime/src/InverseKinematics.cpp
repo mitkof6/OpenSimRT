@@ -1,13 +1,14 @@
 #include "InverseKinematics.h"
 
 #include "Exception.h"
+#include "OpenSimUtils.h"
 
 #include <OpenSim/Simulation/Model/BodySet.h>
 #include <OpenSim/Simulation/Model/MarkerSet.h>
 #include <OpenSim/Tools/IKCoordinateTask.h>
 
 using OpenSim::Model, OpenSim::MarkerData, OpenSim::Units, OpenSim::IKTaskSet,
-        OpenSim::IKCoordinateTask;
+        OpenSim::IKCoordinateTask, OpenSim::TimeSeriesTable;
 using std::vector, std::string, std::cout, std::endl;
 using namespace SimTK;
 using namespace OpenSimRT;
@@ -17,8 +18,7 @@ using namespace OpenSimRT;
 InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
                                      const vector<MarkerTask>& markerTasks,
                                      const vector<IMUTask>& imuTasks,
-                                     double constraintsWeight,
-                                     double accuracy)
+                                     double constraintsWeight, double accuracy)
         : model(*otherModel.clone()), assembled(false) {
     // initialize model and assembler
     state = model.initSystem();
@@ -83,6 +83,15 @@ InverseKinematics::Output InverseKinematics::solve(const Input& input) {
     }
     assembler->updateFromInternalState(state);
     return InverseKinematics::Output{rms, input.t, state.getQ()};
+}
+
+TimeSeriesTable InverseKinematics::initializeLogger() {
+    auto columnNames =
+            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
+    
+    TimeSeriesTable q;
+    q.setColumnLabels(columnNames);
+    return q;
 }
 
 /******************************************************************************/

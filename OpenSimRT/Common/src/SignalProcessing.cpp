@@ -68,9 +68,11 @@ LowPassSmoothFilter::LowPassSmoothFilter(const Parameters& parameters)
     ENSURE_POSITIVE(parameters.cutoffFrequency);
     // if we need time derivatives then we are between [2, M - 2]
     ENSURE_BOUNDS(parameters.delay, 2, parameters.memory - 2);
-    ENSURE_BOUNDS(parameters.splineOrder, 1, 7);
-    if (parameters.splineOrder % 2 == 0) {
-        THROW_EXCEPTION("spline order should be an odd number between 1 and 7");
+    if (parameters.calculateDerivatives) {
+        ENSURE_BOUNDS(parameters.splineOrder, 1, 7);
+        if (parameters.splineOrder % 2 == 0) {
+            THROW_EXCEPTION("spline order should be an odd number between 1 and 7");
+        }
     }
 
     time = Matrix(1, parameters.memory, 0.0);
