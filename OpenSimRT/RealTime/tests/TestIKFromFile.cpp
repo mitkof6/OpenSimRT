@@ -14,8 +14,10 @@
 
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
-#include <iostream>
+#include <SimTKcommon/Scalar.h>
 #include <chrono>
+#include <iostream>
+#include <thread>
 
 using namespace std;
 using namespace OpenSim;
@@ -26,15 +28,17 @@ void run() {
     // subject data
     INIReader ini(INI_FILE);
     // auto section = "RAJAGOPAL_2015";
-    auto section = "TEST_IK_GAIT2392";
+    auto section = "TEST_IK_FROM_FILE";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto trcFile = subjectDir + ini.getString(section, "TRC_FILE", "");
-    auto ikTaskSetFile = subjectDir + ini.getString(section, "IK_TASK_SET_FILE", "");
+    auto ikTaskSetFile =
+            subjectDir + ini.getString(section, "IK_TASK_SET_FILE", "");
 
     // setup model
     Model model(modelFile);
     ModelUtils::removeActuators(model);
+    model.initSystem();
 
     // construct marker tasks from marker data (.trc)
     IKTaskSet ikTaskSet(ikTaskSetFile);
@@ -49,9 +53,10 @@ void run() {
     TimeSeriesTable q;
     q.setColumnLabels(coordinateColumnNames);
 
-    // initialize ik
+    // initialize ik (lower constraint weight and accuracy -> faster tracking)
     InverseKinematics ik(model, markerTasks,
-                         vector<InverseKinematics::IMUTask>{}, 100);
+                         vector<InverseKinematics::IMUTask>{}, SimTK::Infinity,
+                         1e-5);
 
     // visualizer
     BasicModelVisualizer visualizer(model);
@@ -81,6 +86,7 @@ void run() {
 
         // record
         q.appendRow(pose.t, ~pose.q);
+        // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
     cout << "Mean delay: " << (double) sumDelayMS / markerData.getNumFrames()

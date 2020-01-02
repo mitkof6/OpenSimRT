@@ -15,20 +15,43 @@
 namespace OpenSimRT {
 
 /**
- * \brief A filter that uses low pass IIR filter for removing the
- * noise GCV splines for calculating higher order derivatives.
+ * \brief A non-casual filter that uses a low pass recursive filter for removing
+ * high frequency noise and splines for calculating higher order derivatives.
  *
- * TODO description
+ * A memory buffer contains the previous values (memory parameter) of a signal
+ * (one or many channels as defined by numSignals). When the current value is
+ * provided, the memory buffer is left shifted and the new value is appended at
+ * the end of the buffer (circular buffer). A low pass recursive filter
+ * (cutoffFrequency) is applied to the signal to attenuate high frequency
+ * noise. If one must compute the derivatives of the signal, generalized
+ * cross-validation splines are fitted, because discontinuities are amplified by
+ * numerical differentiation. The output (x, x_dot, x_ddot) is a delayed version
+ * of the signal (delay parameter), so in order to use future values during
+ * filtering (non-casual filter). While this may introduce an artificial delay
+ * in the signal, it can greatly improve the accuracy of the first and second
+ * derivatives of the signal.
+ *
+ * For gait kinematics we identified the following set of parameters assuming
+ * that the signal is generated at 100Hz (typical for motion capture):
+ *
+ *    memory = 35
+ *    cutoffFrequency = 6
+ *    delay = 14
+ *    splineOrder = 3
+ *
+ * The low pass filter uses a kernel (sinc and Hamming window) that multiplies
+ * the signal (memory buffer). For real-time applications, the memory and delay
+ * parameters affects the performance of the filter.
  */
 class Common_API LowPassSmoothFilter {
- public:
+ public: /* public data structures */
     struct Parameters {
-        int numSignals;   // number of signals that are to be filtered
+        int numSignals;   // number of signals that are filtered
         int memory;       // memory buffer of the filter
-        double cutoffFrequency;
+        double cutoffFrequency; // low pass cutoff frequency
         int delay;              // sample delay to evaluate the result
         int splineOrder;        // spline order use 3
-        bool calculateDerivatives;
+        bool calculateDerivatives; // whether to calculate derivatives
     };
     struct Input {
         double t;
@@ -39,14 +62,14 @@ class Common_API LowPassSmoothFilter {
         SimTK::Vector x;
         SimTK::Vector xDot;
         SimTK::Vector xDDot;
-        bool isValid;
+        bool isValid;           // requires at least # memory samples
     };
 
- public:
+ public: /* public interface */
     LowPassSmoothFilter(const Parameters& parameters);
     Output filter(const Input& input);
 
- private:
+ private: /* private data members */
     Parameters parameters;
     SimTK::Matrix time;
     SimTK::Matrix data;

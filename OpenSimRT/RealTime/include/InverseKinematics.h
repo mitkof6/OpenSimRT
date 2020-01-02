@@ -30,6 +30,10 @@ namespace OpenSimRT {
  * tracking as day depend on some coordinate (e.g., patella as a function of
  * knee angle). In this case, they could be ignored without affecting the
  * overall solution and speed up the process.
+ *
+ * TODO:
+ *
+ * 1) Support for IKCoordinateTask
  */
 class RealTime_API InverseKinematics {
  public: /* public data structures */
@@ -56,14 +60,16 @@ class RealTime_API InverseKinematics {
     };
 
  public: /* public interface */
-         /**
-          * Inverse kinematics constructor, that accepts a model, the marker tasks
-          * (if      any), the IMU tasks (if any) and the constraint weight.
-          */
+    /**
+     * Inverse kinematics constructor, that accepts a model, the marker tasks
+     * (if any), the IMU tasks (if any), the constraint weight (Infinity) and
+     * accuracy (1.0e-5). Reducing the value of constraint weight can
+     * significantly reduce the delay.
+     */
     InverseKinematics(const OpenSim::Model& model,
                       const std::vector<MarkerTask>& markerTasks,
                       const std::vector<IMUTask>& imuTasks,
-                      double constraintsWeight);
+                      double constraintsWeight, double accuracy);
     /**
      * Track an input frame (marker and/or IMU target positions/orientation).
      */

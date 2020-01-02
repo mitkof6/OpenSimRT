@@ -11,8 +11,9 @@ int ModelUtils::generateUID() {
 
 vector<string> ModelUtils::getCoordinateNames(const Model& model) {
     vector<string> coordinateColumnNames;
-    for (int i = 0; i < model.getCoordinateSet().getSize(); ++i) {
-        coordinateColumnNames.push_back(model.getCoordinateSet()[i].getName());
+    const auto& coordinates = model.getCoordinatesInMultibodyTreeOrder();
+    for (const auto& coordinate : coordinates) {
+        coordinateColumnNames.push_back(coordinate->getName());
     }
     return coordinateColumnNames;
 }

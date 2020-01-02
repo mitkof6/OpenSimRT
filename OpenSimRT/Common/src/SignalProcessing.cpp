@@ -2,6 +2,8 @@
 
 #include "Exception.h"
 #include "Utils.h"
+#include <SimTKcommon/Scalar.h>
+#include <SimTKcommon/internal/VectorMath.h>
 #define _USE_MATH_DEFINES
 #include <OpenSim/Common/GCVSpline.h>
 #include <OpenSim/Common/Signal.h>
@@ -85,7 +87,10 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
     int N = parameters.numSignals;
     int M = parameters.memory;
     int D = parameters.delay;
-    double dt = time[0][M - 1] - time[0][M - 2]; // assume constant dt
+    double dt = time[0][M - 1] - time[0][M - 2];
+    double dtPrev = time[0][M - 2] - time[0][M - 3];
+    
+    // output
     Output output;
     output.t = time[0][M - D - 1];
     output.x = Vector(N);
@@ -98,6 +103,11 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
         initializationCounter--;
         output.isValid = false;
         return output;
+    }
+
+    // check if dt is consistent
+    if (abs(dt - dtPrev) > 1e-5) {
+        THROW_EXCEPTION("signal sampling frequency is not constant");
     }
 
     // filter

@@ -17,12 +17,13 @@ using namespace OpenSimRT;
 InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
                                      const vector<MarkerTask>& markerTasks,
                                      const vector<IMUTask>& imuTasks,
-                                     double constraintsWeight)
+                                     double constraintsWeight,
+                                     double accuracy)
         : model(*otherModel.clone()), assembled(false) {
     // initialize model and assembler
     state = model.initSystem();
     assembler = new Assembler(model.getMultibodySystem());
-    // assembler->setAccuracy(1e-3);
+    assembler->setAccuracy(accuracy);
     // assembler->setErrorTolerance(1e-3);
     assembler->setSystemConstraintsWeight(constraintsWeight);
 
@@ -93,8 +94,8 @@ void InverseKinematics::createMarkerTasksFromIKTaskSet(
 
     for (int i = 0; i < ikTaskSet.getSize(); ++i) {
         if (dynamic_cast<const IKCoordinateTask*>(&ikTaskSet[i])) {
-            cout << "IKCoordinateTask: " << ikTaskSet[i].getName() << " ignored"
-                 << endl;
+            cout << "TODO - IKCoordinateTask:" << ikTaskSet[i].getName()
+                 << " ignored" << endl;
             continue;
         }
         if (ikTaskSet[i].getApply() &&

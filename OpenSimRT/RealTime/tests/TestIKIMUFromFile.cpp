@@ -13,6 +13,7 @@
 
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
+#include <SimTKcommon/Scalar.h>
 #include <chrono>
 #include <iostream>
 
@@ -24,11 +25,15 @@ using namespace OpenSimRT;
 void run() {
     // subject data
     INIReader ini(INI_FILE);
-    auto subjectDir = DATA_DIR + ini.getString("NGIMU", "SUBJECT_DIR", "");
-    auto modelFile = subjectDir + ini.getString("NGIMU", "MODEL_FILE", "");
-    auto trcFile = subjectDir + ini.getString("NGIMU", "TRC_FILE", "");
+    auto section = "TEST_IK_IMU_FROM_FILE";
+    auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+    auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+    auto trcFile = subjectDir + ini.getString(section, "TRC_FILE", "");
 
+    // setup model
     Model model(modelFile);
+    ModelUtils::removeActuators(model);
+    model.initSystem();
 
     // create IMU tasks from marker data (.trc)
     MarkerData markerData(trcFile);
@@ -42,9 +47,9 @@ void run() {
     TimeSeriesTable q;
     q.setColumnLabels(coordinateColumnNames);
 
-    // initialize ik
+    // initialize ik (lower constraint weight and accuracy -> faster tracking)
     InverseKinematics ik(model, vector<InverseKinematics::MarkerTask>{},
-                         imuTasks, 100);
+                         imuTasks, SimTK::Infinity, 1e-5);
 
     // visualizer
     BasicModelVisualizer visualizer(model);
