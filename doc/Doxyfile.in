@@ -3,7 +3,7 @@ PROJECT_NUMBER         = @VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@
 STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
                          @PROJECT_BINARY_DIR@
 INPUT                  = @doxy_main_page@ \
-                         @PROJECT_SOURCE_DIR@/src
+                         @PROJECT_SOURCE_DIR@/OpenSimRT
 FILE_PATTERNS          = *.h *.hpp *.c *.cpp
 RECURSIVE              = YES
 # Enable the USE_MATHJAX option to render LaTeX formulas using MathJax

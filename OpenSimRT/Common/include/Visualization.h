@@ -12,6 +12,7 @@
 
 #include <OpenSim/Simulation/Model/Model.h>
 #include <OpenSim/Simulation/Model/ModelVisualizer.h>
+#include <SimTKcommon/internal/DecorationGenerator.h>
 #include <simbody/internal/Visualizer_InputListener.h>
 
 namespace OpenSimRT {
@@ -77,9 +78,12 @@ class Common_API ForceDecorator : public SimTK::DecorationGenerator {
 class Common_API BasicModelVisualizer {
  public:
     BasicModelVisualizer(const OpenSim::Model& model);
-    SimTK::Visualizer* getVisualizer();
+    // Update visualizer state.
     void update(const SimTK::Vector& q,
                 const SimTK::Vector& muscleActivations = SimTK::Vector());
+    // Add decoration generator to the visualizer (take ownership of the
+    // memory).
+    void addDecorationGenerator(SimTK::DecorationGenerator* generator);
 
  private:
     OpenSim::Model model;

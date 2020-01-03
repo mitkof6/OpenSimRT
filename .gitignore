@@ -7,3 +7,4 @@ build/
 /compile_commands.json
 *.log
 *__pycache__*
+install/

@@ -1,16 +1,12 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
-
 ################################################################################
+# setup
 
-# project
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 project(OpenSimRT VERSION 1.0.0)
 
 # cmake modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(cmake/CMakeHelpers.cmake)
-
-# ctest
-include(CTest)
 
 # force RelWithDebInfo on Linux
 if(UNIX AND NOT CMAKE_BUILD_TYPE)
@@ -27,7 +23,7 @@ option(USE_UNITY_BUILD "Enable to speed up the building" OFF)
 # build Vicon interface
 option(BUILD_VICON "Build Vicon streamer interface" OFF)
 
-# compilation database
+# compilation database (completion for Linux)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # disable code parts when CI is invoked
@@ -41,7 +37,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # c++11, -g option is used to export debug symbols for gdb
 if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU OR
-    ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
+   ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
   # Using C++11 on OSX requires using libc++ instead of libstd++.
   # libc++ is an implementation of the C++ standard library for OSX.
   if(APPLE)
@@ -56,31 +52,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU OR
     # -fno-var-tracking-assignments
   endif()
 endif()
-
-# report platform
-if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-  set(PLATFORM_ABI x64)
-else()
-  set(PLATFORM_ABI x86)
-endif()
-set(BUILD_PLATFORM "${CMAKE_HOST_SYSTEM_NAME}:${PLATFORM_ABI}" CACHE STRING
-  "This is the platform and ABI we're building for." FORCE)
-
-# install layout
-# Layout. This works for all platforms:
-#   * <prefix>/lib/cmake/<PROJECT-NAME>
-#   * <prefix>/lib/
-#   * <prefix>/include/
-#   * <prefix>/bin/
-#   * <prefix>/doc/
-#   * <prefix>/scripts/
-set(CMAKE_INSTALL_BINDIR bin)
-set(CMAKE_INSTALL_INCLUDEDIR include)
-set(CMAKE_INSTALL_LIBDIR lib)
-set(CMAKE_INSTALL_DOCDIR ${CMAKE_INSTALL_PREFIX}/docs)
-set(CMAKE_INSTALL_CONFIG ${CMAKE_INSTALL_PREFIX}/lib/cmake/${PROJECT_NAME})
-set(CMAKE_INSTALL_SCRIPTS ${CMAKE_INSTALL_PREFIX}/scripts)
-set(CMAKE_INSTALL_DATADIR ${CMAKE_INSTALL_PREFIX}/data)
 
 # define library postfix so that different builds will produce
 # distinguished libraries
@@ -100,24 +71,23 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
 
 ################################################################################
+# make install (https://github.com/forexample/package-example)
 
-# configure project global settings that are include in the source
-set(INI_FILE "${PROJECT_SOURCE_DIR}/data/setup.ini")
-set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
-configure_file("${PROJECT_SOURCE_DIR}/OpenSimRT/Settings.h.in"
-  "${PROJECT_SOURCE_DIR}/OpenSimRT/Settings.h")
-set(CMAKE_EXTRA_INCLUDE_FILES)
-
-################################################################################
-
-# find OpenSim
-find_package(OpenSim REQUIRED)
-include_directories(${OpenSim_INCLUDE_DIRS})
-link_directories(${OpenSim_LIB_DIR})
-
-################################################################################
-
-# installation (https://github.com/forexample/package-example)
+# install layout
+# Layout. This works for all platforms:
+#   * <prefix>/lib/cmake/<PROJECT-NAME>
+#   * <prefix>/lib/
+#   * <prefix>/include/
+#   * <prefix>/bin/
+#   * <prefix>/doc/
+#   * <prefix>/scripts/
+set(CMAKE_INSTALL_BINDIR bin)
+set(CMAKE_INSTALL_INCLUDEDIR include)
+set(CMAKE_INSTALL_LIBDIR lib)
+set(CMAKE_INSTALL_DOCDIR ${CMAKE_INSTALL_PREFIX}/doc)
+set(CMAKE_INSTALL_CONFIG ${CMAKE_INSTALL_PREFIX}/lib/cmake/${PROJECT_NAME})
+# set(CMAKE_INSTALL_SCRIPTS ${CMAKE_INSTALL_PREFIX}/scripts)
+set(CMAKE_INSTALL_DATADIR ${CMAKE_INSTALL_PREFIX}/data)
 
 # include module with function 'write_basic_package_version_file'
 include(CMakePackageConfigHelpers)
@@ -160,11 +130,28 @@ install(
   DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/data/
   DESTINATION "${CMAKE_INSTALL_DATADIR}")
 
-# others dirs can be copied to the install dir
+################################################################################
+# cpack -G ZIP -C RelWithDebInfo
+
+include(InstallRequiredSystemLibraries)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_VERSION_MAJOR "${OpenSimRT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${OpenSimRT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${OpenSimRT_VERSION_PATCH}")
+include(CPack)
 
 ################################################################################
+# configure project global settings that are include in the source
 
-# sub-modules
+set(INI_FILE "${PROJECT_SOURCE_DIR}/data/setup.ini")
+set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
+configure_file("${PROJECT_SOURCE_DIR}/OpenSimRT/Settings.h.in"
+  "${PROJECT_SOURCE_DIR}/OpenSimRT/Settings.h")
+set(CMAKE_EXTRA_INCLUDE_FILES)
+
+################################################################################
+# sub-directories
+
 add_subdirectory(OpenSimRT)
 add_subdirectory(doc)
 

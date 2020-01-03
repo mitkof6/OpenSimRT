@@ -78,7 +78,7 @@ void run() {
             grfRightPointIdentifier, grfRightForceIdentifier,
             grfRightTorqueIdentifier);
     auto grfRightLogger = ExternalWrench::initializeLogger();
-    
+
     ExternalWrench::Parameters grfLeftFootPar{
             grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
     auto grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
@@ -117,13 +117,13 @@ void run() {
     // initialize id and logger
     InverseDynamics id(model, wrenchParameters);
     auto tauLogger = id.initializeLogger();
-    
+
     // visualizer
     BasicModelVisualizer visualizer(model);
     auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-    visualizer.getVisualizer()->addDecorationGenerator(rightGRFDecorator);
+    visualizer.addDecorationGenerator(rightGRFDecorator);
     auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-    visualizer.getVisualizer()->addDecorationGenerator(leftGRFDecorator);
+    visualizer.addDecorationGenerator(leftGRFDecorator);
 
     // mean delay
     int sumDelayMS = 0;
@@ -180,7 +180,7 @@ void run() {
         tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
         grfRightLogger.appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
         grfLeftLogger.appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
-        
+
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
@@ -191,11 +191,11 @@ void run() {
     STOFileAdapter::write(tauLogger,
                           subjectDir + "real_time/inverse_dynamics/tau.sto");
     STOFileAdapter::write(
-        grfRightLogger,
-        subjectDir + "real_time/inverse_dynamics/wrench_right.sto");
-    STOFileAdapter::write(
-        grfLeftLogger,
-        subjectDir + "real_time/inverse_dynamics/wrench_left.sto");
+            grfRightLogger,
+            subjectDir + "real_time/inverse_dynamics/wrench_right.sto");
+    STOFileAdapter::write(grfLeftLogger,
+                          subjectDir +
+                                  "real_time/inverse_dynamics/wrench_left.sto");
 }
 
 int main(int argc, char* argv[]) {

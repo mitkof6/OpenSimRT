@@ -78,8 +78,6 @@ BasicModelVisualizer::BasicModelVisualizer(const OpenSim::Model& otherModel)
 #endif
 }
 
-SimTK::Visualizer* BasicModelVisualizer::getVisualizer() { return visualizer; }
-
 void BasicModelVisualizer::update(const Vector& q,
                                   const Vector& muscleActivations) {
 #ifndef CONTINUOUS_INTEGRATION
@@ -103,6 +101,12 @@ void BasicModelVisualizer::update(const Vector& q,
             shouldTerminate = true;
         }
     }
+#endif
+}
+
+void BasicModelVisualizer::addDecorationGenerator(DecorationGenerator* generator) {
+#ifndef CONTINUOUS_INTEGRATION
+    visualizer->addDecorationGenerator(generator);
 #endif
 }
 
