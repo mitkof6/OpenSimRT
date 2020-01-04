@@ -1,12 +1,16 @@
 ################################################################################
 # setup
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+cmake_minimum_required(VERSION 3.0)
 project(OpenSimRT VERSION 1.0.0)
 
 # cmake modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(cmake/CMakeHelpers.cmake)
+
+# enable testing
+include(CTest)
+enable_testing()
 
 # force RelWithDebInfo on Linux
 if(UNIX AND NOT CMAKE_BUILD_TYPE)
@@ -22,6 +26,9 @@ option(USE_UNITY_BUILD "Enable to speed up the building" OFF)
 
 # build Vicon interface
 option(BUILD_VICON "Build Vicon streamer interface" OFF)
+
+# build code generation (example model moment arm)
+option(BUILD_MOMENT_ARM "Build code generated moment arm projects" ON)
 
 # compilation database (completion for Linux)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -154,5 +161,9 @@ set(CMAKE_EXTRA_INCLUDE_FILES)
 
 add_subdirectory(OpenSimRT)
 add_subdirectory(doc)
+
+if(BUILD_MOMENT_ARM)
+  add_subdirectory(data/gait1992/real_time/moment_arm/code_generation)
+endif()
 
 ################################################################################
