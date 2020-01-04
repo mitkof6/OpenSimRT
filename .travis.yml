@@ -1,4 +1,5 @@
 language: cpp
+os: linux
 dist: bionic
 addons:
   apt:
@@ -37,9 +38,9 @@ script:
   - cmake ../
       -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
       -DCMAKE_INSTALL_PREFIX:PATH=../install
-      # -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
       -DOpenSim_DIR:PATH=$OpenSim_DIR
       -DCONTINUOUS_INTEGRATION=ON
+      # -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
   - make -j8
   - ctest
   - make install
