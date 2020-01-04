@@ -4,6 +4,8 @@
  * \brief Run-time loading of a dynamic library of the code generated muscle
  * moment arm.
  *
+ * TODO: Not tested on Windows and Mac yet.
+ *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include <OpenSim/Common/LoadOpenSimLibrary.h>
@@ -32,7 +34,7 @@ void run() {
 
     // get function pointer
 #ifdef _WIN32
-    CalcMomentArm GetWelcomeMessage =
+    CalcMomentArm calcMomentArm =
             (CalcMomentArm) GetProcAddress(momentArmLibHandle, "calcMomentArm");
 #else
     CalcMomentArm calcMomentArm =
