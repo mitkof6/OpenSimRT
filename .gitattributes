@@ -2,3 +2,8 @@
 *.obj filter=lfs diff=lfs merge=lfs -text
 data/geometry_mobl filter=lfs diff=lfs merge=lfs -text
 data/geometry_v3.3/ filter=lfs diff=lfs merge=lfs -text
+data/gait1992/ filter=lfs diff=lfs merge=lfs -text
+data/mobl2016/ filter=lfs diff=lfs merge=lfs -text
+*.sto filter=lfs diff=lfs merge=lfs -text
+*.mot filter=lfs diff=lfs merge=lfs -text
+*.trc filter=lfs diff=lfs merge=lfs -text
