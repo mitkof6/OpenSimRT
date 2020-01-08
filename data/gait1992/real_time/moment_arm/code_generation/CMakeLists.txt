@@ -24,9 +24,9 @@ mark_as_advanced(CMAKE_DEBUG_POSTFIX)
 mark_as_advanced(CMAKE_RELWITHDEBINFO_POSTFIX)
 mark_as_advanced(CMAKE_MINSIZEREL_POSTFIX)
 
-# build executables and libraries in the same place
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
+# # build executables and libraries in the same place
+# set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
+# set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")
 
 ################################################################################
 
@@ -43,7 +43,7 @@ file(GLOB sources MomentArm.cpp)
 file(GLOB tests TestMomentArm.cpp)
 
 # dynamic library
-set(target Gait1992MomentArm)	
+set(target Gait1992MomentArm)
 addLibrary(
   KIT ${target}
   SOURCES ${sources}
