@@ -89,7 +89,7 @@ void BasicModelVisualizer::update(const Vector& q,
     // TODO handle path actuators
     if (muscleActivations.size() == model.getMuscles().getSize()) {
         for (int i = 0; i < model.getMuscles().getSize(); ++i) {
-            model.getMuscles()[i].setActivation(state, muscleActivations[i]);
+            model.updMuscles()[i].setActivation(state, muscleActivations[i]);
         }
     }
 #ifndef CONTINUOUS_INTEGRATION

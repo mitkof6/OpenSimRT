@@ -1,9 +1,9 @@
 /**
  * @file TestSOFromFile.cpp
  *
- * \brief Loads results from OpenSim IK and externally applied forces
- * and executes the static optimization analysis in an iterative
- * manner in order to determine the muscle forces.
+ * \brief Loads results from OpenSim IK and externally applied forces and
+ * executes the static optimization analysis in an iterative manner in order to
+ * determine the muscle forces.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
@@ -93,12 +93,12 @@ void run() {
 
     // initialize so
     MuscleOptimization::OptimizationParameters optimizationParameters;
-    optimizationParameters.convergenceTolerance =
-            1e-0; // set 1e-0 for linear muscle
-    MuscleOptimization so(
-            model, optimizationParameters, calcMomentArm,
-            // new TorqueBasedTargetNonLinearMuscle()); // TODO change tolerance
-            new TorqueBasedTargetLinearMuscle());
+    optimizationParameters.convergenceTolerance = 1e-0;
+    optimizationParameters.maximumIterations = 300;
+    optimizationParameters.objectiveExponent = 2;
+    MuscleOptimization so(model, optimizationParameters, calcMomentArm);
+    auto fmLogger = so.initializeLogger();
+    auto amLogger = so.initializeLogger();
 
     // visualizer
     BasicModelVisualizer visualizer(model);
@@ -124,7 +124,7 @@ void run() {
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
 
-        auto soOutput = so.solve({t, q, qDot, ~tauRaw});
+        auto soOutput = so.solve({t, q, ~tauRaw});
 
         chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();
@@ -134,8 +134,21 @@ void run() {
         // visualization
         visualizer.update(q, soOutput.am);
 
+        // log data (use filter time to align with delay)
+        fmLogger.appendRow(ikFiltered.t, ~soOutput.fm);
+        amLogger.appendRow(ikFiltered.t, ~soOutput.am);
+
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
+
+    cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
+         << endl;
+
+    // store results
+    STOFileAdapter::write(fmLogger,
+                          subjectDir + "real_time/muscle_optimization/fm.sto");
+    STOFileAdapter::write(amLogger,
+                          subjectDir + "real_time/muscle_optimization/am.sto");
 }
 
 int main(int argc, char* argv[]) {
