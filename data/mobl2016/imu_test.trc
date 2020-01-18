@@ -1,3 +1,8 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:17f07e03a07854da54597d6f53792027acd209b6630db8868d128a37416fe083
-size 241
+PathFileType	4	(X/Y/Z)	imu_2phones.trc
+DataRate	CameraRate	NumFrames	NumMarkers	Units	OrigDataRate	OrigDataStartFrame	OrigNumFrames
+60	60	2	2	rad	60	1	2
+Frame#	Time	humerus_imu	radius_imu
+X1	Y1	Z1	X2	Y2	Z2
+
+1	0	0	0	0	0	0	0	
+2	0.1	0	0	0	0	0	0
