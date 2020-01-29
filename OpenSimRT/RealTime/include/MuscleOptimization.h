@@ -76,10 +76,14 @@ class RealTime_API TorqueBasedTarget : public SimTK::OptimizerSystem {
     int p;
     int npa;
     SimTK::ReferencePtr<OpenSim::Model> model;
+    SimTK::State state;
     SimTK::Matrix R;
     SimTK::Vector fMax, tau;
     MomentArmFunction calcMomentArm;
     std::vector<int> multibodyOrderIndex;
+
+    // Model muscles and coordinates that are used.
+    std::vector<int> activeMuscleIndices, activeCoordinateIndices;
 
  public:
     TorqueBasedTarget(OpenSim::Model* model, int objectiveExponent,

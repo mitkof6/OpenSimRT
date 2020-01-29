@@ -2,9 +2,13 @@
 
 #include <Common/TimeSeriesTable.h>
 
-using OpenSim::Model, OpenSim::Actuator, OpenSim::Storage,
-        OpenSim::TimeSeriesTable;
-using std::vector, std::string;
+using OpenSim::Actuator;
+using OpenSim::Model;
+using OpenSim::Storage;
+using OpenSim::TimeSeriesTable;
+using std::string;
+using std::vector;
+
 using namespace OpenSimRT;
 
 int OpenSimUtils::generateUID() {
@@ -92,13 +96,19 @@ TimeSeriesTable OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
     delete[] timeData;
 
     // build table columns
-    auto coordinateNmaes =
+    const auto& coordinateNames =
             OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
-    for (auto coordinate : coordinateNmaes) {
-        double* columnData = new double[q.getSize()];
-        q.getDataColumn(coordinate, columnData);
-        table.appendColumn(coordinate, SimTK::Vector(q.getSize(), columnData));
-        delete[] columnData;
+    const auto& columnLabels = q.getColumnLabels();
+    for (const auto& coordinate : coordinateNames) {
+        for (int i = 0; i < columnLabels.size(); ++i) {
+            if (columnLabels[i].find(coordinate) != std::string::npos) {
+                double* columnData = new double[q.getSize()];
+                q.getDataColumn(columnLabels[i], columnData);
+                table.appendColumn(columnLabels[i],
+                                   SimTK::Vector(q.getSize(), columnData));
+                delete[] columnData;
+            }
+        }
     }
 
     return table;

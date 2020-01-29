@@ -33,23 +33,23 @@ plot_sto_file(fm_rt_file, fm_rt_file + '.pdf', 3)
 
 d_fm_total = []
 with PdfPages(output_dir + 'muscle_optimization_comparison.pdf') as pdf:
-    for i in range(1, fm_reference.shape[1]):
+    for i in range(1, fm_rt.shape[1]):
 
         # find index
-        key = fm_reference.columns[i]
-        j = fm_rt.columns.get_loc(key)
+        key = fm_rt.columns[i]
+        j = fm_reference.columns.get_loc(key)
 
-        d_tau = rmse_metric(fm_reference.iloc[:, i], fm_rt.iloc[:, j])
-        if not np.isnan(d_tau):     # NaN when siganl is zero
+        d_tau = rmse_metric(fm_rt.iloc[:, i], fm_reference.iloc[:, j])
+        if not np.isnan(d_tau):     # NaN when signal is zero
             d_fm_total.append(d_tau)
 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
 
-        ax.plot(fm_reference.time, fm_reference.iloc[:, i], label='OpenSim SO')
-        ax.plot(fm_rt.time, fm_rt.iloc[:, j], label='Real-time SO')
+        ax.plot(fm_reference.time, fm_reference.iloc[:, j], label='OpenSim SO')
+        ax.plot(fm_rt.time, fm_rt.iloc[:, i], label='Real-time SO')
         ax.set_xlabel('time')
         ax.set_ylabel('actuator forces (Nm | N)')
-        ax.set_title(fm_rt.columns[j])
+        ax.set_title(fm_reference.columns[j])
         annotate_plot(ax, 'RMSE = ' + str(d_tau))
         ax.legend(loc='lower left')
 

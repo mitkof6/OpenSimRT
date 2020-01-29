@@ -38,9 +38,11 @@ using namespace OpenSimRT;
 typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
 
 void run() {
-    // load library
+    // load library //! FK: dn douleuei se mena to relative path
     auto momentArmLibHandle =
-            OpenSim::LoadOpenSimLibrary("Gait1992MomentArm_rd", true);
+            OpenSim::LoadOpenSimLibrary("/home/filipkon/Documents/VVR/OpenSimRT/build/libGait1992MomentArm_rd", true);
+    if (momentArmLibHandle == nullptr)
+        THROW_EXCEPTION("Lib cannot be found.");
 
     // get function pointer
 #ifdef _WIN32
@@ -110,15 +112,8 @@ void run() {
     for (int i = 0; i < qTable.getNumRows(); i++) {
         // get raw pose from table
         double t = qTable.getIndependentColumn()[i];
-        auto qRaw = qTable.getRowAtIndex(i).getAsVector();
+        auto q = qTable.getRowAtIndex(i).getAsVector();
         auto tauRaw = tauTable.getRowAtIndex(i).getAsRowVector();
-
-        // filter
-        auto ikFiltered = ikFilter.filter({t, qRaw});
-        auto q = ikFiltered.x;
-        auto qDot = ikFiltered.xDot;
-
-        if (!ikFiltered.isValid) { continue; }
 
         // perform id
         chrono::high_resolution_clock::time_point t1;
@@ -135,8 +130,8 @@ void run() {
         visualizer.update(q, soOutput.am);
 
         // log data (use filter time to align with delay)
-        fmLogger.appendRow(ikFiltered.t, ~soOutput.fm);
-        amLogger.appendRow(ikFiltered.t, ~soOutput.am);
+        fmLogger.appendRow(t, ~soOutput.fm);
+        amLogger.appendRow(t, ~soOutput.am);
 
         // this_thread::sleep_for(chrono::milliseconds(10));
     }

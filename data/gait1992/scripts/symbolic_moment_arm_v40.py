@@ -270,9 +270,14 @@ def calculate_moment_arm_symbolically(model_file, results_dir):
     model = opensim.Model(model_file)
     state = model.initSystem()
 
-    model_coordinates = {}
+    model_coordinates = {} # coordinates in multibody order
     for i, coordinate in enumerate(model.getCoordinateSet()):
-        model_coordinates[coordinate.getName()] = i
+        mbix = coordinate.getBodyIndex()
+        mqix = coordinate.getMobilizerQIndex()
+        model_coordinates[coordinate.getName()] = (mbix, mqix)
+    model_coordinates = dict(sorted(model_coordinates.items(), key=lambda x: x[1]))
+    for i, (key, value) in enumerate(model_coordinates.items()):
+        model_coordinates[key] = i
 
     model_muscles = {}
     for i, muscle in enumerate(model.getMuscles()):
@@ -368,9 +373,15 @@ def calculate_spanning_muscle_coordinates(model_file, results_dir):
     for body in model.getBodySet():
         ordered_body_set.append(body.getName())
 
+    model_coordinates = {} # coordinates in multibody order
+    for i, coordinate in enumerate(model.getCoordinateSet()):
+        mbix = coordinate.getBodyIndex()
+        mqix = coordinate.getMobilizerQIndex()
+        model_coordinates[coordinate.getName()] = (mbix, mqix)
+    model_coordinates = dict(sorted(model_coordinates.items(), key=lambda x: x[1]))
     ordered_coordinate_set = []
-    for coordinate in model.getCoordinateSet():
-        ordered_coordinate_set.append(coordinate.getName())
+    for key, value in model_coordinates.items():
+        ordered_coordinate_set.append(key)
 
     # get the coordinates that are spanned by the muscles
     muscle_coordinates = {}
@@ -488,13 +499,12 @@ if not os.path.isdir(results_dir):
 # when computed once results are stored into files and loaded with
 # (pickle)
 compute = True
-visualize = True
+visualize = False
 
 if compute:
     calculate_spanning_muscle_coordinates(model_file, results_dir)
     calculate_moment_arm_symbolically(model_file, results_dir)
 
-if visualize:
     with open(results_dir + 'R.dat', 'rb') as f_r,\
          open(results_dir + 'sampling_dict.dat', 'rb') as f_sd,\
          open(results_dir + 'model_coordinates.dat', 'rb') as f_mc,\
@@ -509,6 +519,7 @@ if visualize:
                                     'MomentArm',
                                     results_dir + '/code_generation/')
 
+if visualize:
     # visualize data
     with PdfPages(results_dir + 'compare_moment_arm.pdf') as pdf:
         for muscle in sampling_dict.keys():

@@ -12,15 +12,16 @@ using namespace SimTK;
 using namespace OpenSimRT;
 
 Matrix calculateMomentArm(const State& s, const Model& model,
-        const vector<int>& activeCoordinateIndices,
-        const vector<int>& activeMuscleIndices) {
-    const auto& coordinateSet = model.getCoordinateSet();
-    const auto& muscleSet = model.getMuscles();
+                          const vector<int>& activeCoordinateIndices,
+                          const vector<int>& activeMuscleIndices) {
+    const auto& coordinates = model.getCoordinatesInMultibodyTreeOrder();
+    const auto& muscles = model.getMuscles();
     Matrix R(activeCoordinateIndices.size(), activeMuscleIndices.size());
     for (int i = 0; i < activeCoordinateIndices.size(); i++) {
         for (int j = 0; j < activeMuscleIndices.size(); j++) {
-            R[i][j] = muscleSet[activeMuscleIndices[j]].computeMomentArm(
-                    s, coordinateSet[activeCoordinateIndices[i]]);
+            const Coordinate& coord = *coordinates[i];
+            R[i][j] = muscles[activeMuscleIndices[j]].computeMomentArm(
+                    s, const_cast<Coordinate&>(coord));
         }
     }
     return R;
@@ -135,36 +136,35 @@ TorqueBasedTarget::TorqueBasedTarget(Model* model, int objectiveExponent,
     setNumParameters(na);
     setParameterLimits(lowerBounds, upperBounds);
 
-    // new OpenSim version has different order of coordinates
-    auto coordinateNames = OpenSimUtils::getCoordinateNames(*model);
-    auto coordinateNamesMBOrder =
-            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(*model);
-    for (auto coordinate : coordinateNames) {
-        auto it = find(coordinateNamesMBOrder.begin(),
-                       coordinateNamesMBOrder.end(), coordinate);
-        if (it == coordinateNamesMBOrder.end()) {
-            THROW_EXCEPTION("cannot find coordinate");
-        }
-        auto index = distance(coordinateNamesMBOrder.begin(), it);
-        multibodyOrderIndex.push_back(index);
-        cout << coordinate << "\t" << index << endl;
+    // coordinate indexes - //! for Analytic solution
+    const auto& coordinateSet = model->getCoordinateSet();
+    for (int i = 0; i < coordinateSet.getSize(); ++i) {
+        activeCoordinateIndices.push_back(i);
     }
+
+    // muscle indexes - //! for Analytic solution
+    const auto& muscleSet = model->getMuscles();
+    for (int i = 0; i < muscleSet.getSize(); ++i) {
+        activeMuscleIndices.push_back(i);
+    }
+
+    // initialize system - //! for Analytic solution
+    state = model->initSystem();
 }
 
 void TorqueBasedTarget::prepareForOptimization(
         const MuscleOptimization::Input& input) {
-    tau = Vector(input.tau.size(), 0.0);
-    for (int i = 0; i < tau.size(); i++) {
-        tau[i] = input.tau[multibodyOrderIndex[i]];
-    }
 
-    auto q = Vector(input.q.size(), 0.0);
-    for (int i = 0; i < q.size(); i++) {
-        q[i] = input.q[multibodyOrderIndex[i]];
-    }
-    R = calcMomentArm(q);
+    // update state - //! for Analytic solution
+    state.updQ() = input.q;
+    model->getMultibodySystem().realize(state, Stage::Position);
+
+    tau = input.tau;
+    R = calcMomentArm(input.q);
+    // R = calculateMomentArm(state, *model,
+    //         activeCoordinateIndices,
+    //         activeMuscleIndices);
 }
-
 Vector TorqueBasedTarget::extractMuscleForces(const Vector& x) const {
     return x(0, npa);
 }
