@@ -38,7 +38,7 @@ using namespace OpenSimRT;
 typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
 
 void run() {
-    // load library //! FK: dn douleuei se mena to relative path
+    // load library //! FK: had some issues with the relative path. please ignore
     auto momentArmLibHandle =
             OpenSim::LoadOpenSimLibrary("/home/filipkon/Documents/VVR/OpenSimRT/build/libGait1992MomentArm_rd", true);
     if (momentArmLibHandle == nullptr)
@@ -113,13 +113,13 @@ void run() {
         // get raw pose from table
         double t = qTable.getIndependentColumn()[i];
         auto q = qTable.getRowAtIndex(i).getAsVector();
-        auto tauRaw = tauTable.getRowAtIndex(i).getAsRowVector();
+        auto tau = tauTable.getRowAtIndex(i).getAsRowVector();
 
         // perform id
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
 
-        auto soOutput = so.solve({t, q, ~tauRaw});
+        auto soOutput = so.solve({t, q, ~tau});
 
         chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();

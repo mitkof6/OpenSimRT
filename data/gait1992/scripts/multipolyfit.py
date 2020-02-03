@@ -67,7 +67,7 @@ def multipolyfit(xs, y, deg, full=False, model_out=False, powers_out=False):
     # Raise data to specified degree pattern, stack in order
     A = hstack(asarray([as_tall((xs**p).prod(1)) for p in powers]))
 
-    beta = linalg.lstsq(A, y)[0]
+    beta = linalg.lstsq(A, y, rcond=None)[0]
 
     if model_out:
         return mk_model(beta, powers)

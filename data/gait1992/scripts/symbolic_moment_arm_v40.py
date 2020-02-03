@@ -188,18 +188,18 @@ def visualize_moment_arm(moment_arm_coordinate, muscle, coordinates,
     poly = R[model_muscles[muscle],
              model_coordinates[moment_arm_coordinate]]
     moment_arm_poly = np.array([
-        poly.subs(dict(zip(poly.free_symbols, x))) for x in sampling_grid
-    ], np.float)
+        poly.subs(dict(zip([sp.Symbol(coord) for coord in coordinates], x)))
+        for x in sampling_grid], np.float)
 
     # RMSE
-    rmse = np.round(np.sqrt(np.mean((100.0 *moment_arm[:, idx] -
-                                     100.0 *moment_arm_poly) ** 2)), 5)
+    rmse = np.round(np.sqrt(np.mean((100.0 * moment_arm[:, idx] -
+                                     100.0 * moment_arm_poly) ** 2)), 5)
     print('Moment arm RMSE = ' + str(rmse).ljust(8) +
           'for ' + muscle + '@' + moment_arm_coordinate +
           '(' + str(coordinates).strip('[]') + ')')
 
     # visualization
-    if isinstance(coordinates, str):
+    if isinstance(coordinates, list) and len(coordinates) == 1:
         fig = plt.figure()
         ax = fig.gca()
         ax.plot(
@@ -208,7 +208,7 @@ def visualize_moment_arm(moment_arm_coordinate, muscle, coordinates,
         ax.plot(sampling_grid[:, idx], moment_arm_poly * 100.0, 'b-',
                 label='analytical')
         annotate_plot(ax, 'RMSE = ' + str(rmse))
-        ax.set_xlabel(coordinates + ' (rad)')
+        ax.set_xlabel(coordinates[0] + ' (rad)')
         ax.set_ylabel(moment_arm_coordinate + ' (cm)')
         ax.set_title(muscle)
         ax.legend(loc='lower left')
@@ -270,12 +270,13 @@ def calculate_moment_arm_symbolically(model_file, results_dir):
     model = opensim.Model(model_file)
     state = model.initSystem()
 
-    model_coordinates = {} # coordinates in multibody order
+    model_coordinates = {}  # coordinates in multibody order
     for i, coordinate in enumerate(model.getCoordinateSet()):
         mbix = coordinate.getBodyIndex()
         mqix = coordinate.getMobilizerQIndex()
         model_coordinates[coordinate.getName()] = (mbix, mqix)
-    model_coordinates = dict(sorted(model_coordinates.items(), key=lambda x: x[1]))
+    model_coordinates = dict(
+        sorted(model_coordinates.items(), key=lambda x: x[1]))
     for i, (key, value) in enumerate(model_coordinates.items()):
         model_coordinates[key] = i
 
@@ -287,8 +288,7 @@ def calculate_moment_arm_symbolically(model_file, results_dir):
     R = []
     sampling_dict = {}
     resolution = {1: 15, 2: 10, 3: 8, 4: 8, 5: 5}
-    for muscle, k in tqdm(sorted(model_muscles.items(),
-                                 key=operator.itemgetter(1))):
+    for muscle, k in tqdm(model_muscles.items()):
         # get initial state each time
         coordinates = muscle_coordinates[muscle]
         N = resolution[len(coordinates)]
@@ -324,15 +324,8 @@ def calculate_moment_arm_symbolically(model_file, results_dir):
                                           moment_arm[:, i],
                                           degree, powers_out=True)
             polynomial = mk_sympy_function(coeffs, powers)
-
-            # the order of the free symbols may be incorrect
-            free_symbols = list(polynomial.free_symbols)
-            if len(free_symbols) > 1 and \
-               str(free_symbols[0]) > str(free_symbols[1]):
-                free_symbols = free_symbols[::-1]
-
-            polynomial = polynomial.subs(
-                dict(zip(free_symbols, [sp.Symbol(x) for x in coordinates])))
+            polynomial = polynomial.subs({sp.Symbol('x%d' % i): sp.Symbol(x)
+                                          for i, x in enumerate(coordinates)})
             muscle_moment_row[model_coordinates[coordinate]] = polynomial
 
         R.append(muscle_moment_row)
@@ -373,12 +366,13 @@ def calculate_spanning_muscle_coordinates(model_file, results_dir):
     for body in model.getBodySet():
         ordered_body_set.append(body.getName())
 
-    model_coordinates = {} # coordinates in multibody order
+    model_coordinates = {}  # coordinates in multibody order
     for i, coordinate in enumerate(model.getCoordinateSet()):
         mbix = coordinate.getBodyIndex()
         mqix = coordinate.getMobilizerQIndex()
         model_coordinates[coordinate.getName()] = (mbix, mqix)
-    model_coordinates = dict(sorted(model_coordinates.items(), key=lambda x: x[1]))
+    model_coordinates = dict(
+        sorted(model_coordinates.items(), key=lambda x: x[1]))
     ordered_coordinate_set = []
     for key, value in model_coordinates.items():
         ordered_coordinate_set.append(key)
@@ -499,12 +493,13 @@ if not os.path.isdir(results_dir):
 # when computed once results are stored into files and loaded with
 # (pickle)
 compute = True
-visualize = False
+visualize = True
 
 if compute:
     calculate_spanning_muscle_coordinates(model_file, results_dir)
     calculate_moment_arm_symbolically(model_file, results_dir)
 
+if visualize:
     with open(results_dir + 'R.dat', 'rb') as f_r,\
          open(results_dir + 'sampling_dict.dat', 'rb') as f_sd,\
          open(results_dir + 'model_coordinates.dat', 'rb') as f_mc,\
@@ -519,14 +514,13 @@ if compute:
                                     'MomentArm',
                                     results_dir + '/code_generation/')
 
-if visualize:
     # visualize data
     with PdfPages(results_dir + 'compare_moment_arm.pdf') as pdf:
         for muscle in sampling_dict.keys():
             coordinates = sampling_dict[muscle]['coordinates']
             if len(coordinates) == 1:
                 visualize_moment_arm(coordinates[0], muscle,
-                                     coordinates[0],
+                                     coordinates,
                                      sampling_dict,
                                      model_coordinates,
                                      model_muscles, R, pdf)
