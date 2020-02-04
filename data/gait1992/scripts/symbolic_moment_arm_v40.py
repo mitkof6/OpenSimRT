@@ -287,7 +287,7 @@ def calculate_moment_arm_symbolically(model_file, results_dir):
     # calculate moment arm matrix (R) symbolically
     R = []
     sampling_dict = {}
-    resolution = {1: 15, 2: 10, 3: 8, 4: 8, 5: 5}
+    resolution = {1: 15, 2: 12, 3: 10, 4: 10, 5: 5}
     for muscle, k in tqdm(model_muscles.items()):
         # get initial state each time
         coordinates = muscle_coordinates[muscle]
