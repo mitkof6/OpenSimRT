@@ -38,9 +38,9 @@ using namespace OpenSimRT;
 typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
 
 void run() {
-    // load library //! FK: had some issues with the relative path. please ignore
+    // load library //! FK: had some issues with the path. please ignore
     auto momentArmLibHandle =
-            OpenSim::LoadOpenSimLibrary("/home/filipkon/Documents/VVR/OpenSimRT/build/libGait1992MomentArm_rd", true);
+            OpenSim::LoadOpenSimLibrary("./build/Gait1992MomentArm_rd", true);
     if (momentArmLibHandle == nullptr)
         THROW_EXCEPTION("Lib cannot be found.");
 
