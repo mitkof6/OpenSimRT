@@ -36,21 +36,35 @@ using namespace OpenSimRT;
 
 // function prototype: SimTK::Matrix calcMomentArm(const SimTK::Vector& q)
 typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
+typedef std::vector<std::string> (*Container)();
 
 void run() {
     // load library //! FK: had some issues with the relative path. please ignore
     auto momentArmLibHandle =
-            OpenSim::LoadOpenSimLibrary("/home/filipkon/Documents/VVR/OpenSimRT/build/libGait1992MomentArm_rd", true);
+            OpenSim::LoadOpenSimLibrary("./build/Gait1992MomentArm_rd", true);
     if (momentArmLibHandle == nullptr)
-        THROW_EXCEPTION("Lib cannot be found.");
+        THROW_EXCEPTION("Library cannot be found.");
 
     // get function pointer
 #ifdef _WIN32
     CalcMomentArm calcMomentArm =
             (CalcMomentArm) GetProcAddress(momentArmLibHandle, "calcMomentArm");
+
+    Container getModelMuscleSymbolicOrder = (Container) GetProcAddress(
+            momentArmLibHandle, "getModelMuscleSymbolicOrder");
+
+    Container getModelCoordinateSymbolicOrder = (Container) GetProcAddress(
+            momentArmLibHandle, "getModelCoordinateSymbolicOrder");
+
 #else
     CalcMomentArm calcMomentArm =
             (CalcMomentArm) dlsym(momentArmLibHandle, "calcMomentArm");
+
+    Container getModelMuscleSymbolicOrder = (Container) dlsym(
+            momentArmLibHandle, "getModelMuscleSymbolicOrder");
+
+    Container getModelCoordinateSymbolicOrder = (Container) dlsym(
+            momentArmLibHandle, "getModelCoordinateSymbolicOrder");
 #endif
 
     // subject data
@@ -68,6 +82,15 @@ void run() {
 
     Model model(modelFile);
     model.initSystem();
+
+    const auto& coordinateNamesinMBOrder =
+            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
+    const auto coordinateNamesinSymbolicOrder = getModelCoordinateSymbolicOrder();
+    ENSURE_ORDER_IN_VECTORS(coordinateNamesinMBOrder, coordinateNamesinSymbolicOrder);
+
+    const auto& muscleNamesinMBOrder = OpenSimUtils::getMuscleNames(model);
+    const auto muscleNamesinSymbolicOrder = getModelMuscleSymbolicOrder();
+    ENSURE_ORDER_IN_VECTORS(muscleNamesinMBOrder, muscleNamesinSymbolicOrder);
 
     // get kinematics as a table with ordered coordinates
     auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(

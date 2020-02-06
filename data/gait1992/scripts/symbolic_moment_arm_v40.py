@@ -28,6 +28,11 @@ plt.rcParams['font.size'] = 13
 ################################################################################
 # utilities
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 def cartesian(arrays, out=None):
     """Generate a cartesian product of input arrays.
 
@@ -422,7 +427,7 @@ def calculate_spanning_muscle_coordinates(model_file, results_dir):
             csv_file.write('\n')
 
 
-def export_moment_arm_as_c_function(R, model_coordinates, file_name,
+def export_moment_arm_as_c_function(R, model_coordinates, model_muscles, file_name,
                                     results_dir):
     """Exports the moment arm matrix R [coordinates x muscles] as a
     callable functions of the coordinate positions.
@@ -448,6 +453,12 @@ def export_moment_arm_as_c_function(R, model_coordinates, file_name,
         header_file.write('MomentArm_API ' +
                           'SimTK::Matrix calcMomentArm(const SimTK::Vector& q) ' +
                           'OPTIMIZATION;\n')
+        header_file.write('MomentArm_API ' +
+                          'std::vector<std::string> getModelMuscleSymbolicOrder() ' +
+                          'OPTIMIZATION;\n')
+        header_file.write('MomentArm_API ' +
+                          'std::vector<std::string> getModelCoordinateSymbolicOrder() ' +
+                          'OPTIMIZATION;\n')
         header_file.write('}\n' +
                           '#endif\n\n')
         header_file.write('#endif')
@@ -455,7 +466,25 @@ def export_moment_arm_as_c_function(R, model_coordinates, file_name,
     # source
     with open(results_dir + file_name + '.cpp', 'w') as source_file:
         source_file.write('#include "' + file_name + '.h"\n\n')
-        source_file.write('using namespace SimTK;\n\n')
+        source_file.write('using namespace SimTK;\n')
+        source_file.write('using namespace std;\n\n')
+
+        source_file.write('vector<string> getModelCoordinateSymbolicOrder(){\n')
+        source_file.write('    return vector<string>({\n')
+        cc_model_coordinates = list(chunks(list(model_coordinates.keys()),3))
+        for coord in cc_model_coordinates[:-1]:
+            source_file.write('        ' + str(coord)[1:-1].replace('\'', '\"') + ',\n')
+        source_file.write('        ' +
+                str(cc_model_coordinates[-1])[1:-1].replace('\'', '\"') + '});\n}\n\n')
+
+        source_file.write('std::vector<std::string> getModelMuscleSymbolicOrder(){\n')
+        source_file.write('    return vector<string>({\n')
+        cc_model_muscles = list(chunks(list(model_muscles.keys()),4))
+        for muscle in cc_model_muscles[:-1]:
+            source_file.write('        ' + str(muscle)[1:-1].replace('\'', '\"') + ',\n')
+        source_file.write('        ' +
+                str(cc_model_muscles[-1])[1:-1].replace('\'', '\"') + '});\n}\n\n')
+
         source_file.write('Matrix calcMomentArm(const Vector& q) {\n')
         source_file.write('    Matrix R(' + str(n) + ', ' + str(m) + ', 0.0);\n')
 
@@ -510,7 +539,7 @@ if visualize:
         model_muscles = pickle.load(f_mm)
 
     # export moment arm
-    export_moment_arm_as_c_function(R, model_coordinates,
+    export_moment_arm_as_c_function(R, model_coordinates, model_muscles,
                                     'MomentArm',
                                     results_dir + '/code_generation/')
 

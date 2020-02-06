@@ -42,6 +42,16 @@ class FileLineException : public std::exception {
 #define ENSURE_BOUNDS(i, min, max)	                                	\
     (i >= min && i <= max ) ? i : THROW_EXCEPTION("ENSURE_BOUNDS failed")
 
+// ensure that elements in vectors x,y are the same
+#define ENSURE_ORDER_IN_VECTORS(x, y)                                           \
+    if (x.size() != y.size()) {                                                \
+        THROW_EXCEPTION("ENSURE_ORDER_IN_VECTOR failed! Containers must have " \
+                        "the same size");                                      \
+    }                                                                          \
+    if (!equal(x.begin(), x.end(), y.begin())) {                               \
+        THROW_EXCEPTION("ENSURE_ORDER_IN_VECTOR failed! Elements do not have " \
+                        "the same order");                                     \
+    }
 } // namespace OpenSimRT
 
 #endif
