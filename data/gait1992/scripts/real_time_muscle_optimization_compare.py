@@ -19,6 +19,11 @@ output_dir = os.path.join(subject_dir, 'real_time/muscle_optimization/')
 fm_reference_file = os.path.join(subject_dir,
                                  'static_optimization/task_StaticOptimization_force.sto')
 fm_rt_file = os.path.join(output_dir, 'fm.sto')
+am_rt_file = os.path.join(output_dir, 'am.sto')
+tauRes_rt_file = os.path.join(output_dir, 'tauRes.sto')
+
+plot_sto_file(am_rt_file, am_rt_file + '.pdf', 3)
+plot_sto_file(tauRes_rt_file, tauRes_rt_file + '.pdf', 3)
 
 ##
 # read data

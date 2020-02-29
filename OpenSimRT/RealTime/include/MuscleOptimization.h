@@ -56,10 +56,11 @@ class RealTime_API MuscleOptimization {
                        const MomentArmFunction& momentArmFunction);
     Output solve(const Input& input);
     /**
-     * Initialize inverse kinematics log storage. Use this to create a
+     * Initialize muscle optimization log storage. Use this to create a
      * TimeSeriesTable that can be appended with the computed kinematics.
      */
-    OpenSim::TimeSeriesTable initializeLogger();
+    OpenSim::TimeSeriesTable initializeMuscleLogger(); 
+    OpenSim::TimeSeriesTable initializeResidualLogger();
 };
 
 /**

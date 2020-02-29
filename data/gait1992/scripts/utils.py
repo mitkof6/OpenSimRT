@@ -71,7 +71,7 @@ def read_from_storage(file_name, to_filter=False):
     labels = osim_array_to_list(sto.getColumnLabels())
     time = opensim.ArrayDouble()
     sto.getTimeColumn(time)
-    time = osim_array_to_list(time)
+    time = np.round(osim_array_to_list(time), 3)
     data = []
     for i in range(sto.getSize()):
         temp = osim_array_to_list(sto.getStateVector(i).getData())

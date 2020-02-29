@@ -40,8 +40,7 @@ typedef std::vector<std::string> (*Container)();
 
 void run() {
     // load library //! FK: had some issues with the path. please ignore
-    auto momentArmLibHandle =
-            OpenSim::LoadOpenSimLibrary("./build/Gait1992MomentArm_rd", true);
+    auto momentArmLibHandle = OpenSim::LoadOpenSimLibrary("./Gait1992MomentArm_rd", true);
     if (momentArmLibHandle == nullptr)
         THROW_EXCEPTION("Library cannot be found.");
 
@@ -80,16 +79,20 @@ void run() {
     auto delay = ini.getInteger(section, "DELAY", 0);
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
+    auto convergenceTolerance = ini.getReal(section, "CONVERGENCE_TOLERANCE", 0);
+    auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
+    auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
+
     Model model(modelFile);
     model.initSystem();
 
     const auto& coordinateNamesinMBOrder =
             OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
-    const auto coordinateNamesinSymbolicOrder = getModelCoordinateSymbolicOrder();
+    auto coordinateNamesinSymbolicOrder = getModelCoordinateSymbolicOrder();
     ENSURE_ORDER_IN_VECTORS(coordinateNamesinMBOrder, coordinateNamesinSymbolicOrder);
 
     const auto& muscleNamesinMBOrder = OpenSimUtils::getMuscleNames(model);
-    const auto muscleNamesinSymbolicOrder = getModelMuscleSymbolicOrder();
+    auto muscleNamesinSymbolicOrder = getModelMuscleSymbolicOrder();
     ENSURE_ORDER_IN_VECTORS(muscleNamesinMBOrder, muscleNamesinSymbolicOrder);
 
     // get kinematics as a table with ordered coordinates
@@ -118,13 +121,14 @@ void run() {
 
     // initialize so
     MuscleOptimization::OptimizationParameters optimizationParameters;
-    optimizationParameters.convergenceTolerance = 1e-0;
-    optimizationParameters.maximumIterations = 300;
-    optimizationParameters.objectiveExponent = 2;
+    optimizationParameters.convergenceTolerance = convergenceTolerance;
+    optimizationParameters.maximumIterations = maximumIterations;
+    optimizationParameters.objectiveExponent = objectiveExponent;
     MuscleOptimization so(model, optimizationParameters, calcMomentArm);
-    auto fmLogger = so.initializeLogger();
-    auto amLogger = so.initializeLogger();
-
+    auto fmLogger = so.initializeMuscleLogger();
+    auto amLogger = so.initializeMuscleLogger();
+    auto tauResLogger = so.initializeResidualLogger();
+    
     // visualizer
     BasicModelVisualizer visualizer(model);
 
@@ -137,6 +141,9 @@ void run() {
         double t = qTable.getIndependentColumn()[i];
         auto q = qTable.getRowAtIndex(i).getAsVector();
         auto tau = tauTable.getRowAtIndex(i).getAsRowVector();
+        // for (int j = 0; j < 6; j++) {
+        //     tau[j] = 0;
+        // }
 
         // perform id
         chrono::high_resolution_clock::time_point t1;
@@ -155,7 +162,8 @@ void run() {
         // log data (use filter time to align with delay)
         fmLogger.appendRow(t, ~soOutput.fm);
         amLogger.appendRow(t, ~soOutput.am);
-
+        tauResLogger.appendRow(t, ~soOutput.residuals);
+        
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
@@ -167,6 +175,9 @@ void run() {
                           subjectDir + "real_time/muscle_optimization/fm.sto");
     STOFileAdapter::write(amLogger,
                           subjectDir + "real_time/muscle_optimization/am.sto");
+    STOFileAdapter::write(tauResLogger,
+                          subjectDir + "real_time/muscle_optimization/tauRes.sto");
+
 }
 
 int main(int argc, char* argv[]) {

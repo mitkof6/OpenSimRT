@@ -72,14 +72,14 @@ mass_change = float(re.findall('[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d
 
 # load model and manually adjust body masses (RRA adjusts only CoM not body
 # masses)
-adjust_model_mass('model_adjusted.osim', mass_change)
+# adjust_model_mass('model_adjusted.osim', mass_change)
 
 # adjust max isometric force of subject-specific model based on height and
 # weight regression model
-subject_specific_isometric_force('../model/model_generic.osim',
-                                 'model_adjusted.osim',
-                                 1.70,
-                                 subject_height)
+# subject_specific_isometric_force('../model/model_generic.osim',
+#                                  'model_adjusted.osim',
+#                                  1.70,
+#                                  subject_height)
 os.chdir(subject_dir)
 
 ##
@@ -104,14 +104,14 @@ os.chdir(subject_dir)
 ##
 # computed muscle controls (takes more time)
 
-os.chdir('computed_muscle_controls/')
-call(['opensim-cmd', 'run-tool', 'setup_cmc.xml'])
-# plot_sto_file('task_states.sto', 'task_states.pdf', 3)
-plot_sto_file('task_Actuation_force.sto', 'task_Actuation_force.pdf', 3)
-plot_sto_file('task_MuscleAnalysis_NormalizedFiberLength.sto',
-              'task_MuscleAnalysis_NormalizedFiberLength.pdf', 3)
-plot_sto_file('task_MuscleAnalysis_NormFiberVelocity.sto',
-              'task_MuscleAnalysis_NormFiberVelocity.pdf', 3)
-os.chdir(subject_dir)
+# os.chdir('computed_muscle_controls/')
+# call(['opensim-cmd', 'run-tool', 'setup_cmc.xml'])
+# # plot_sto_file('task_states.sto', 'task_states.pdf', 3)
+# plot_sto_file('task_Actuation_force.sto', 'task_Actuation_force.pdf', 3)
+# plot_sto_file('task_MuscleAnalysis_NormalizedFiberLength.sto',
+#               'task_MuscleAnalysis_NormalizedFiberLength.pdf', 3)
+# plot_sto_file('task_MuscleAnalysis_NormFiberVelocity.sto',
+#               'task_MuscleAnalysis_NormFiberVelocity.pdf', 3)
+# os.chdir(subject_dir)
 
 ##

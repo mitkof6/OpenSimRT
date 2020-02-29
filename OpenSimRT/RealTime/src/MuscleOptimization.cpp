@@ -73,8 +73,16 @@ MuscleOptimization::solve(const MuscleOptimization::Input& input) {
     return MuscleOptimization::Output{input.t, am, fm, residuals};
 }
 
-TimeSeriesTable MuscleOptimization::initializeLogger() {
+TimeSeriesTable MuscleOptimization::initializeMuscleLogger() {
     auto columnNames = OpenSimUtils::getMuscleNames(model);
+
+    TimeSeriesTable m;
+    m.setColumnLabels(columnNames);
+    return m;
+}
+
+TimeSeriesTable MuscleOptimization::initializeResidualLogger() {
+    auto columnNames = OpenSimUtils::getCoordinateNames(model);
 
     TimeSeriesTable m;
     m.setColumnLabels(columnNames);
@@ -97,7 +105,11 @@ TorqueBasedTarget::TorqueBasedTarget(Model* model, int objectiveExponent,
             actuator->setName(name);
             actuator->setMinControl(-SimTK::Infinity);
             actuator->setMaxControl(SimTK::Infinity);
-            actuator->setOptimalForce(1);
+            if (name.find("pelvis") != std::string::npos) {
+                actuator->setOptimalForce(50);
+            } else {
+                actuator->setOptimalForce(0.5);
+            }
             model->addForce(actuator);
             cout << "Add coordinate actuator: " << actuator->getName() << endl;
         }
@@ -136,28 +148,28 @@ TorqueBasedTarget::TorqueBasedTarget(Model* model, int objectiveExponent,
     setNumParameters(na);
     setParameterLimits(lowerBounds, upperBounds);
 
-    // coordinate indexes - //! for Analytic solution
-    const auto& coordinateSet = model->getCoordinateSet();
-    for (int i = 0; i < coordinateSet.getSize(); ++i) {
-        activeCoordinateIndices.push_back(i);
-    }
+    // // coordinate indexes - //! for Analytic solution
+    // const auto& coordinateSet = model->getCoordinateSet();
+    // for (int i = 0; i < coordinateSet.getSize(); ++i) {
+    //     activeCoordinateIndices.push_back(i);
+    // }
 
-    // muscle indexes - //! for Analytic solution
-    const auto& muscleSet = model->getMuscles();
-    for (int i = 0; i < muscleSet.getSize(); ++i) {
-        activeMuscleIndices.push_back(i);
-    }
+    // // muscle indexes - //! for Analytic solution
+    // const auto& muscleSet = model->getMuscles();
+    // for (int i = 0; i < muscleSet.getSize(); ++i) {
+    //     activeMuscleIndices.push_back(i);
+    // }
 
-    // initialize system - //! for Analytic solution
-    state = model->initSystem();
+    // // initialize system - //! for Analytic solution
+    // state = model->initSystem();
 }
 
 void TorqueBasedTarget::prepareForOptimization(
         const MuscleOptimization::Input& input) {
 
-    // update state - //! for Analytic solution
-    state.updQ() = input.q;
-    model->getMultibodySystem().realize(state, Stage::Position);
+    // // update state - //! for Analytic solution
+    // state.updQ() = input.q;
+    // model->getMultibodySystem().realize(state, Stage::Position);
 
     tau = input.tau;
     R = calcMomentArm(input.q);
@@ -177,7 +189,7 @@ int TorqueBasedTarget::objectiveFunc(const Vector& x, bool newCoefficients,
                                      Real& rP) const {
     rP = 0.0;
     for (int i = 0; i < getNumParameters(); ++i) {
-        rP += pow(abs(x[i]) / fMax[i], p);
+        rP += pow(abs(x[i] / fMax[i]), p);
     }
     return 0;
 }
@@ -186,9 +198,9 @@ int TorqueBasedTarget::gradientFunc(const Vector& x, bool newCoefficients,
                                     Vector& gradient) const {
     for (int i = 0; i < getNumParameters(); ++i) {
         if (x[i] < 0) {
-            gradient[i] = -1.0 * p * pow(abs(x[i]) / fMax[i], p - 1);
+            gradient[i] = -1.0 * p * pow(abs(x[i] / fMax[i]), p - 1);
         } else {
-            gradient[i] = p * pow(abs(x[i]) / fMax[i], p - 1);
+            gradient[i] = p * pow(abs(x[i] / fMax[i]), p - 1);
         }
     }
     return 0;

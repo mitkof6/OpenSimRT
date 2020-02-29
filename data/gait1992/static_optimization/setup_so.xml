@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<OpenSimDocument Version="40000">
+<OpenSimDocument Version="30000">
   <AnalyzeTool name="task">
     <!--Name of the .osim file used to construct a model.-->
     <model_file>../residual_reduction_algorithm/model_adjusted.osim</model_file>
     <!--Replace the model's force set with sets specified in <force_set_files>? If false, the force set is appended to.-->
     <replace_force_set>false</replace_force_set>
     <!--List of xml files used to construct a force set for the model.-->
-    <force_set_files>so_actuators.xml</force_set_files>
+    <force_set_files>../model/reserve_actuators.xml</force_set_files>
     <!--Directory used for writing results.-->
     <results_directory>.</results_directory>
     <!--Output precision.  It is 8 by default.-->
@@ -36,7 +36,7 @@
           <!--End time.-->
           <end_time>infinity</end_time>
           <!--Specifies how often to store results during a simulation. More specifically, the interval (a positive integer) specifies how many successful integration steps should be taken before results are recorded again.-->
-          <step_interval>1</step_interval>
+          <step_interval>10</step_interval>
           <!--Flag (true or false) indicating whether the results are in degrees or not.-->
           <in_degrees>true</in_degrees>
           <!--If true, the model's own force set will be used in the static optimization computation.  Otherwise, inverse dynamics for coordinate actuators will be computed for all unconstrained degrees of freedom.-->
@@ -48,8 +48,24 @@
           <!--Value used to determine when the optimization solution has converged-->
           <optimizer_convergence_criterion>0.0001</optimizer_convergence_criterion>
           <!--An integer for setting the maximum number of iterations the optimizer can use at each time.  -->
-          <optimizer_max_iterations>100</optimizer_max_iterations>
+          <optimizer_max_iterations>300</optimizer_max_iterations>
         </StaticOptimization>
+	<MuscleAnalysis name="MuscleAnalysis">
+          <!--Flag (true or false) specifying whether whether on. True by default.-->
+          <on>true</on>
+          <!--Start time.-->
+          <start_time>-infinity</start_time>
+          <!--End time.-->
+          <end_time>infinity</end_time>
+          <!--Specifies how often to store results during a simulation. More specifically, the interval (a positive integer) specifies how many successful integration steps should be taken before results are recorded again.-->
+          <step_interval>1</step_interval>
+          <!--List of muscles for which to perform the analysis. Use 'all' to perform the analysis for all muscles.-->
+          <muscle_list> all</muscle_list>
+          <!--List of generalized coordinates for which to compute moment arms. Use 'all' to compute for all coordinates.-->
+          <!-- <moment_arm_coordinate_list> hip_flexion_r knee_angle_r ankle_angle_r </moment_arm_coordinate_list> -->
+          <!--Flag indicating whether moments should be computed.-->
+          <compute_moments>false</compute_moments>
+        </MuscleAnalysis>
       </objects>
       <groups />
     </AnalysisSet>
@@ -59,14 +75,14 @@
       <groups />
     </ControllerSet>
     <!--XML file (.xml) containing the forces applied to the model as ExternalLoads.-->
-    <external_loads_file>../experimental_data/setup_grf.xml</external_loads_file>
+    <external_loads_file>../experimental_data/setup_grf_after_rra.xml</external_loads_file>
     <!--Storage file (.sto) containing the time history of states for the model. This file often contains multiple rows of data, each row being a time-stamped array of states. The first column contains the time.  The rest of the columns contain the states in the order appropriate for the model. In a storage file, unlike a motion file (.mot), non-uniform time spacing is allowed.  If the user-specified initial time for a simulation does not correspond exactly to one of the time stamps in this file, interpolation is NOT used because it is sometimes necessary to use an exact set of states for analyses.  Instead, the closest earlier set of states is used.-->
     <states_file />
     <!--Motion file (.mot) or storage file (.sto) containing the time history of the generalized coordinates for the model. These can be specified in place of the states file.-->
-    <coordinates_file>../inverse_kinematics/task_InverseKinematics.mot</coordinates_file>
+    <coordinates_file>../residual_reduction_algorithm/task_Kinematics_q.sto</coordinates_file>
     <!--Storage file (.sto) containing the time history of the generalized speeds for the model. If coordinates_file is used in place of states_file, these can be optionally set as well to give the speeds. If not specified, speeds will be computed from coordinates by differentiation.-->
     <speeds_file />
     <!--Low-pass cut-off frequency for filtering the coordinates_file data (currently does not apply to states_file or speeds_file). A negative value results in no filtering. The default value is -1.0, so no filtering.-->
-    <lowpass_cutoff_frequency_for_coordinates>6</lowpass_cutoff_frequency_for_coordinates>
+    <lowpass_cutoff_frequency_for_coordinates>-1</lowpass_cutoff_frequency_for_coordinates>
   </AnalyzeTool>
 </OpenSimDocument>

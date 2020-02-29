@@ -7,6 +7,7 @@
 # Dependencies: opensim, matplotlib, numpy, sympy, multipolyfit, tqdm
 #
 # @author Dimitar Stanev <jimstanev@gmail.com>
+# contributors: Konstantinos Filip
 ##
 import os
 import csv
@@ -28,10 +29,12 @@ plt.rcParams['font.size'] = 13
 ################################################################################
 # utilities
 
+
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
 
 def cartesian(arrays, out=None):
     """Generate a cartesian product of input arrays.
@@ -292,7 +295,7 @@ def calculate_moment_arm_symbolically(model_file, results_dir):
     # calculate moment arm matrix (R) symbolically
     R = []
     sampling_dict = {}
-    resolution = {1: 15, 2: 12, 3: 10, 4: 10, 5: 5}
+    resolution = {1: 15, 2: 15, 3: 15, 4: 15, 5: 10}
     for muscle, k in tqdm(model_muscles.items()):
         # get initial state each time
         coordinates = muscle_coordinates[muscle]
