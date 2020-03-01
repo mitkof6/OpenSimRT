@@ -11,7 +11,6 @@
 #include "INIReader.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
-#include "SignalProcessing.h"
 #include "Simulation.h"
 #include "Utils.h"
 #include "Visualization.h"
@@ -40,7 +39,7 @@ typedef std::vector<std::string> (*Container)();
 
 void run() {
     // load library //! FK: had some issues with the path. please ignore
-    auto momentArmLibHandle = OpenSim::LoadOpenSimLibrary("./Gait1992MomentArm_rd", true);
+    auto momentArmLibHandle = OpenSim::LoadOpenSimLibrary("./Gait1992MomentArm", true);
     if (momentArmLibHandle == nullptr)
         THROW_EXCEPTION("Library cannot be found.");
 
@@ -109,16 +108,6 @@ void run() {
                         " != " + toString(tauTable.getNumRows()));
     }
 
-    // setup filters
-    LowPassSmoothFilter::Parameters ikFilterParam;
-    ikFilterParam.numSignals = model.getNumCoordinates();
-    ikFilterParam.memory = memory;
-    ikFilterParam.delay = delay;
-    ikFilterParam.cutoffFrequency = cutoffFreq;
-    ikFilterParam.splineOrder = splineOrder;
-    ikFilterParam.calculateDerivatives = true;
-    LowPassSmoothFilter ikFilter(ikFilterParam);
-
     // initialize so
     MuscleOptimization::OptimizationParameters optimizationParameters;
     optimizationParameters.convergenceTolerance = convergenceTolerance;
@@ -127,8 +116,8 @@ void run() {
     MuscleOptimization so(model, optimizationParameters, calcMomentArm);
     auto fmLogger = so.initializeMuscleLogger();
     auto amLogger = so.initializeMuscleLogger();
-    auto tauResLogger = so.initializeResidualLogger();
-    
+    // auto tauResLogger = so.initializeResidualLogger();
+
     // visualizer
     BasicModelVisualizer visualizer(model);
 
@@ -141,9 +130,6 @@ void run() {
         double t = qTable.getIndependentColumn()[i];
         auto q = qTable.getRowAtIndex(i).getAsVector();
         auto tau = tauTable.getRowAtIndex(i).getAsRowVector();
-        // for (int j = 0; j < 6; j++) {
-        //     tau[j] = 0;
-        // }
 
         // perform id
         chrono::high_resolution_clock::time_point t1;
@@ -162,8 +148,7 @@ void run() {
         // log data (use filter time to align with delay)
         fmLogger.appendRow(t, ~soOutput.fm);
         amLogger.appendRow(t, ~soOutput.am);
-        tauResLogger.appendRow(t, ~soOutput.residuals);
-        
+
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
@@ -175,9 +160,6 @@ void run() {
                           subjectDir + "real_time/muscle_optimization/fm.sto");
     STOFileAdapter::write(amLogger,
                           subjectDir + "real_time/muscle_optimization/am.sto");
-    STOFileAdapter::write(tauResLogger,
-                          subjectDir + "real_time/muscle_optimization/tauRes.sto");
-
 }
 
 int main(int argc, char* argv[]) {

@@ -62,16 +62,16 @@ endif()
 
 # define library postfix so that different builds will produce
 # distinguished libraries
-set(CMAKE_RELEASE_POSTFIX "_r" CACHE STRING "Release postfix")
-set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Debug postfix")
-set(CMAKE_RELWITHDEBINFO_POSTFIX "_rd" CACHE STRING
-  "Release with debug info postfix")
-set(CMAKE_MINSIZEREL_POSTFIX "_mr" CACHE STRING
-  "Minimum size release postfix")
-mark_as_advanced(CMAKE_RELEASE_POSTFIX)
-mark_as_advanced(CMAKE_DEBUG_POSTFIX)
-mark_as_advanced(CMAKE_RELWITHDEBINFO_POSTFIX)
-mark_as_advanced(CMAKE_MINSIZEREL_POSTFIX)
+# set(CMAKE_RELEASE_POSTFIX "_r" CACHE STRING "Release postfix")
+# set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Debug postfix")
+# set(CMAKE_RELWITHDEBINFO_POSTFIX "_rd" CACHE STRING
+#   "Release with debug info postfix")
+# set(CMAKE_MINSIZEREL_POSTFIX "_mr" CACHE STRING
+#   "Minimum size release postfix")
+# mark_as_advanced(CMAKE_RELEASE_POSTFIX)
+# mark_as_advanced(CMAKE_DEBUG_POSTFIX)
+# mark_as_advanced(CMAKE_RELWITHDEBINFO_POSTFIX)
+# mark_as_advanced(CMAKE_MINSIZEREL_POSTFIX)
 
 # build executables and libraries in the same place
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} CACHE INTERNAL "")

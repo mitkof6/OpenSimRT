@@ -30,7 +30,7 @@ typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
 void run() {
     // load library
     auto momentArmLibHandle =
-            OpenSim::LoadOpenSimLibrary("Gait1992MomentArm_rd", true);
+            OpenSim::LoadOpenSimLibrary("Gait1992MomentArm", true);
 
     // get function pointer
 #ifdef _WIN32
