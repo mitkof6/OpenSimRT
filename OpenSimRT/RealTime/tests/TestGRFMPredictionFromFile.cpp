@@ -114,9 +114,7 @@ void run() {
     // LowPassSmoothFilter grfRightFilter(grfFilterParam),
     //         grfLeftFilter(grfFilterParam);
 
-    GRFPrediction::Parameters grfm_parameters;
-    grfm_parameters.rightFootContactForceName = "foot_r";
-    grfm_parameters.leftFootContactForceName = "foot_l";
+    GaitPhaseDetector::Parameters grfm_parameters;
     grfm_parameters.stance_threshold = 50;
     GRFPrediction grfm(model, grfm_parameters);
 

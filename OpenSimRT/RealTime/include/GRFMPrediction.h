@@ -20,15 +20,12 @@
 #include <OpenSim/Simulation/Model/Model.h>
 #include <OpenSim/Simulation/SimbodyEngine/Body.h>
 
-namespace OpenSim {
+//==============================================================================
 /**
  * \brief Defines the gait phases that are supported.
  */
-class RealTime_API GaitPhase : public Object {
-    OpenSim_DECLARE_CONCRETE_OBJECT(GaitPhase, Object);
-
+class RealTime_API GaitPhase {
  public:
-    OpenSim_DECLARE_PROPERTY(phase, int, "Phase enum value.");
     /*
      *  ------------------------------------
      * |            ALWAYS_ACTIVE           |
@@ -45,11 +42,13 @@ class RealTime_API GaitPhase : public Object {
         DOUBLE_SUPPORT = (1 << 2 | STANCE),               // 0101
         ACTIVE_ALWAYS = (STANCE | SWING | DOUBLE_SUPPORT) // 0111
     };
+    int phase;
 
     GaitPhase();
     GaitPhase(Phase phase);
     explicit GaitPhase(int phase);
     operator int() const;
+    GaitPhase& operator=(const GaitPhase& rhs);
     bool operator==(Phase other) const;
     bool operator!=(Phase other) const;
     bool operator==(GaitPhase other) const;
@@ -57,57 +56,39 @@ class RealTime_API GaitPhase : public Object {
     std::string toString() const;
 };
 
+// =============================================================================
 /**
  * \brief Detects gait phase cycles based on ground reaction force
  * predicted by contacts.
  */
-class RealTime_API GaitPhaseDetector : public Component {
-    OpenSim_DECLARE_CONCRETE_OBJECT(GaitPhaseDetector, Component);
-
- private: // explicit
-    /**
-     * \brief An event handler that is triggered when the foot touches or
-     * leaves the ground. This is used to identify the gait phase.
-     */
-    class StanceSwingEvent : public SimTK::TriggeredEventHandler {
-     public:
-        StanceSwingEvent(const HuntCrossleyForce& contact,
-                         const HuntCrossleyForce& contactContra,
-                         GaitPhase& phase, double threshold);
-
-     protected:
-        SimTK::Real getValue(const SimTK::State& s) const override;
-        void handleEvent(SimTK::State& s, SimTK::Real accuracy,
-                         bool& shouldTerminate) const override;
-
-     private:
-        const HuntCrossleyForce& contact;
-        const HuntCrossleyForce& contactContra;
-        GaitPhase& phase;
-        double threshold;
-        mutable double contactValue, contactValueContra;
-        void updatePhase() const;
-    };
-
+class RealTime_API GaitPhaseDetector {
  public:
-    mutable GaitPhase phaseR, phaseL;
-    OpenSim_DECLARE_PROPERTY(stance_threshold, double,
-                             "Threshold to be identified as stance.");
-    OpenSim_DECLARE_SOCKET(contact_force_right, HuntCrossleyForce,
-                           "The contact force of the right leg.");
-    OpenSim_DECLARE_SOCKET(contact_force_left, HuntCrossleyForce,
-                           "The contact force of the left leg.");
-    GaitPhaseDetector();
 
- protected:
-    void extendAddToSystem(SimTK::MultibodySystem& system) const override;
+    struct Parameters {
+        double stance_threshold;
+    } parameters;
+
+    GaitPhaseDetector(OpenSim::Model* model, const Parameters& parameters);
+    std::vector<GaitPhase> getPhase(const SimTK::State& state);
+
+ private:
+    SimTK::ReferencePtr<OpenSim::Model> model;
+    GaitPhase phaseR, phaseL;
+    double avgPelvisVel;
+    void updPhase(const SimTK::State& state);
+
+    // * Note: Markers are also possible, but can go missing
+    SimTK::ReferencePtr<OpenSim::Station> heelStationR;
+    SimTK::ReferencePtr<OpenSim::Station> heelStationL;
+    SimTK::ReferencePtr<OpenSim::Station> toeStationR;
+    SimTK::ReferencePtr<OpenSim::Station> toeStationL;
+    SimTK::ReferencePtr<OpenSim::Station> pelvisStation;
 };
-} // namespace OpenSim
 
+
+// =============================================================================
 class RealTime_API GRFPrediction {
-
     typedef std::function<double(double)> TransitionFuction;
-
  public:
     struct Input {
         double t;
@@ -123,13 +104,7 @@ class RealTime_API GRFPrediction {
         SimTK::Vec3 moment;
     };
 
-    struct Parameters {
-        double stance_threshold;
-        std::string rightFootContactForceName;
-        std::string leftFootContactForceName;
-    } parameters;
-
-    GRFPrediction(const OpenSim::Model&, const Parameters&);
+    GRFPrediction(const OpenSim::Model&, const GaitPhaseDetector::Parameters&);
     void solve(const Input& input);
 
     OpenSim::TimeSeriesTable initializeLogger();
@@ -144,6 +119,6 @@ class RealTime_API GRFPrediction {
 
     OpenSim::Model model;
     SimTK::State state;
-    SimTK::ReferencePtr<OpenSim::GaitPhaseDetector> gaitPhaseDetector;
+    SimTK::ReferencePtr<GaitPhaseDetector> gaitPhaseDetector;
 };
 #endif // !GROUND_REACTION_FORCE_PREDICTION
