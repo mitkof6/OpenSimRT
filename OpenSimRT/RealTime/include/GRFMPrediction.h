@@ -56,35 +56,8 @@ class RealTime_API GaitPhase {
     std::string toString() const;
 };
 
-// =============================================================================
-/**
- * \brief Detects gait phase cycles based on ground reaction force
- * predicted by contacts.
- */
-class RealTime_API GaitPhaseDetector {
- public:
-
-    struct Parameters {
-        double stance_threshold;
-    } parameters;
-
-    GaitPhaseDetector(OpenSim::Model* model, const Parameters& parameters);
-    std::vector<GaitPhase> getPhase(const SimTK::State& state);
-
- private:
-    SimTK::ReferencePtr<OpenSim::Model> model;
-    GaitPhase phaseR, phaseL;
-    double avgPelvisVel;
-    void updPhase(const SimTK::State& state);
-
-    // * Note: Markers are also possible, but can go missing
-    SimTK::ReferencePtr<OpenSim::Station> heelStationR;
-    SimTK::ReferencePtr<OpenSim::Station> heelStationL;
-    SimTK::ReferencePtr<OpenSim::Station> toeStationR;
-    SimTK::ReferencePtr<OpenSim::Station> toeStationL;
-    SimTK::ReferencePtr<OpenSim::Station> pelvisStation;
-};
-
+class RealTime_API GaitPhaseDetector;
+class RealTime_API ContactForceBasedPhaseDetector;
 
 // =============================================================================
 class RealTime_API GRFPrediction {
@@ -104,7 +77,7 @@ class RealTime_API GRFPrediction {
         SimTK::Vec3 moment;
     };
 
-    GRFPrediction(const OpenSim::Model&, const GaitPhaseDetector::Parameters&);
+    GRFPrediction(const OpenSim::Model&);
     void solve(const Input& input);
 
     OpenSim::TimeSeriesTable initializeLogger();
@@ -119,6 +92,58 @@ class RealTime_API GRFPrediction {
 
     OpenSim::Model model;
     SimTK::State state;
-    SimTK::ReferencePtr<GaitPhaseDetector> gaitPhaseDetector;
+    SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
 };
+
+// =============================================================================
+/**
+ * \brief Detects gait phase cycles based on ground reaction force
+ * predicted by contacts.
+ */
+class RealTime_API GaitPhaseDetector {
+ public:
+
+    GaitPhaseDetector() = default;
+    virtual ~GaitPhaseDetector() = default;
+
+    virtual std::vector<GaitPhase> getPhase(const GRFPrediction::Input& input) = 0;
+
+ protected:
+    GaitPhase phaseR, phaseL;
+    virtual void updPhase(const GRFPrediction::Input& input) = 0;
+};
+
+// class RealTime_API VelocityBasedPhaseDetector : GaitPhaseDetector {
+//  public:
+//     VelocityBasedPhaseDetector(OpenSim::Model* model);
+//     std::vector<GaitPhase> getPhase(const SimTK::State& state) override;
+
+//  private:
+//     void updPhase(const SimTK::State& state) override;
+
+//     SimTK::ReferencePtr<OpenSim::Model> model;
+
+//     // * Note: Markers are also possible, but can go missing
+//     SimTK::ReferencePtr<OpenSim::Station> heelStationR;
+//     SimTK::ReferencePtr<OpenSim::Station> heelStationL;
+//     SimTK::ReferencePtr<OpenSim::Station> toeStationR;
+//     SimTK::ReferencePtr<OpenSim::Station> toeStationL;
+//     SimTK::ReferencePtr<OpenSim::Station> pelvisStation;
+// };
+
+class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
+ public:
+    // ContactForceBasedPhaseDetector(OpenSim::Model* model);
+    ContactForceBasedPhaseDetector(const OpenSim::Model& model);
+    std::vector<GaitPhase> getPhase(const GRFPrediction::Input& input) override;
+ private:
+    void updPhase(const GRFPrediction::Input& input) override;
+
+    // SimTK::ReferencePtr<OpenSim::Model> model;
+    OpenSim::Model model;
+    SimTK::State state;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightFootContactForce;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftFootContactForce;
+};
+
 #endif // !GROUND_REACTION_FORCE_PREDICTION

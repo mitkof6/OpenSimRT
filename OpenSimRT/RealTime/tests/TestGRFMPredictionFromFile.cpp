@@ -114,9 +114,9 @@ void run() {
     // LowPassSmoothFilter grfRightFilter(grfFilterParam),
     //         grfLeftFilter(grfFilterParam);
 
-    GaitPhaseDetector::Parameters grfm_parameters;
-    grfm_parameters.stance_threshold = 50;
-    GRFPrediction grfm(model, grfm_parameters);
+    // GaitPhaseDetector::Parameters grfm_parameters;
+    // grfm_parameters.stance_threshold = 50;
+    GRFPrediction grfm(model);
 
     // visualizer
     BasicModelVisualizer visualizer(model);
