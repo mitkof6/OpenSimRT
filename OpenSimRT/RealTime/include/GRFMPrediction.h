@@ -75,18 +75,18 @@ class RealTime_API GRFPrediction {
         SimTK::Vec3 point;
         SimTK::Vec3 force;
         SimTK::Vec3 moment;
+        SimTK::Vector asVector();
     };
 
     GRFPrediction(const OpenSim::Model&);
-    void solve(const Input& input);
-
-    OpenSim::TimeSeriesTable initializeLogger();
+    std::vector<Output> solve(const Input& input);
 
  private:
     TransitionFuction reactionComponentTransition;
     TransitionFuction anteriorForceTransition;
 
-    double Tds, Tp, k1, k2;
+    double Tds, Ths, Tto, k1, k2;
+    GaitPhase phaseR, phaseL;
     SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
     SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
 
@@ -136,14 +136,26 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
     // ContactForceBasedPhaseDetector(OpenSim::Model* model);
     ContactForceBasedPhaseDetector(const OpenSim::Model& model);
     std::vector<GaitPhase> getPhase(const GRFPrediction::Input& input) override;
+
+    enum LeadingLeg {
+        INVALID,
+        RIGHT,
+        LEFT
+    };
+    int leadingLeg;
+
+    double t0, duration;
  private:
     void updPhase(const GRFPrediction::Input& input) override;
 
     // SimTK::ReferencePtr<OpenSim::Model> model;
     OpenSim::Model model;
     SimTK::State state;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightFootContactForce;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftFootContactForce;
+
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightHeelContactForce;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightToeContactForce;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftHeelContactForce;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftToeContactForce;
 };
 
 #endif // !GROUND_REACTION_FORCE_PREDICTION

@@ -21,8 +21,7 @@ GaitPhase::GaitPhase(int otherPhase) : phase(otherPhase) {}
 GaitPhase::operator int() const { return phase; }
 
 GaitPhase& GaitPhase::operator=(const GaitPhase& rhs) {
-    if (this == &rhs)
-        return *this;
+    if (this == &rhs) return *this;
     phase = rhs.phase;
     return *this;
 }
@@ -50,12 +49,17 @@ std::string GaitPhase::toString() const {
     }
 }
 //==============================================================================
-ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(const Model& otherModel):
-    model(*otherModel.clone()){
+ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
+        const Model& otherModel)
+        : model(*otherModel.clone()) {
     phaseR = GaitPhase::Phase::INVALID;
     phaseL = GaitPhase::Phase::INVALID;
+    leadingLeg = LeadingLeg::LEFT;
 
-    // platform body
+    double heeSphereRadius = 0.035; // todo
+    double toeSphereRadius = 0.03; // todo
+
+    // platform
     auto platform = new OpenSim::Body();
     platform->setName("Platform");
     platform->setMass(1);
@@ -64,9 +68,10 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(const Model& othe
     platform->attachGeometry(new Brick(Vec3(1, 0.0075, 1)));
     model.addBody(platform);
 
-    // joint connection the platform to the ground
-    auto platformToGround = new WeldJoint("PlatformToGround", model.getGround(),
-        Vec3(0), Vec3(0), *platform, Vec3(-0.6, -0.035, 0), Vec3(0));
+    // weld joint
+    auto platformToGround =
+            new WeldJoint("PlatformToGround", model.getGround(), Vec3(0),
+                          Vec3(0), *platform, Vec3(-0.6, -0.035, 0), Vec3(0));
     model.addJoint(platformToGround);
 
     // contact half-space
@@ -80,111 +85,144 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(const Model& othe
     // contact spheres
     auto rightHeelContact = new ContactSphere();
     rightHeelContact->setName("RHeelContact");
-    rightHeelContact->setRadius(0.04);
+    rightHeelContact->setRadius(heeSphereRadius);
     rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005));
+    rightHeelContact->setOrientation(Vec3(Pi / 2, 0, 0));
     rightHeelContact->setBody(model.getBodySet().get("calcn_r"));
     model.addContactGeometry(rightHeelContact);
-
     auto leftHeelContact = new ContactSphere();
     leftHeelContact->setName("LHeelContact");
-    leftHeelContact->setRadius(0.04);
+    leftHeelContact->setRadius(heeSphereRadius);
     leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005));
+    leftHeelContact->setOrientation(Vec3(Pi / 2, 0, 0));
     leftHeelContact->setBody(model.getBodySet().get("calcn_l"));
     model.addContactGeometry(leftHeelContact);
-
     auto rightToeContact = new ContactSphere();
     rightToeContact->setName("RToeContact");
-    rightToeContact->setRadius(0.04);
-    rightToeContact->setLocation(Vec3(0.06, -0.01, -0.02));
+    rightToeContact->setRadius(toeSphereRadius);
+    rightToeContact->setLocation(Vec3(0.055, 0.008, -0.01));
+    rightToeContact->setOrientation(Vec3(Pi / 2, 0, 0));
     rightToeContact->setBody(model.getBodySet().get("toes_r"));
     model.addContactGeometry(rightToeContact);
-
     auto leftToeContact = new ContactSphere();
     leftToeContact->setName("LToeContact");
-    leftToeContact->setRadius(0.04);
-    leftToeContact->setLocation(Vec3(0.06, -0.01, 0.02));
+    leftToeContact->setRadius(toeSphereRadius);
+    leftToeContact->setLocation(Vec3(0.055, 0.008, 0.01));
+    leftToeContact->setOrientation(Vec3(Pi / 2, 0, 0));
     leftToeContact->setBody(model.getBodySet().get("toes_l"));
     model.addContactGeometry(leftToeContact);
 
     // right foot contact parameters
-    auto rightFootContactParams = new HuntCrossleyForce::ContactParameters();
-    rightFootContactParams->setStiffness(2000000);
-    rightFootContactParams->setDissipation(1.0);
-    rightFootContactParams->setStaticFriction(0.9);
-    rightFootContactParams->setDynamicFriction(0.8);
-    rightFootContactParams->setViscousFriction(0.6);
-    rightFootContactParams->addGeometry("RHeelContact");
-    rightFootContactParams->addGeometry("RToeContact");
-    rightFootContactParams->addGeometry("PlatformContact");
+    auto rightHeelContactParams = new HuntCrossleyForce::ContactParameters();
+    rightHeelContactParams->setStiffness(2e6);
+    rightHeelContactParams->setDissipation(1.0);
+    rightHeelContactParams->setStaticFriction(0.9);
+    rightHeelContactParams->setDynamicFriction(0.8);
+    rightHeelContactParams->setViscousFriction(0.6);
+    rightHeelContactParams->addGeometry("RHeelContact");
+    rightHeelContactParams->addGeometry("PlatformContact");
+    auto rightToeContactParams = new HuntCrossleyForce::ContactParameters();
+    rightToeContactParams->setStiffness(2e6);
+    rightToeContactParams->setDissipation(1.0);
+    rightToeContactParams->setStaticFriction(0.9);
+    rightToeContactParams->setDynamicFriction(0.8);
+    rightToeContactParams->setViscousFriction(0.6);
+    rightToeContactParams->addGeometry("RToeContact");
+    rightToeContactParams->addGeometry("PlatformContact");
 
     // left foot contact parameters
-    auto leftFootContactParams = new HuntCrossleyForce::ContactParameters();
-    leftFootContactParams->setStiffness(2000000);
-    leftFootContactParams->setDissipation(1.0);
-    leftFootContactParams->setStaticFriction(0.9);
-    leftFootContactParams->setDynamicFriction(0.8);
-    leftFootContactParams->setViscousFriction(0.6);
-    leftFootContactParams->addGeometry("LHeelContact");
-    leftFootContactParams->addGeometry("LToeContact");
-    leftFootContactParams->addGeometry("PlatformContact");
+    auto leftHeelContactParams = new HuntCrossleyForce::ContactParameters();
+    leftHeelContactParams->setStiffness(2e6);
+    leftHeelContactParams->setDissipation(1.0);
+    leftHeelContactParams->setStaticFriction(0.9);
+    leftHeelContactParams->setDynamicFriction(0.8);
+    leftHeelContactParams->setViscousFriction(0.6);
+    leftHeelContactParams->addGeometry("LHeelContact");
+    leftHeelContactParams->addGeometry("PlatformContact");
+    auto leftToeContactParams = new HuntCrossleyForce::ContactParameters();
+    leftToeContactParams->setStiffness(2e6);
+    leftToeContactParams->setDissipation(1.0);
+    leftToeContactParams->setStaticFriction(0.9);
+    leftToeContactParams->setDynamicFriction(0.8);
+    leftToeContactParams->setViscousFriction(0.6);
+    leftToeContactParams->addGeometry("LToeContact");
+    leftToeContactParams->addGeometry("PlatformContact");
 
     // right foot Force
-    rightFootContactForce = new HuntCrossleyForce(rightFootContactParams);
-    rightFootContactForce->setName("RightFootContactForce");
-    model.addForce(rightFootContactForce);
+    rightHeelContactForce = new HuntCrossleyForce(rightHeelContactParams);
+    rightHeelContactForce->setName("RightHeelContactForce");
+    model.addForce(rightHeelContactForce);
+    rightToeContactForce = new HuntCrossleyForce(rightToeContactParams);
+    rightToeContactForce->setName("RightToeContactForce");
+    model.addForce(rightToeContactForce);
 
     // left foot Force
-    leftFootContactForce = new HuntCrossleyForce(leftFootContactParams);
-    leftFootContactForce->setName("LeftFootContactForce");
-    model.addForce(leftFootContactForce);
+    leftHeelContactForce = new HuntCrossleyForce(leftHeelContactParams);
+    leftHeelContactForce->setName("LeftHeelContactForce");
+    model.addForce(leftHeelContactForce);
+    leftToeContactForce = new HuntCrossleyForce(leftToeContactParams);
+    leftToeContactForce->setName("LeftToeContactForce");
+    model.addForce(leftToeContactForce);
 
+    // initialize system
     state = model.initSystem();
 }
 
-vector<GaitPhase> ContactForceBasedPhaseDetector::getPhase(const GRFPrediction::Input& input) {
+vector<GaitPhase>
+ContactForceBasedPhaseDetector::getPhase(const GRFPrediction::Input& input) {
     updPhase(input);
     return {phaseR, phaseL};
 }
 
-void ContactForceBasedPhaseDetector::updPhase(const GRFPrediction::Input& input) {
-
+void ContactForceBasedPhaseDetector::updPhase(
+        const GRFPrediction::Input& input) {
     const auto& coordinateSet = model.getCoordinatesInMultibodyTreeOrder();
     int i = 0;
-    for (const auto& coord : coordinateSet){
+    for (const auto& coord : coordinateSet) {
         coord->setValue(state, input.q[i]);
         coord->setSpeedValue(state, input.qDot[i]);
         ++i;
     }
 
     model.realizeDynamics(state);
-    auto rightContactWrench = rightFootContactForce->getRecordValues(state);
-    auto leftContactWrench = leftFootContactForce->getRecordValues(state);
+    auto rightHeelContactWrench = rightHeelContactForce->getRecordValues(state);
+    auto rightToeContactWrench = rightToeContactForce->getRecordValues(state);
+    auto leftHeelContactWrench = leftHeelContactForce->getRecordValues(state);
+    auto leftToeContactWrench = leftToeContactForce->getRecordValues(state);
 
-    Vec3 rightLegForce(-rightContactWrench[0], -rightContactWrench[1],
-                       -rightContactWrench[2]);
-    Vec3 leftLegForce(-leftContactWrench[0], -leftContactWrench[1],
-                      -leftContactWrench[2]);
+    Vec3 rightLegForce(-rightHeelContactWrench[0] - rightToeContactWrench[0],
+                       -rightHeelContactWrench[1] - rightToeContactWrench[1],
+                       -rightHeelContactWrench[2] - rightToeContactWrench[2]);
+    Vec3 leftLegForce(-leftHeelContactWrench[0] - leftToeContactWrench[0],
+                      -leftHeelContactWrench[1] - leftToeContactWrench[1],
+                      -leftHeelContactWrench[2] - leftToeContactWrench[2]);
 
-    double threshold = 20; // todo
+    double threshold = 60; // todo
 
     // f > threshold
     auto rightContactValue = rightLegForce.norm() - threshold;
     auto leftContactValue = leftLegForce.norm() - threshold;
-
-    // cout << rightLegForce.norm() << endl;
+    // cout << rightLegForce.norm() << ", " << leftLegForce.norm() << endl;
 
     if (rightContactValue > 0) {
+        if (phaseR == GaitPhase::Phase::SWING) {
+            leadingLeg = LeadingLeg::RIGHT;
+            t0 = input.t;
+        }
         phaseR = GaitPhase::Phase::STANCE;
     } else {
         phaseR = GaitPhase::Phase::SWING;
     }
 
     if (leftContactValue > 0) {
+        if (phaseL == GaitPhase::Phase::SWING) {
+            leadingLeg = LeadingLeg::LEFT;
+            t0 = input.t;
+        }
         phaseL = GaitPhase::Phase::STANCE;
     } else {
         phaseL = GaitPhase::Phase::SWING;
     }
-
 }
 //==============================================================================
 // VelocityBasedPhaseDetector::VelocityBasedPhaseDetector(Model* otherModel) :
@@ -194,13 +232,17 @@ void ContactForceBasedPhaseDetector::updPhase(const GRFPrediction::Input& input)
 
 //     // add station point to the model
 //     heelStationR =
-//         new Station(model->getBodySet().get("calcn_r"), Vec3(0.012, -0.0015, -0.005));
+//         new Station(model->getBodySet().get("calcn_r"), Vec3(0.012, -0.0015,
+//         -0.005));
 //     heelStationL =
-//         new Station(model->getBodySet().get("calcn_l"), Vec3(0.012, -0.0015, 0.005));
+//         new Station(model->getBodySet().get("calcn_l"), Vec3(0.012, -0.0015,
+//         0.005));
 //     toeStationR =
-//         new Station(model->getBodySet().get("toes_r"), Vec3(0.06, -0.01, -0.02));
+//         new Station(model->getBodySet().get("toes_r"), Vec3(0.06, -0.01,
+//         -0.02));
 //     toeStationL =
-//         new Station(model->getBodySet().get("toes_l"), Vec3(0.06, -0.01, 0.02));
+//         new Station(model->getBodySet().get("toes_l"), Vec3(0.06, -0.01,
+//         0.02));
 
 //     const auto& pelvisBody = model->getBodySet().get("pelvis");
 //     pelvisStation = new Station(pelvisBody, pelvisBody.getMassCenter());
@@ -218,7 +260,8 @@ void ContactForceBasedPhaseDetector::updPhase(const GRFPrediction::Input& input)
 //     model->addModelComponent(pelvisStation);
 // }
 
-// vector<GaitPhase> VelocityBasedPhaseDetector::getPhase(const SimTK::State& state) {
+// vector<GaitPhase> VelocityBasedPhaseDetector::getPhase(const SimTK::State&
+// state) {
 //     updPhase(state);
 //     return {phaseR, phaseL};
 // }
@@ -248,11 +291,12 @@ void ContactForceBasedPhaseDetector::updPhase(const GRFPrediction::Input& input)
 //     // }
 // }
 
-
 //==============================================================================
 
 GRFPrediction::GRFPrediction(const Model& otherModel)
-    : model(*otherModel.clone()) {
+        : model(*otherModel.clone()), Tds(-1.0) {
+    phaseR = GaitPhase::Phase::INVALID;
+    phaseL = GaitPhase::Phase::INVALID;
 
     // leg phase detector
     gaitPhaseDetector = new ContactForceBasedPhaseDetector(model);
@@ -266,15 +310,39 @@ GRFPrediction::GRFPrediction(const Model& otherModel)
     // define transition functions for reaction components
     k1 = exp(4.0 / 9.0);
     k2 = exp(-12.0 / 9.0) / 2.0;
-    reactionComponentTransition = [&](const double& time) -> double {
-              return exp(-pow((time / Tds), 3));
-          };
-    anteriorForceTransition = [&](const double& time) -> double {
-              return k1 * exp(-pow((time - Tp) / Tds, 2)) - k2 * time / Tds;
-          };
+    Tds = 0.16; // todo
+    auto Tp = Tds / 3.0;
+    reactionComponentTransition = [&](const double& t) -> double {
+        return exp(-pow((t / Tds / 2.0), 3));
+    };
+    // anteriorForceTransition = [&](const double& t) -> double {
+    //     return k1 * exp(-pow((t - Tp) / Tds / 2.0, 2)) - k2 * t / Tds / 2.0;
+    // };
+
+    double A, B, K, M, m1, m2, c; // todo
+    A = 0; B = 50; K = 1; M = 0.3; c = 0.02; m1 = Tds / 2.0; m2 = Tp;
+    auto anteriorForceTransition = [&](const double& t) -> double {
+        return A + K / (1.0 + exp(B * (t - m1))) +
+                M * exp(-pow((t - m2), 2) / (2 * pow(c, 2)));
+    };
 }
 
-void GRFPrediction::solve(const GRFPrediction::Input& input) {
+Vector GRFPrediction::Output::asVector() {
+    auto output = Vector(9);
+    output[0] = point[0];
+    output[1] = point[1];
+    output[2] = point[2];
+    output[3] = force[0];
+    output[4] = force[1];
+    output[5] = force[2];
+    output[6] = moment[0];
+    output[7] = moment[1];
+    output[8] = moment[2];
+    return output;
+}
+
+vector<GRFPrediction::Output>
+GRFPrediction::solve(const GRFPrediction::Input& input) {
     auto phase = gaitPhaseDetector->getPhase(input);
     // cout << "Time: " << input.t << " "
     //     << "Right: " << phase[0].toString() << " "
@@ -322,8 +390,8 @@ void GRFPrediction::solve(const GRFPrediction::Input& input) {
         if (body.getName() == "ground") continue;
 
         // calculate F_ext = sum(m_i * (a_i - g) ) //* Yes, the sign is minus(-)
-        reactionForce +=
-                body.getMass() * (bodyAccelerations[idx][1] - model.getGravity());
+        reactionForce += body.getMass() *
+                         (bodyAccelerations[idx][1] - model.getGravity());
 
         // calculate M_ext = sum( I_i * omega_dot + omega x (I_i * omega) -
         // sum_j( r_ij x F_ij )), where i: each body, j: endpoint of the ith
@@ -336,46 +404,83 @@ void GRFPrediction::solve(const GRFPrediction::Input& input) {
 
         // angular velocity-dependent force on the body due to rotational
         // inertia
-        const auto& gyroscopicForce =
-                matter.getGyroscopicForce(state, idx);
+        const auto& gyroscopicForce = matter.getGyroscopicForce(state, idx);
 
         // total angular velocity-dependent force acting on this body, including
         // forces due to Coriolis acceleration and gyroscopic forces due to
         // rotational inertia.
-        const auto& centrifugalForce = matter.getTotalCentrifugalForces(
-                state, idx);
+        const auto& centrifugalForce =
+                matter.getTotalCentrifugalForces(state, idx);
 
         // estimate of ground reaction moment
-        externalMoment += I * bodyAccelerations[idx][0] +
-                          cross(bodyVelocities[idx][0], I * bodyVelocities[idx][0]);
+        externalMoment +=
+                I * bodyAccelerations[idx][0] +
+                cross(bodyVelocities[idx][0], I * bodyVelocities[idx][0]);
     }
 
-    // Vector logV(18);
-    // auto point = Vec3(0, 0, 0);
+    Vec3 rightReactionForce;
+    Vec3 leftReactionForce;
+    Vec3 trailingReactionForce;
+    Vec3 leadingReactionForce;
+    if (phase[0] == GaitPhase::Phase::STANCE &&
+        phase[1] == GaitPhase::Phase::STANCE) {
+        // double support
+        // todo  Trasnition fucntion apply on the trailing leg
+        // todo transition function input is the time duration of the DS phase
+        double time = input.t - gaitPhaseDetector->t0;
 
-    // int offset = 0;
-    // while (offset < 18) {
-    //     for (int i = 0; i < 3; ++i) {
-    //         logV[i + offset] = point[i];
-    //         logV[i + offset + 3] = reactionForce[i];
-    //         logV[i + offset + 6] = externalMoment[i];
-    //     }
-    //     offset += 9;
-    // }
-    // center of pressure
-    // logger->addRow(input.t, logV);
-}
+        trailingReactionForce[0] =
+                // reactionForce[0] * reactionComponentTransition(time);
+                reactionForce[0] * anteriorForceTransition(time);
+        trailingReactionForce[1] =
+                reactionForce[1] * reactionComponentTransition(time);
+        trailingReactionForce[2] =
+                reactionForce[2] * reactionComponentTransition(time);
 
-TimeSeriesTable GRFPrediction::initializeLogger() {
-    std::vector<std::string> columnNames{
-        "r_ground_force_px", "r_ground_force_py", "r_ground_force_pz",
-        "r_ground_force_vx", "r_ground_force_vy", "r_ground_force_vz",
-        "r_ground_torque_x", "r_ground_torque_y", "r_ground_torque_z",
-        "l_ground_force_px", "l_ground_force_py", "l_ground_force_pz",
-        "l_ground_force_vx", "l_ground_force_vy", "l_ground_force_vz",
-        "l_ground_torque_x", "l_ground_torque_y", "l_ground_torque_z"};
+        leadingReactionForce[0] = reactionForce[0] - trailingReactionForce[0];
+        leadingReactionForce[1] = reactionForce[1] - trailingReactionForce[1];
+        leadingReactionForce[2] = reactionForce[2] - trailingReactionForce[2];
 
-    TimeSeriesTable q;
-    q.setColumnLabels(columnNames);
-    return q;
+
+
+        if (gaitPhaseDetector->leadingLeg ==
+                ContactForceBasedPhaseDetector::LeadingLeg::RIGHT) {
+            rightReactionForce = leadingReactionForce;
+            leftReactionForce = trailingReactionForce;
+        } else {
+            rightReactionForce = trailingReactionForce;
+            leftReactionForce = leadingReactionForce;
+        }
+
+    } else if (phase[0] == GaitPhase::Phase::STANCE &&
+               phase[1] == GaitPhase::Phase::SWING) {
+        // right stance
+        rightReactionForce = reactionForce;
+        leftReactionForce = Vec3(0);
+
+    } else if (phase[0] == GaitPhase::Phase::SWING &&
+               phase[1] == GaitPhase::Phase::STANCE) {
+        // left stance
+        rightReactionForce = Vec3(0);
+        leftReactionForce = reactionForce;
+
+    } else {
+        // invalid
+        rightReactionForce = Vec3(0);
+        leftReactionForce = Vec3(0);
+    }
+
+    Output rightLegOutput;
+    rightLegOutput.t = input.t;
+    rightLegOutput.force = rightReactionForce;
+    rightLegOutput.moment = externalMoment;
+    rightLegOutput.point = Vec3(0);
+
+    Output leftLegOutput;
+    leftLegOutput.t = input.t;
+    leftLegOutput.force = leftReactionForce;
+    leftLegOutput.moment = externalMoment;
+    leftLegOutput.point = Vec3(0);
+
+    return {rightLegOutput, leftLegOutput};
 }

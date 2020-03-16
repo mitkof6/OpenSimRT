@@ -77,14 +77,14 @@ void run() {
     // auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
     //         grfRightPointIdentifier, grfRightForceIdentifier,
     //         grfRightTorqueIdentifier);
-    // auto grfRightLogger = ExternalWrench::initializeLogger();
+    auto grfRightLogger = ExternalWrench::initializeLogger();
 
     // ExternalWrench::Parameters grfLeftFootPar{
     //         grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
     // auto grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
     //         grfLeftPointIdentifier, grfLeftForceIdentifier,
     //         grfLeftTorqueIdentifier);
-    // auto grfLeftLogger = ExternalWrench::initializeLogger();
+    auto grfLeftLogger = ExternalWrench::initializeLogger();
 
     // vector<ExternalWrench::Parameters> wrenchParameters;
     // wrenchParameters.push_back(grfRightFootPar);
@@ -119,7 +119,7 @@ void run() {
     GRFPrediction grfm(model);
 
     // visualizer
-    BasicModelVisualizer visualizer(model);
+    // BasicModelVisualizer visualizer(model);
     // auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
     // visualizer.addDecorationGenerator(rightGRFDecorator);
     // auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
@@ -142,30 +142,30 @@ void run() {
         }
 
         // perform grfm prediction
-        grfm.solve({t, q, qDot, qDDot});
+        auto grfmOutput = grfm.solve({ikFiltered.t, q, qDot, qDDot});
 
         // visualization
-        visualizer.update(q);
+        // visualizer.update(q);
         // rightGRFDecorator->update(grfRightWrench.point, grfRightWrench.force);
         // leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
 
         // log data (use filter time to align with delay)
-        // tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
-        // grfRightLogger.appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
-        // grfLeftLogger.appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
+        // grfmLogger.appendRow(ikFiltered.t, grfmOutput[0]);
+        grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
+        grfLeftLogger.appendRow(grfmOutput[1].t, ~grfmOutput[1].asVector());
 
-        this_thread::sleep_for(chrono::milliseconds(10));
+        // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
-    // // store results
+    // store results
     // STOFileAdapter::write(tauLogger,
     //                       subjectDir + "real_time/grfm_prediction/tau.sto");
-    // STOFileAdapter::write(grfRightLogger,
-    //                       subjectDir +
-    //                               "real_time/grfm_prediction/wrench_right.sto");
-    // STOFileAdapter::write(grfLeftLogger,
-    //                       subjectDir +
-    //                               "real_time/grfm_prediction/wrench_left.sto");
+    STOFileAdapter::write(grfRightLogger,
+                          subjectDir +
+                                  "real_time/grfm_prediction/wrench_right.sto");
+    STOFileAdapter::write(grfLeftLogger,
+                          subjectDir +
+                                  "real_time/grfm_prediction/wrench_left.sto");
 }
 
 int main(int argc, char* argv[]) {
