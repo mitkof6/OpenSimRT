@@ -308,23 +308,25 @@ GRFPrediction::GRFPrediction(const Model& otherModel)
     }
 
     // define transition functions for reaction components
+    Tds = 0.08; // todo
+    auto Tp = 2.0 * Tds / 3.0;
     k1 = exp(4.0 / 9.0);
-    k2 = exp(-12.0 / 9.0) / 2.0;
-    Tds = 0.16; // todo
-    auto Tp = Tds / 3.0;
+    k2 = k1 * exp(-16.0 / 9.0) / 2.0;
     reactionComponentTransition = [&](const double& t) -> double {
-        return exp(-pow((t / Tds / 2.0), 3));
+        return exp(-pow((t / Tds), 3));
     };
-    // anteriorForceTransition = [&](const double& t) -> double {
-    //     return k1 * exp(-pow((t - Tp) / Tds / 2.0, 2)) - k2 * t / Tds / 2.0;
-    // };
+    anteriorForceTransition = [&](const double& t) -> double {
+        return k1 * exp(-pow((t - Tp) / Tds, 2)) - k2 * t / Tds;
+    };
 
-    double A, B, K, M, m1, m2, c; // todo
-    A = 0; B = 50; K = 1; M = 0.3; c = 0.02; m1 = Tds / 2.0; m2 = Tp;
-    auto anteriorForceTransition = [&](const double& t) -> double {
-        return A + K / (1.0 + exp(B * (t - m1))) +
-                M * exp(-pow((t - m2), 2) / (2 * pow(c, 2)));
-    };
+    // double A, B, K, M, m1, m2, c; // todo
+    // A = 0; B = 50; K = 1; M = 0.3; c = 0.02; m1 = Tds / 2.0; m2 = Tp;
+    // A = 0; K = 1; B = 27.96243188;
+    // M = -0.04883987; c = 0.02999439; m1 = 0.11871468; m2 = 0.21028451;
+    // anteriorForceTransition = [&](const double& t) -> double {
+    //     return A + K / (1.0 + exp(B * (t - m1))) +
+    //             M * exp(-pow((t - m2), 2) / (2.0 * pow(c, 2)));
+    // };
 }
 
 Vector GRFPrediction::Output::asVector() {
@@ -430,8 +432,8 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
         double time = input.t - gaitPhaseDetector->t0;
 
         trailingReactionForce[0] =
-                // reactionForce[0] * reactionComponentTransition(time);
-                reactionForce[0] * anteriorForceTransition(time);
+                reactionForce[0] * reactionComponentTransition(time);
+                // reactionForce[0] * anteriorForceTransition(time);
         trailingReactionForce[1] =
                 reactionForce[1] * reactionComponentTransition(time);
         trailingReactionForce[2] =
