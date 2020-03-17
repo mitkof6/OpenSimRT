@@ -20,44 +20,34 @@
 #include <OpenSim/Simulation/Model/Model.h>
 #include <OpenSim/Simulation/SimbodyEngine/Body.h>
 
+class RealTime_API GaitPhaseDetector; // todo
+class RealTime_API ContactForceBasedPhaseDetector;
+
 //==============================================================================
 /**
  * \brief Defines the gait phases that are supported.
  */
-class RealTime_API GaitPhase {
+class RealTime_API GaitPhaseState {
  public:
-    /*
-     *  ------------------------------------
-     * |            ALWAYS_ACTIVE           |
-     *  ------------------------------------
-     * |      STANCE      |      SWING      |
-     *  ------------------------------------
-     * |  DOUBLE_SUPPORT  |        -        |
-     *  ------------------------------------
-     */
-    enum Phase {
-        INVALID = 0,
-        STANCE = 1 << 0,                                  // 0001
-        SWING = 1 << 1,                                   // 0010
-        DOUBLE_SUPPORT = (1 << 2 | STANCE),               // 0101
-        ACTIVE_ALWAYS = (STANCE | SWING | DOUBLE_SUPPORT) // 0111
+    enum class LegPhase {
+        INVALID,
+        SWING,
+        STANCE
     };
-    int phase;
 
-    GaitPhase();
-    GaitPhase(Phase phase);
-    explicit GaitPhase(int phase);
-    operator int() const;
-    GaitPhase& operator=(const GaitPhase& rhs);
-    bool operator==(Phase other) const;
-    bool operator!=(Phase other) const;
-    bool operator==(GaitPhase other) const;
-    bool operator!=(GaitPhase other) const;
-    std::string toString() const;
+    enum class GaitPhase {
+        INVALID,
+        RIGHT_SWING,
+        LEFT_SWING,
+        DOUBLE_SUPPORT
+    };
+
+    enum class LeadingLeg {
+        INVALID,
+        RIGHT,
+        LEFT
+    };
 };
-
-class RealTime_API GaitPhaseDetector;
-class RealTime_API ContactForceBasedPhaseDetector;
 
 // =============================================================================
 class RealTime_API GRFPrediction {
@@ -85,14 +75,27 @@ class RealTime_API GRFPrediction {
     TransitionFuction reactionComponentTransition;
     TransitionFuction anteriorForceTransition;
 
-    double Tds, Ths, Tto, k1, k2;
-    GaitPhase phaseR, phaseL;
+    double currentTime, Tds, k1, k2;
     SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
     SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
 
     OpenSim::Model model;
     SimTK::State state;
+    GaitPhaseState::GaitPhase gaitphase;
     SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
+
+    void computeReactionForces(SimTK::Vec3& rightReactionForce,
+            SimTK::Vec3& leftReactionForce);
+    void computeReactionMoments(const SimTK::Vec3& rightReactionForce,
+            const SimTK::Vec3& leftReactionForce,
+            SimTK::Vec3& rightReactionMoment,
+            SimTK::Vec3& leftReactionMoment);
+    void computeReactionPoint(const SimTK::Vec3& rightReactionForce,
+            const SimTK::Vec3& leftReactionForce,
+            const SimTK::Vec3& rightReactionMoment,
+            const SimTK::Vec3& leftReactionMoment,
+            SimTK::Vec3& rightPoint,
+            SimTK::Vec3& leftPoint);
 };
 
 // =============================================================================
@@ -102,15 +105,40 @@ class RealTime_API GRFPrediction {
  */
 class RealTime_API GaitPhaseDetector {
  public:
-
     GaitPhaseDetector() = default;
     virtual ~GaitPhaseDetector() = default;
-
-    virtual std::vector<GaitPhase> getPhase(const GRFPrediction::Input& input) = 0;
+    virtual GaitPhaseState::GaitPhase getPhase(const GRFPrediction::Input& input) = 0;
 
  protected:
-    GaitPhase phaseR, phaseL;
-    virtual void updPhase(const GRFPrediction::Input& input) = 0;
+    GaitPhaseState::LeadingLeg leadingLeg;
+    GaitPhaseState::LegPhase phaseR, phaseL;
+    GaitPhaseState::GaitPhase gaitPhase;
+    virtual void updPhase() = 0;
+
+};
+
+class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
+ public:
+    ContactForceBasedPhaseDetector(const OpenSim::Model& model);
+
+    // getters
+    GaitPhaseState::GaitPhase getPhase(const GRFPrediction::Input& input) override;
+    const GaitPhaseState::LeadingLeg getLeadingLeg();
+    const double getHeelStrikeTime();
+
+ private:
+    void updPhase() override;
+    void detectRightHeelStrike();
+    void detectLeftHeelStrike();
+
+    double Ths, time;
+    OpenSim::Model model;
+    SimTK::State state;
+
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightHeelContactForce;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightToeContactForce;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftHeelContactForce;
+    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftToeContactForce;
 };
 
 // class RealTime_API VelocityBasedPhaseDetector : GaitPhaseDetector {
@@ -130,32 +158,4 @@ class RealTime_API GaitPhaseDetector {
 //     SimTK::ReferencePtr<OpenSim::Station> toeStationL;
 //     SimTK::ReferencePtr<OpenSim::Station> pelvisStation;
 // };
-
-class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
- public:
-    // ContactForceBasedPhaseDetector(OpenSim::Model* model);
-    ContactForceBasedPhaseDetector(const OpenSim::Model& model);
-    std::vector<GaitPhase> getPhase(const GRFPrediction::Input& input) override;
-
-    enum LeadingLeg {
-        INVALID,
-        RIGHT,
-        LEFT
-    };
-    int leadingLeg;
-
-    double t0, duration;
- private:
-    void updPhase(const GRFPrediction::Input& input) override;
-
-    // SimTK::ReferencePtr<OpenSim::Model> model;
-    OpenSim::Model model;
-    SimTK::State state;
-
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightHeelContactForce;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightToeContactForce;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftHeelContactForce;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftToeContactForce;
-};
-
 #endif // !GROUND_REACTION_FORCE_PREDICTION

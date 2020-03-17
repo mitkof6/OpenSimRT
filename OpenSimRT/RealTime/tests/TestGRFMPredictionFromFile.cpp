@@ -30,7 +30,6 @@ void run() {
     auto section = "TEST_GRFM_PREDICTION_FROM_FILE";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
-    // auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
     // auto grfRightApplyBody =
@@ -66,12 +65,9 @@ void run() {
 
     // setup model
     Model model(modelFile);
-    // OpenSimUtils::removeActuators(model);
     model.initSystem();
 
     // // setup external forces
-    // Storage grfMotion(grfMotFile);
-
     // ExternalWrench::Parameters grfRightFootPar{
     //         grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
     // auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
@@ -103,16 +99,6 @@ void run() {
     ikFilterParam.splineOrder = splineOrder;
     ikFilterParam.calculateDerivatives = true;
     LowPassSmoothFilter ikFilter(ikFilterParam);
-
-    // LowPassSmoothFilter::Parameters grfFilterParam;
-    // grfFilterParam.numSignals = 9;
-    // grfFilterParam.memory = memory;
-    // grfFilterParam.delay = delay;
-    // grfFilterParam.cutoffFrequency = cutoffFreq;
-    // grfFilterParam.splineOrder = splineOrder;
-    // grfFilterParam.calculateDerivatives = false;
-    // LowPassSmoothFilter grfRightFilter(grfFilterParam),
-    //         grfLeftFilter(grfFilterParam);
 
     // GaitPhaseDetector::Parameters grfm_parameters;
     // grfm_parameters.stance_threshold = 50;
@@ -158,8 +144,6 @@ void run() {
     }
 
     // store results
-    // STOFileAdapter::write(tauLogger,
-    //                       subjectDir + "real_time/grfm_prediction/tau.sto");
     STOFileAdapter::write(grfRightLogger,
                           subjectDir +
                                   "real_time/grfm_prediction/wrench_right.sto");
