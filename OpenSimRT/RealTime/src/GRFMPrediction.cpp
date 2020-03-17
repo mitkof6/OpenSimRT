@@ -40,24 +40,22 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     model.addContactGeometry(platformContact);
 
     // contact spheres
-    double heelSphereRadius = 0.035; // todo
-    double toeSphereRadius = 0.03;   // todo
     auto rightHeelContact = new ContactSphere();
     auto leftHeelContact = new ContactSphere();
     auto rightToeContact = new ContactSphere();
     auto leftToeContact = new ContactSphere();
-    rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005)); // todo
-    leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005));   // todo
-    rightToeContact->setLocation(Vec3(0.055, 0.008, -0.01));     // todo
-    leftToeContact->setLocation(Vec3(0.055, 0.008, 0.01));       // todo
-    rightHeelContact->setBody(model.getBodySet().get("calcn_r"));
-    leftHeelContact->setBody(model.getBodySet().get("calcn_l"));
-    rightToeContact->setBody(model.getBodySet().get("toes_r"));
-    leftToeContact->setBody(model.getBodySet().get("toes_l"));
-    rightHeelContact->setRadius(heelSphereRadius);
-    leftHeelContact->setRadius(heelSphereRadius);
-    rightToeContact->setRadius(toeSphereRadius);
-    leftToeContact->setRadius(toeSphereRadius);
+    rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005));  // todo
+    leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005));    // todo
+    rightToeContact->setLocation(Vec3(0.055, 0.008, -0.01));      // todo
+    leftToeContact->setLocation(Vec3(0.055, 0.008, 0.01));        // todo
+    rightHeelContact->setBody(model.getBodySet().get("calcn_r")); // todo
+    leftHeelContact->setBody(model.getBodySet().get("calcn_l"));  // todo
+    rightToeContact->setBody(model.getBodySet().get("toes_r"));   // todo
+    leftToeContact->setBody(model.getBodySet().get("toes_l"));    // todo
+    rightHeelContact->setRadius(0.035);                           // todo
+    leftHeelContact->setRadius(0.035);                            // todo
+    rightToeContact->setRadius(0.03);                             // todo
+    leftToeContact->setRadius(0.03);                              // todo
     rightHeelContact->setName("RHeelContact");
     leftHeelContact->setName("LHeelContact");
     rightToeContact->setName("RToeContact");
@@ -138,11 +136,9 @@ void ContactForceBasedPhaseDetector::updLegPhase() {
     auto leftContactWrench = leftHeelContactForce->getRecordValues(state);
 
     // right/left leg total contact force
-    Vec3 rightLegForce(-rightContactWrench[0],
-                       -rightContactWrench[1],
+    Vec3 rightLegForce(-rightContactWrench[0], -rightContactWrench[1],
                        -rightContactWrench[2]);
-    Vec3 leftLegForce(-leftContactWrench[0],
-                      -leftContactWrench[1],
+    Vec3 leftLegForce(-leftContactWrench[0], -leftContactWrench[1],
                       -leftContactWrench[2]);
 
     // f > threshold
@@ -308,7 +304,7 @@ void GRFPrediction::computeReactionForces(Vec3& rightReactionForce,
         // trailing leg force
         trailingReactionForce[0] =
                 reactionForce[0] * reactionComponentTransition(time); // todo
-                // reactionForce[0] * anteriorForceTransition(time);
+        // reactionForce[0] * anteriorForceTransition(time);
         trailingReactionForce[1] =
                 reactionForce[1] * reactionComponentTransition(time);
         trailingReactionForce[2] =
