@@ -138,9 +138,7 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
     SimTK::State state;
 
     SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightHeelContactForce;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightToeContactForce;
     SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftHeelContactForce;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftToeContactForce;
 };
 
 // class RealTime_API VelocityBasedPhaseDetector : GaitPhaseDetector {

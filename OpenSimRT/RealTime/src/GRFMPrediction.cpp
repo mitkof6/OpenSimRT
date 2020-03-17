@@ -67,48 +67,34 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     model.addContactGeometry(rightToeContact);
     model.addContactGeometry(leftToeContact);
 
-    // contact parameters values // todo
+    // contact parameters // todo
     double stiffness = 2e6;
     double dissipation = 1.0;
     double staticFriction = 0.9;
     double dynamicFriction = 0.8;
     double viscousFriction = 0.6;
 
-    // contact parameters
-    auto rightHeelContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
+    auto rightContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
             stiffness, dissipation, staticFriction, dynamicFriction,
             viscousFriction);
-    auto rightToeContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
+    auto leftContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
             stiffness, dissipation, staticFriction, dynamicFriction,
             viscousFriction);
-    auto leftHeelContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
-            stiffness, dissipation, staticFriction, dynamicFriction,
-            viscousFriction);
-    auto leftToeContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
-            stiffness, dissipation, staticFriction, dynamicFriction,
-            viscousFriction);
-    rightHeelContactParams->addGeometry("RHeelContact");
-    rightHeelContactParams->addGeometry("PlatformContact");
-    rightToeContactParams->addGeometry("RToeContact");
-    rightToeContactParams->addGeometry("PlatformContact");
-    leftHeelContactParams->addGeometry("LHeelContact");
-    leftHeelContactParams->addGeometry("PlatformContact");
-    leftToeContactParams->addGeometry("LToeContact");
-    leftToeContactParams->addGeometry("PlatformContact");
+
+    rightContactParams->addGeometry("PlatformContact");
+    rightContactParams->addGeometry("RHeelContact");
+    rightContactParams->addGeometry("RToeContact");
+    leftContactParams->addGeometry("PlatformContact");
+    leftContactParams->addGeometry("LHeelContact");
+    leftContactParams->addGeometry("LToeContact");
 
     // contact forces
-    rightHeelContactForce = new OpenSim::HuntCrossleyForce(rightHeelContactParams);
-    rightToeContactForce = new OpenSim::HuntCrossleyForce(rightToeContactParams);
-    leftHeelContactForce = new OpenSim::HuntCrossleyForce(leftHeelContactParams);
-    leftToeContactForce = new OpenSim::HuntCrossleyForce(leftToeContactParams);
+    rightHeelContactForce = new OpenSim::HuntCrossleyForce(rightContactParams);
+    leftHeelContactForce = new OpenSim::HuntCrossleyForce(leftContactParams);
     rightHeelContactForce->setName("RightHeelContactForce");
-    rightToeContactForce->setName("RightToeContactForce");
     leftHeelContactForce->setName("LeftHeelContactForce");
-    leftToeContactForce->setName("LeftToeContactForce");
     model.addForce(rightHeelContactForce);
-    model.addForce(rightToeContactForce);
     model.addForce(leftHeelContactForce);
-    model.addForce(leftToeContactForce);
 
     // initialize system
     state = model.initSystem();
@@ -148,21 +134,19 @@ void ContactForceBasedPhaseDetector::updGaitPhase() {
 }
 void ContactForceBasedPhaseDetector::updLegPhase() {
     // get contact force values
-    auto rightHeelContactWrench = rightHeelContactForce->getRecordValues(state);
-    auto rightToeContactWrench = rightToeContactForce->getRecordValues(state);
-    auto leftHeelContactWrench = leftHeelContactForce->getRecordValues(state);
-    auto leftToeContactWrench = leftToeContactForce->getRecordValues(state);
+    auto rightContactWrench = rightHeelContactForce->getRecordValues(state);
+    auto leftContactWrench = leftHeelContactForce->getRecordValues(state);
 
     // right/left leg total contact force
-    Vec3 rightLegForce(-rightHeelContactWrench[0] - rightToeContactWrench[0],
-                       -rightHeelContactWrench[1] - rightToeContactWrench[1],
-                       -rightHeelContactWrench[2] - rightToeContactWrench[2]);
-    Vec3 leftLegForce(-leftHeelContactWrench[0] - leftToeContactWrench[0],
-                      -leftHeelContactWrench[1] - leftToeContactWrench[1],
-                      -leftHeelContactWrench[2] - leftToeContactWrench[2]);
+    Vec3 rightLegForce(-rightContactWrench[0],
+                       -rightContactWrench[1],
+                       -rightContactWrench[2]);
+    Vec3 leftLegForce(-leftContactWrench[0],
+                      -leftContactWrench[1],
+                      -leftContactWrench[2]);
 
     // f > threshold
-    double threshold = 60; // todo
+    double threshold = 25; // todo
     auto rightContactValue = rightLegForce.norm() - threshold;
     auto leftContactValue = leftLegForce.norm() - threshold;
 
