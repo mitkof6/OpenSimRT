@@ -20,15 +20,8 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     phaseL = GaitPhaseState::LegPhase::INVALID;
     leadingLeg = GaitPhaseState::LeadingLeg::LEFT; // todo
 
-    double heeSphereRadius = 0.035; // todo
-    double toeSphereRadius = 0.03;  // todo
-
     // platform
-    auto platform = new OpenSim::Body();
-    platform->setName("Platform");
-    platform->setMass(1);
-    platform->setMassCenter(Vec3(0));
-    platform->setInertia(Inertia(0));
+    auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
     platform->attachGeometry(new Brick(Vec3(1, 0.0075, 1))); // todo
     model.addBody(platform);
 
@@ -47,33 +40,31 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     model.addContactGeometry(platformContact);
 
     // contact spheres
+    double heelSphereRadius = 0.035; // todo
+    double toeSphereRadius = 0.03;   // todo
     auto rightHeelContact = new ContactSphere();
-    rightHeelContact->setName("RHeelContact");
-    rightHeelContact->setRadius(heeSphereRadius);
-    rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005)); // todo
-    // rightHeelContact->setOrientation(Vec3(Pi / 2, 0, 0)); // todo
-    rightHeelContact->setBody(model.getBodySet().get("calcn_r"));
-    model.addContactGeometry(rightHeelContact);
     auto leftHeelContact = new ContactSphere();
-    leftHeelContact->setName("LHeelContact");
-    leftHeelContact->setRadius(heeSphereRadius);
-    leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005)); // todo
-    // leftHeelContact->setOrientation(Vec3(Pi / 2, 0, 0)); // todo
-    leftHeelContact->setBody(model.getBodySet().get("calcn_l"));
-    model.addContactGeometry(leftHeelContact);
     auto rightToeContact = new ContactSphere();
-    rightToeContact->setName("RToeContact");
-    rightToeContact->setRadius(toeSphereRadius);
-    rightToeContact->setLocation(Vec3(0.055, 0.008, -0.01)); // todo
-    // rightToeContact->setOrientation(Vec3(Pi / 2, 0, 0)); // todo
-    rightToeContact->setBody(model.getBodySet().get("toes_r"));
-    model.addContactGeometry(rightToeContact);
     auto leftToeContact = new ContactSphere();
-    leftToeContact->setName("LToeContact");
-    leftToeContact->setRadius(toeSphereRadius);
-    leftToeContact->setLocation(Vec3(0.055, 0.008, 0.01)); // todo
-    // leftToeContact->setOrientation(Vec3(Pi / 2, 0, 0)); //todo
+    rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005)); // todo
+    leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005));   // todo
+    rightToeContact->setLocation(Vec3(0.055, 0.008, -0.01));     // todo
+    leftToeContact->setLocation(Vec3(0.055, 0.008, 0.01));       // todo
+    rightHeelContact->setBody(model.getBodySet().get("calcn_r"));
+    leftHeelContact->setBody(model.getBodySet().get("calcn_l"));
+    rightToeContact->setBody(model.getBodySet().get("toes_r"));
     leftToeContact->setBody(model.getBodySet().get("toes_l"));
+    rightHeelContact->setRadius(heelSphereRadius);
+    leftHeelContact->setRadius(heelSphereRadius);
+    rightToeContact->setRadius(toeSphereRadius);
+    leftToeContact->setRadius(toeSphereRadius);
+    rightHeelContact->setName("RHeelContact");
+    leftHeelContact->setName("LHeelContact");
+    rightToeContact->setName("RToeContact");
+    leftToeContact->setName("LToeContact");
+    model.addContactGeometry(rightHeelContact);
+    model.addContactGeometry(leftHeelContact);
+    model.addContactGeometry(rightToeContact);
     model.addContactGeometry(leftToeContact);
 
     // contact parameters values // todo
@@ -134,26 +125,30 @@ ContactForceBasedPhaseDetector::getPhase(const GRFPrediction::Input& input) {
     model.realizeDynamics(state);
     time = input.t;
 
-    // update gait phase
-    updPhase();
+    // update phase
+    updLegPhase();
+    updGaitPhase();
+    return gaitPhase;
+}
+
+void ContactForceBasedPhaseDetector::updGaitPhase() {
     if (phaseR == GaitPhaseState::LegPhase::STANCE &&
         phaseL == GaitPhaseState::LegPhase::STANCE) {
-        return GaitPhaseState::GaitPhase::DOUBLE_SUPPORT;
+        gaitPhase = GaitPhaseState::GaitPhase::DOUBLE_SUPPORT;
 
     } else if (phaseL == GaitPhaseState::LegPhase::SWING &&
                phaseR == GaitPhaseState::LegPhase::STANCE) {
-        return GaitPhaseState::GaitPhase::LEFT_SWING;
+        gaitPhase = GaitPhaseState::GaitPhase::LEFT_SWING;
 
     } else if (phaseR == GaitPhaseState::LegPhase::SWING &&
                phaseL == GaitPhaseState::LegPhase::STANCE) {
-        return GaitPhaseState::GaitPhase::RIGHT_SWING;
+        gaitPhase = GaitPhaseState::GaitPhase::RIGHT_SWING;
 
     } else {
-        return GaitPhaseState::GaitPhase::INVALID;
+        gaitPhase = GaitPhaseState::GaitPhase::INVALID;
     }
 }
-
-void ContactForceBasedPhaseDetector::updPhase() {
+void ContactForceBasedPhaseDetector::updLegPhase() {
     // get contact force values
     auto rightHeelContactWrench = rightHeelContactForce->getRecordValues(state);
     auto rightToeContactWrench = rightToeContactForce->getRecordValues(state);
@@ -195,9 +190,7 @@ ContactForceBasedPhaseDetector::getLeadingLeg() {
     return leadingLeg;
 };
 
-const double ContactForceBasedPhaseDetector::getHeelStrikeTime() {
-    return Ths;
-}
+const double ContactForceBasedPhaseDetector::getHeelStrikeTime() { return Ths; }
 
 void ContactForceBasedPhaseDetector::detectRightHeelStrike() {
     if (phaseR == GaitPhaseState::LegPhase::SWING) {
@@ -228,8 +221,8 @@ GRFPrediction::GRFPrediction(const Model& otherModel)
     // define transition functions for reaction components
     Tds = 0.08; // todo
     auto Tp = 2.0 * Tds / 3.0;
-    k1 = exp(4.0 / 9.0);
-    k2 = k1 * exp(-16.0 / 9.0) / 2.0;
+    auto k1 = exp(4.0 / 9.0);
+    auto k2 = k1 * exp(-16.0 / 9.0) / 2.0;
     reactionComponentTransition = [&](const double& t) -> double {
         return exp(-pow((t / Tds), 3));
     };
@@ -272,7 +265,7 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
     state.updQ() = input.q;
     state.updQDot() = input.qDot;
     state.updQDotDot() = input.qDDot;
-    model.realizeDynamics(state);
+    model.realizeVelocity(state);
 
     // compute body velocities and accelerations
     const auto& matter = model.getMatterSubsystem();
@@ -319,17 +312,21 @@ void GRFPrediction::computeReactionForces(Vec3& rightReactionForce,
         // get body segment
         const auto& body = model.getBodySet()[i];
         const auto& idx = body.getMobilizedBodyIndex();
-        // if (body.getName() == "ground") continue;
 
         // F_ext = sum(m_i * (a_i - g) )
         reactionForce += body.getMass() *
                          (bodyAccelerations[idx][1] - model.getGravity());
+
+        // cout << bodyAccelerations[idx][1] << model.getGravity() << endl; //
+        // todo: find cause of bug!!!!
     }
 
     Vec3 trailingReactionForce, leadingReactionForce;
     if (gaitphase == GaitPhaseState::GaitPhase::DOUBLE_SUPPORT) {
         // double support
         double time = currentTime - gaitPhaseDetector->getHeelStrikeTime();
+
+        // trailing leg force
         trailingReactionForce[0] =
                 reactionForce[0] * reactionComponentTransition(time); // todo
                 // reactionForce[0] * anteriorForceTransition(time);
@@ -338,9 +335,8 @@ void GRFPrediction::computeReactionForces(Vec3& rightReactionForce,
         trailingReactionForce[2] =
                 reactionForce[2] * reactionComponentTransition(time);
 
-        leadingReactionForce[0] = reactionForce[0] - trailingReactionForce[0];
-        leadingReactionForce[1] = reactionForce[1] - trailingReactionForce[1];
-        leadingReactionForce[2] = reactionForce[2] - trailingReactionForce[2];
+        // leading leg force
+        leadingReactionForce = reactionForce - trailingReactionForce;
 
         // assign forces to output
         switch (gaitPhaseDetector->getLeadingLeg()) {

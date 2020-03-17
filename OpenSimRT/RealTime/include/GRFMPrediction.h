@@ -75,7 +75,7 @@ class RealTime_API GRFPrediction {
     TransitionFuction reactionComponentTransition;
     TransitionFuction anteriorForceTransition;
 
-    double currentTime, Tds, k1, k2;
+    double currentTime, Tds;
     SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
     SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
 
@@ -113,7 +113,8 @@ class RealTime_API GaitPhaseDetector {
     GaitPhaseState::LeadingLeg leadingLeg;
     GaitPhaseState::LegPhase phaseR, phaseL;
     GaitPhaseState::GaitPhase gaitPhase;
-    virtual void updPhase() = 0;
+    virtual void updLegPhase() = 0;
+    virtual void updGaitPhase() = 0;
 
 };
 
@@ -127,7 +128,8 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
     const double getHeelStrikeTime();
 
  private:
-    void updPhase() override;
+    void updLegPhase() override;
+    void updGaitPhase() override;
     void detectRightHeelStrike();
     void detectLeftHeelStrike();
 
