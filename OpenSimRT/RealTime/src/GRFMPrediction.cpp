@@ -75,16 +75,16 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     double viscousFriction = 0.6;
 
     // contact parameters
-    auto rightHeelContactParams = new HuntCrossleyForce::ContactParameters(
+    auto rightHeelContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
             stiffness, dissipation, staticFriction, dynamicFriction,
             viscousFriction);
-    auto rightToeContactParams = new HuntCrossleyForce::ContactParameters(
+    auto rightToeContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
             stiffness, dissipation, staticFriction, dynamicFriction,
             viscousFriction);
-    auto leftHeelContactParams = new HuntCrossleyForce::ContactParameters(
+    auto leftHeelContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
             stiffness, dissipation, staticFriction, dynamicFriction,
             viscousFriction);
-    auto leftToeContactParams = new HuntCrossleyForce::ContactParameters(
+    auto leftToeContactParams = new OpenSim::HuntCrossleyForce::ContactParameters(
             stiffness, dissipation, staticFriction, dynamicFriction,
             viscousFriction);
     rightHeelContactParams->addGeometry("RHeelContact");
@@ -97,10 +97,10 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     leftToeContactParams->addGeometry("PlatformContact");
 
     // contact forces
-    rightHeelContactForce = new HuntCrossleyForce(rightHeelContactParams);
-    rightToeContactForce = new HuntCrossleyForce(rightToeContactParams);
-    leftHeelContactForce = new HuntCrossleyForce(leftHeelContactParams);
-    leftToeContactForce = new HuntCrossleyForce(leftToeContactParams);
+    rightHeelContactForce = new OpenSim::HuntCrossleyForce(rightHeelContactParams);
+    rightToeContactForce = new OpenSim::HuntCrossleyForce(rightToeContactParams);
+    leftHeelContactForce = new OpenSim::HuntCrossleyForce(leftHeelContactParams);
+    leftToeContactForce = new OpenSim::HuntCrossleyForce(leftToeContactParams);
     rightHeelContactForce->setName("RightHeelContactForce");
     rightToeContactForce->setName("RightToeContactForce");
     leftHeelContactForce->setName("LeftHeelContactForce");
@@ -117,13 +117,11 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
 GaitPhaseState::GaitPhase
 ContactForceBasedPhaseDetector::getPhase(const GRFPrediction::Input& input) {
     // update model state
-    const auto& coordinateSet = model.getCoordinatesInMultibodyTreeOrder();
-    for (int i = 0; i < coordinateSet.size(); ++i) {
-        coordinateSet[i]->setValue(state, input.q[i]);
-        coordinateSet[i]->setSpeedValue(state, input.qDot[i]);
-    }
+    state.updTime() = input.t;
+    state.updQ() = input.q;
+    state.updQDot() = input.qDot;
+    state.updQDotDot() = input.qDDot;
     model.realizeDynamics(state);
-    time = input.t;
 
     // update phase
     updLegPhase();
@@ -195,14 +193,14 @@ const double ContactForceBasedPhaseDetector::getHeelStrikeTime() { return Ths; }
 void ContactForceBasedPhaseDetector::detectRightHeelStrike() {
     if (phaseR == GaitPhaseState::LegPhase::SWING) {
         leadingLeg = GaitPhaseState::LeadingLeg::RIGHT;
-        Ths = time;
+        Ths = state.getTime();
     }
 }
 
 void ContactForceBasedPhaseDetector::detectLeftHeelStrike() {
     if (phaseL == GaitPhaseState::LegPhase::SWING) {
         leadingLeg = GaitPhaseState::LeadingLeg::LEFT;
-        Ths = time;
+        Ths = state.getTime();
     }
 }
 //==============================================================================
@@ -316,9 +314,6 @@ void GRFPrediction::computeReactionForces(Vec3& rightReactionForce,
         // F_ext = sum(m_i * (a_i - g) )
         reactionForce += body.getMass() *
                          (bodyAccelerations[idx][1] - model.getGravity());
-
-        // cout << bodyAccelerations[idx][1] << model.getGravity() << endl; //
-        // todo: find cause of bug!!!!
     }
 
     Vec3 trailingReactionForce, leadingReactionForce;

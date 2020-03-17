@@ -133,7 +133,7 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
     void detectRightHeelStrike();
     void detectLeftHeelStrike();
 
-    double Ths, time;
+    double Ths;
     OpenSim::Model model;
     SimTK::State state;
 
