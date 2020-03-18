@@ -64,20 +64,18 @@ class RealTime_API GRFPrediction {
     TransitionFuction anteriorForceTransition;
 
     double currentTime, Tds;
-    SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
-    SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
 
     OpenSim::Model model;
     SimTK::State state;
     GaitPhaseState::GaitPhase gaitphase;
     SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
 
-    void computeReactionForces(SimTK::Vec3& rightReactionForce,
-                               SimTK::Vec3& leftReactionForce);
-    void computeReactionMoments(const SimTK::Vec3& rightReactionForce,
-                                const SimTK::Vec3& leftReactionForce,
-                                SimTK::Vec3& rightReactionMoment,
-                                SimTK::Vec3& leftReactionMoment);
+    void seperateReactionComponents(const SimTK::Vec3& totalReactionForce,
+                                    const SimTK::Vec3& totalReactionMoment,
+                                    SimTK::Vec3& rightReactionForce,
+                                    SimTK::Vec3& leftReactionForce,
+                                    SimTK::Vec3& rightReactionMoment,
+                                    SimTK::Vec3& leftReactionMoment);
     void computeReactionPoint(const SimTK::Vec3& rightReactionForce,
                               const SimTK::Vec3& leftReactionForce,
                               const SimTK::Vec3& rightReactionMoment,

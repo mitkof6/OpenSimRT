@@ -29,68 +29,58 @@ right_wrench = read_from_storage(right_wrench_rt_file)
 left_wrench = read_from_storage(left_wrench_rt_file)
 
 
+def plotXYZ(gt_data_frame, est_data_frame, id_gt, id_est, title, y_label):
+    fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(8, 8))
+    for i in range(3):
+        ax[i].plot(gt_data_frame.time, gt_data_frame.iloc[:, i + id_gt],
+                    label='Measured')
+        ax[i].plot(est_data_frame.time, est_data_frame.iloc[:, i + id_est],
+            '--', label='Predicted')
+        ax[i].set_xlabel('time (s)')
+        ax[i].set_ylabel(y_label)
+        ax[i].set_title(est_data_frame.columns[id_est + i] + ' ' + title )
+        ax[i].legend(loc='lower left')
+        ax[i].grid(True)
+
+    fig.tight_layout()
+    pdf.savefig(fig)
+    plt.close()
+
 with PdfPages(results_dir + 'grfm_estimation.pdf') as pdf:
 
     # forces
-    fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(8, 8))
+    # right
+    id_gt = experiment_grf.columns.get_loc("ground_force_vx")
+    id_est = right_wrench.columns.get_loc('f_x')
+    plotXYZ(experiment_grf, right_wrench, id_gt, id_est, 'right', 'force (N)')
 
-    gt_id_r = experiment_grf.columns.get_loc("ground_force_vx")
-    gt_id_l = experiment_grf.columns.get_loc("1_ground_force_vx")
-    wr_id = right_wrench.columns.get_loc('f_x')
-    wl_id = left_wrench.columns.get_loc('f_x')
+    # left
+    id_gt = experiment_grf.columns.get_loc("1_ground_force_vx")
+    id_est = left_wrench.columns.get_loc('f_x')
+    plotXYZ(experiment_grf, left_wrench, id_gt, id_est, 'left', 'force (N)')
 
-    for i in range(3):
-        ax[i].plot(experiment_grf.time, experiment_grf.iloc[:, i + gt_id_r],
-                    label='Measured')
-        ax[i].plot(right_wrench.time, right_wrench.iloc[:, i + wr_id],
-            '--', label='Predicted')
-        ax[i].set_xlabel('time (s)')
-        ax[i].set_ylabel('ground reaction force (N)')
-        ax[i].set_title(experiment_grf.columns[gt_id_r + i])
-        ax[i].legend(loc='lower left')
-        ax[i].grid(True)
-
-    fig.tight_layout()
-    pdf.savefig(fig)
-    plt.close()
-
-    fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(8, 8))
-    for i in range(3):
-        ax[i].plot(experiment_grf.time, experiment_grf.iloc[:, i + gt_id_l],
-                    label='Measured')
-        ax[i].plot(left_wrench.time, left_wrench.iloc[:, i + wl_id],
-            '--', label='Predicted')
-        ax[i].set_xlabel('time (s)')
-        ax[i].set_ylabel('ground reaction force (N)')
-        ax[i].set_title(experiment_grf.columns[gt_id_l + i])
-        ax[i].legend(loc='lower left')
-        ax[i].grid(True)
-
-    fig.tight_layout()
-    pdf.savefig(fig)
-    plt.close()
 
     # # torques
-    # fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(8, 8))
+    # right
+    id_gt = experiment_grf.columns.get_loc("ground_torque_x")
+    id_est = right_wrench.columns.get_loc('tau_x')
+    plotXYZ(experiment_grf, right_wrench, id_gt, id_est,'right', 'moment (Nm)')
 
-    # idx1 = grf_labels.index('ground_torque_x')
-    # idx2 = grf_labels.index('1_ground_torque_x')
-    # idy = grf_est_labels.index('r_ground_torque_x')
-
-    # for i in range(3):
-    #     ax[i].plot(grf_data[:, 0], grf_data[:, i + idx1] + grf_data[:,i + idx2],
-    #                 label='Measured')
-    #     ax[i].plot(grf_est_data[:, 0], grf_est_data[:, i + idy],
-    #         '--', label='Predicted')
-    #     ax[i].set_xlabel('time (s)')
-    #     ax[i].set_ylabel(grf_est_labels[i + idy])
-    #     ax[i].grid(True)
-    #     ax[i].legend()
-
-    # fig.tight_layout()
-    # pdf.savefig(fig)
-    # plt.close()
+    # left
+    id_gt = experiment_grf.columns.get_loc("1_ground_torque_x")
+    id_est = left_wrench.columns.get_loc('tau_x')
+    plotXYZ(experiment_grf, left_wrench, id_gt, id_est, 'left', 'moment (Nm)')
 
 
+    # # point
+    # right
+    id_gt = experiment_grf.columns.get_loc("ground_force_px")
+    id_est = right_wrench.columns.get_loc('p_x')
+    plotXYZ(experiment_grf, right_wrench, id_gt, id_est, 'right', 'coordinate (m)')
+
+    # left
+    id_gt = experiment_grf.columns.get_loc("1_ground_force_px")
+    id_est = left_wrench.columns.get_loc('p_x')
+    plotXYZ(experiment_grf, left_wrench, id_gt, id_est, 'left', 'coordinate (m)')
 
 ##
