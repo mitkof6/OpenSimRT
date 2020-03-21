@@ -1,6 +1,6 @@
 DataType=double
 version=3
-OpenSimVersion=4.0
+OpenSimVersion=4.1
 endheader
 time	pelvis_tilt	pelvis_list	pelvis_rotation	pelvis_tx	pelvis_ty	pelvis_tz	hip_flexion_r	hip_adduction_r	hip_rotation_r	knee_angle_r	ankle_angle_r	hip_flexion_l	hip_adduction_l	hip_rotation_l	knee_angle_l	ankle_angle_l	lumbar_extension	lumbar_bending	lumbar_rotation
 0.2	3.912443983230497	22.44105607371513	8.114285644980159	-0.02301734497460185	0.1517546912743861	-0.2224215434932634	162.8687823354276	-74.94441911620098	-87.46489283408971	-249.6332521936022	-17.49896821705358	-93.5810537723918	44.34213819782703	1.429450217735043	40.68049471355551	41.28370537340808	-1.331809650475347	-16.8957206863785	-35.76172409152648

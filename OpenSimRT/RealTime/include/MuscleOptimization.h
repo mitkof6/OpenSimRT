@@ -8,6 +8,7 @@
 #ifndef MUSCLE_OPTIMIZATION_H
 #define MUSCLE_OPTIMIZATION_H
 
+#include "OpenSimUtils.h"
 #include "internal/RealTimeExports.h"
 
 #include <OpenSim/Simulation/Model/Model.h>
@@ -17,10 +18,6 @@ namespace OpenSimRT {
 
 // forward declaration
 class TorqueBasedTarget;
-
-typedef SimTK::Matrix (*MomentArmFunction)(const SimTK::Vector& q);
-// typedef std::function<SimTK::Matrix(const SimTK::Vector& q)>
-// MomentArmFunction;
 
 /**
  * \brief Solves the muscle optimization problem.
@@ -51,7 +48,7 @@ class RealTime_API MuscleOptimization {
  public:
     MuscleOptimization(const OpenSim::Model& model,
                        const OptimizationParameters& optimizationParameters,
-                       const MomentArmFunction& momentArmFunction);
+                       const MomentArmFunctionT& momentArmFunction);
     Output solve(const Input& input);
     /**
      * Initialize muscle optimization log storage. Use this to create a
@@ -76,10 +73,11 @@ class RealTime_API TorqueBasedTarget : public SimTK::OptimizerSystem {
     SimTK::State state;
     SimTK::Matrix R;
     SimTK::Vector fMax, tau;
-    MomentArmFunction calcMomentArm;
+    MomentArmFunctionT calcMomentArm;
+
  public:
     TorqueBasedTarget(OpenSim::Model* model, int objectiveExponent,
-                      const MomentArmFunction& momentArmFunction);
+                      const MomentArmFunctionT& momentArmFunction);
     void prepareForOptimization(const MuscleOptimization::Input& input);
     SimTK::Vector extractMuscleForces(const SimTK::Vector& x) const;
 

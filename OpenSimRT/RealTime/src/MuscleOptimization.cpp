@@ -33,7 +33,7 @@ MuscleOptimization::MuscleOptimization(
         const Model& modelOther,
         const MuscleOptimization::OptimizationParameters&
                 optimizationParameters,
-        const MomentArmFunction& momentArmFunction)
+        const MomentArmFunctionT& momentArmFunction)
         : model(*modelOther.clone()) {
     // configure optimizer
     target = new TorqueBasedTarget(&model,
@@ -82,7 +82,7 @@ TimeSeriesTable MuscleOptimization::initializeMuscleLogger() {
 /*******************************************************************************/
 
 TorqueBasedTarget::TorqueBasedTarget(Model* model, int objectiveExponent,
-                                     const MomentArmFunction& momentArmFunction)
+                                     const MomentArmFunctionT& momentArmFunction)
         : model(model), p(objectiveExponent), calcMomentArm(momentArmFunction) {
     // number of inequalities (minus pelvis torques, which are non-physiological)
     auto& cs = model->getCoordinateSet();

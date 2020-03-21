@@ -24,47 +24,7 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-#include <OpenSim/Common/LoadOpenSimLibrary.h>
-// necessary for loading dynamic libraries
-#ifdef _WIN32
-#    include <winbase.h>
-#    include <windows.h>
-#else
-#    include <dlfcn.h>
-#endif
-
-// function prototype: SimTK::Matrix calcMomentArm(const SimTK::Vector& q)
-typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
-typedef std::vector<std::string> (*Container)();
-
 void run() {
-    // load library //! FK: had some issues with the path. please ignore
-    auto momentArmLibHandle = OpenSim::LoadOpenSimLibrary("./Gait1992MomentArm", true);
-    if (momentArmLibHandle == nullptr)
-        THROW_EXCEPTION("Library cannot be found.");
-
-    // get function pointer
-#ifdef _WIN32
-    CalcMomentArm calcMomentArm =
-            (CalcMomentArm) GetProcAddress(momentArmLibHandle, "calcMomentArm");
-
-    Container getModelMuscleSymbolicOrder = (Container) GetProcAddress(
-            momentArmLibHandle, "getModelMuscleSymbolicOrder");
-
-    Container getModelCoordinateSymbolicOrder = (Container) GetProcAddress(
-            momentArmLibHandle, "getModelCoordinateSymbolicOrder");
-
-#else
-    CalcMomentArm calcMomentArm =
-            (CalcMomentArm) dlsym(momentArmLibHandle, "calcMomentArm");
-
-    Container getModelMuscleSymbolicOrder = (Container) dlsym(
-            momentArmLibHandle, "getModelMuscleSymbolicOrder");
-
-    Container getModelCoordinateSymbolicOrder = (Container) dlsym(
-            momentArmLibHandle, "getModelCoordinateSymbolicOrder");
-#endif
-
     // subject data
     INIReader ini(INI_FILE);
     auto section = "TEST_SO_FROM_FILE";
@@ -72,6 +32,8 @@ void run() {
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
+
+	auto momentArmLibraryPath = ini.getString(section, "MOMENT_ARM_LIBRARY", "");
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
@@ -85,14 +47,9 @@ void run() {
     Model model(modelFile);
     model.initSystem();
 
-    const auto& coordinateNamesinMBOrder =
-            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
-    auto coordinateNamesinSymbolicOrder = getModelCoordinateSymbolicOrder();
-    ENSURE_ORDER_IN_VECTORS(coordinateNamesinMBOrder, coordinateNamesinSymbolicOrder);
-
-    const auto& muscleNamesinMBOrder = OpenSimUtils::getMuscleNames(model);
-    auto muscleNamesinSymbolicOrder = getModelMuscleSymbolicOrder();
-    ENSURE_ORDER_IN_VECTORS(muscleNamesinMBOrder, muscleNamesinSymbolicOrder);
+	// load and verify moment arm function
+	auto calcMomentArm =
+		OpenSimUtils::getMomentArmFromDynamicLibrary(model, momentArmLibraryPath);
 
     // get kinematics as a table with ordered coordinates
     auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
