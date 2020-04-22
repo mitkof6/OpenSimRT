@@ -15,19 +15,32 @@ using namespace SimTK;
 #define NEWTON_EULER_METHOD
 // #define ID_METHOD
 
-// static Vec3 pointProjectionOnPlane(const Vec3& point, const Vec3&
-// planeOrigin,
-//                                    const Vec3& planeNormal) {
-//     return point - dot(point - planeOrigin, planeNormal) * planeNormal;
-// }
+static Vec3 pointProjectionOnPlane(const Vec3& point, const Vec3& planeOrigin,
+                                   const Vec3& planeNormal) {
+    return point - dot(point - planeOrigin, planeNormal) * planeNormal;
+}
+
+template <typename T>
+void updateState(const T& input, const Model& model, State& state,
+                 const Stage& stage) {
+    const auto& coordinateSet = model.getCoordinatesInMultibodyTreeOrder();
+    for (int i = 0; i < coordinateSet.size(); ++i) {
+        coordinateSet[i]->setValue(state, input.q[i]);
+        coordinateSet[i]->setSpeedValue(state, input.qDot[i]);
+    }
+    state.updTime() = input.t;
+    model.getMultibodySystem().realize(state, stage);
+}
 
 //==============================================================================
 ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
         const Model& otherModel)
-        : model(*otherModel.clone()) {
-    phaseR = GaitPhaseState::LegPhase::INVALID;
-    phaseL = GaitPhaseState::LegPhase::INVALID;
-    leadingLeg = GaitPhaseState::LeadingLeg::LEFT; // todo
+        : model(*otherModel.clone()), Ths(-1), Tto(-1), Tds(-1), Tss(-1) {
+    phaseWindowR.init({GaitPhaseState::LegPhase::INVALID,
+                       GaitPhaseState::LegPhase::INVALID});
+    phaseWindowL.init({GaitPhaseState::LegPhase::INVALID,
+                       GaitPhaseState::LegPhase::INVALID});
+    leadingLeg = GaitPhaseState::LeadingLeg::INVALID;
 
     // platform
     auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
@@ -96,80 +109,124 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     leftContactParams->addGeometry("LToeContact");
 
     // contact forces
-    rightHeelContactForce = new OpenSim::HuntCrossleyForce(rightContactParams);
-    leftHeelContactForce = new OpenSim::HuntCrossleyForce(leftContactParams);
-    rightHeelContactForce->setName("RightHeelContactForce");
-    leftHeelContactForce->setName("LeftHeelContactForce");
-    model.addForce(rightHeelContactForce);
-    model.addForce(leftHeelContactForce);
+    rightContactForce = new OpenSim::HuntCrossleyForce(rightContactParams);
+    leftContactForce = new OpenSim::HuntCrossleyForce(leftContactParams);
+    rightContactForce->setName("RightContactForce");
+    leftContactForce->setName("LeftContactForce");
+    model.addForce(rightContactForce);
+    model.addForce(leftContactForce);
 
     // initialize system
     state = model.initSystem();
 }
 
-GaitPhaseState::GaitPhase
-ContactForceBasedPhaseDetector::getPhase(const GRFPrediction::Input& input) {
+void ContactForceBasedPhaseDetector::updDetector(
+        const GRFPrediction::Input& input) {
     // update model state
-    state.updTime() = input.t;
-    state.updQ() = input.q;
-    state.updQDot() = input.qDot;
-    state.updQDotDot() = input.qDDot;
-    model.realizeDynamics(state);
+    updateState(input, model, state, Stage::Dynamics);
 
-    // update phase
-    updLegPhase();
-    updGaitPhase();
-    return gaitPhase;
+    // update leg phase
+    auto phaseR = updLegPhase(rightContactForce);
+    auto phaseL = updLegPhase(leftContactForce);
+
+    // push to sliding window
+    phaseWindowR.insert(phaseR);
+    phaseWindowL.insert(phaseL);
+
+    // detect HS and TO events - help functions
+    auto detectHS = [&](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
+        return (w.data[0] == GaitPhaseState::LegPhase::SWING &&
+                w.data[1] == GaitPhaseState::LegPhase::STANCE)
+                       ? true
+                       : false;
+    };
+
+    auto detectTO = [&](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
+        return (w.data[0] == GaitPhaseState::LegPhase::STANCE &&
+                w.data[1] == GaitPhaseState::LegPhase::SWING)
+                       ? true
+                       : false;
+    };
+
+    // udpate time constants
+    Tto = (detectTO(phaseWindowR) || detectTO(phaseWindowL)) ? state.getTime()
+                                                             : Tto;
+    Ths = (detectHS(phaseWindowR) || detectHS(phaseWindowL)) ? state.getTime()
+                                                             : Ths;
+    Tds = (Tto > Ths && Ths > 0) ? Tto - Ths : Tds;
+    Tss = (Ths > Tto && Tto > 0) ? Ths - Tto : Tss;
+
+    // udpate leading leg
+    leadingLeg = [&]() {
+        if (detectHS(phaseWindowR))
+            return GaitPhaseState::LeadingLeg::RIGHT;
+        else if (detectHS(phaseWindowL))
+            return GaitPhaseState::LeadingLeg::LEFT;
+        else
+            return leadingLeg; // yield previous value
+    }();
+
+    // update gait phase
+    gaitPhase = updGaitPhase(phaseR, phaseL);
 }
 
-void ContactForceBasedPhaseDetector::updGaitPhase() {
+GaitPhaseState::GaitPhase ContactForceBasedPhaseDetector::updGaitPhase(
+        const GaitPhaseState::LegPhase& phaseR,
+        const GaitPhaseState::LegPhase& phaseL) {
+    GaitPhaseState::GaitPhase phase;
     if (phaseR == GaitPhaseState::LegPhase::STANCE &&
         phaseL == GaitPhaseState::LegPhase::STANCE) {
-        gaitPhase = GaitPhaseState::GaitPhase::DOUBLE_SUPPORT;
+        phase = GaitPhaseState::GaitPhase::DOUBLE_SUPPORT;
 
     } else if (phaseL == GaitPhaseState::LegPhase::SWING &&
                phaseR == GaitPhaseState::LegPhase::STANCE) {
-        gaitPhase = GaitPhaseState::GaitPhase::LEFT_SWING;
+        phase = GaitPhaseState::GaitPhase::LEFT_SWING;
 
     } else if (phaseR == GaitPhaseState::LegPhase::SWING &&
                phaseL == GaitPhaseState::LegPhase::STANCE) {
-        gaitPhase = GaitPhaseState::GaitPhase::RIGHT_SWING;
+        phase = GaitPhaseState::GaitPhase::RIGHT_SWING;
 
     } else {
-        gaitPhase = GaitPhaseState::GaitPhase::INVALID;
+        phase = GaitPhaseState::GaitPhase::INVALID;
     }
+    return phase;
 }
-void ContactForceBasedPhaseDetector::updLegPhase() {
-    // get contact force values
-    auto rightContactWrench = rightHeelContactForce->getRecordValues(state);
-    auto leftContactWrench = leftHeelContactForce->getRecordValues(state);
 
-    // right/left leg total contact force
-    Vec3 rightLegForce(-rightContactWrench[0], -rightContactWrench[1],
-                       -rightContactWrench[2]);
-    Vec3 leftLegForce(-leftContactWrench[0], -leftContactWrench[1],
-                      -leftContactWrench[2]);
+GaitPhaseState::LegPhase ContactForceBasedPhaseDetector::updLegPhase(
+        const OpenSim::HuntCrossleyForce* contact) {
+    // contact force
+    auto contactWrench = contact->getRecordValues(state);
+    Vec3 contactForce(-contactWrench[0], -contactWrench[1], -contactWrench[2]);
 
     // f > threshold
-    double threshold = 25; // todo
-    auto rightContactValue = rightLegForce.norm() - threshold;
-    auto leftContactValue = leftLegForce.norm() - threshold;
+    return [](const double& f) {
+        if (f > 0)
+            return GaitPhaseState::LegPhase::STANCE;
+        else if (f <= 0)
+            return GaitPhaseState::LegPhase::SWING;
+        else
+            return GaitPhaseState::LegPhase::INVALID;
+    }(contactForce.norm() - threshold);
+}
 
-    // monitor and update right leg phase
-    if (rightContactValue > 0) {
-        detectRightHeelStrike();
-        phaseR = GaitPhaseState::LegPhase::STANCE;
-    } else {
-        phaseR = GaitPhaseState::LegPhase::SWING;
-    }
+bool ContactForceBasedPhaseDetector::isDetectorReady() {
+    return (Ths >= 0 && Tto >= 0 && Tds >= 0 && Tss >= 0 &&
+            leadingLeg != GaitPhaseState::LeadingLeg::INVALID &&
+            gaitPhase != GaitPhaseState::GaitPhase::INVALID)
+                   ? true
+                   : false;
+}
 
-    // monitor and update left leg phase
-    if (leftContactValue > 0) {
-        detectLeftHeelStrike();
-        phaseL = GaitPhaseState::LegPhase::STANCE;
-    } else {
-        phaseL = GaitPhaseState::LegPhase::SWING;
-    }
+const double ContactForceBasedPhaseDetector::getHeelStrikeTime() { return Ths; }
+
+const double ContactForceBasedPhaseDetector::getToeOffTime() { return Tto; }
+
+const double ContactForceBasedPhaseDetector::getDoubleSupportDuration() {
+    return Tds;
+}
+
+const double ContactForceBasedPhaseDetector::getSingleSupportDuration() {
+    return Tss;
 }
 
 const GaitPhaseState::LeadingLeg
@@ -177,48 +234,58 @@ ContactForceBasedPhaseDetector::getLeadingLeg() {
     return leadingLeg;
 };
 
-const double ContactForceBasedPhaseDetector::getHeelStrikeTime() { return Ths; }
-
-void ContactForceBasedPhaseDetector::detectRightHeelStrike() {
-    if (phaseR == GaitPhaseState::LegPhase::SWING) {
-        leadingLeg = GaitPhaseState::LeadingLeg::RIGHT;
-        Ths = state.getTime();
-    }
+GaitPhaseState::GaitPhase ContactForceBasedPhaseDetector::getPhase() {
+    return gaitPhase;
 }
 
-void ContactForceBasedPhaseDetector::detectLeftHeelStrike() {
-    if (phaseL == GaitPhaseState::LegPhase::SWING) {
-        leadingLeg = GaitPhaseState::LeadingLeg::LEFT;
-        Ths = state.getTime();
-    }
-}
+//==============================================================================
 //==============================================================================
 
 GRFPrediction::GRFPrediction(const Model& otherModel)
-        : model(*otherModel.clone()), Tds(-1.0) {
+        : model(*otherModel.clone()) {
     // gait phase detector
     gaitPhaseDetector = new ContactForceBasedPhaseDetector(model);
 
-    // disable muscles, otherwise they apply passive forces
+    // add station point to the model
+    heelStationR = new Station(model.getBodySet().get("calcn_r"),
+                               Vec3(0.014, -0.0168, -0.0055));
+    heelStationL = new Station(model.getBodySet().get("calcn_l"),
+                               Vec3(0.014, -0.0168, 0.0055));
+    toeStationR = new Station(model.getBodySet().get("calcn_r"),
+                              Vec3(0.24, -0.0168, -0.00117));
+    toeStationL = new Station(model.getBodySet().get("calcn_l"),
+                              Vec3(0.24, -0.0168, 0.00117));
+    heelStationR->setName("heel_station_point_r");
+    heelStationL->setName("heel_station_point_l");
+    toeStationR->setName("toe_station_point_r");
+    toeStationL->setName("toe_station_point_l");
+    model.addModelComponent(heelStationR);
+    model.addModelComponent(heelStationL);
+    model.addModelComponent(toeStationR);
+    model.addModelComponent(toeStationL);
+
+    // initialize system
     state = model.initSystem();
+
+    // disable muscles, otherwise they apply passive forces
     for (int i = 0; i < model.getMuscles().getSize(); ++i) {
         model.updMuscles()[i].setAppliesForce(state, false);
     }
 
     // define transition functions for reaction components
-    Tds = 0.08; // todo
-    auto Tp = 2.0 * Tds / 3.0;
     auto k1 = exp(4.0 / 9.0);
     auto k2 = k1 * exp(-16.0 / 9.0) / 2.0;
     reactionComponentTransition = [&](const double& t) -> double {
-        return exp(-pow((t / Tds), 3));
+        return exp(-pow((2.0 * t / Tds), 3));
     };
     anteriorForceTransition = [&](const double& t) -> double {
-        return k1 * exp(-pow((t - Tp) / Tds, 2)) - k2 * t / Tds;
+        auto Tp = Tds / 3.0;
+        return k1 * exp(-pow(2.0 * (t - Tp) / Tds, 2)) - 2.0 * k2 * t / Tds;
     };
 
-    // double A, B, K, M, m1, m2, c; // todo
-    // A = 0; B = 50; K = 1; M = 0.3; c = 0.02; m1 = Tds / 2.0; m2 = Tp;
+    // todo. use sigmoid with "bump"
+    // double A, B, K, M, m1, m2, c;
+    // A = 0; B = 50; K = 1; M = 0.3; c = 0.02; m1 = Tds; m2 = Tp;
     // A = 0; K = 1; B = 27.96243188;
     // M = -0.04883987; c = 0.02999439; m1 = 0.11871468; m2 = 0.21028451;
     // anteriorForceTransition = [&](const double& t) -> double {
@@ -244,283 +311,239 @@ Vector GRFPrediction::Output::asVector() {
 vector<GRFPrediction::Output>
 GRFPrediction::solve(const GRFPrediction::Input& input) {
     // update class state variables
-    currentTime = input.t;
-    gaitphase = gaitPhaseDetector->getPhase(input);
+    t = input.t;
+    gaitPhaseDetector->updDetector(input);
 
-    // update model state
-    state.updTime() = input.t;
-    state.updQ() = input.q;
-    state.updQDot() = input.qDot;
-    state.updQDotDot() = input.qDDot;
+    if (gaitPhaseDetector->isDetectorReady()) {
+        // update model state
+        updateState(input, model, state, Stage::Dynamics);
 
-    // realize stage
-    model.realizeDynamics(state);
-    const auto& matter = model.getMatterSubsystem();
+        // get matter subsystem
+        const auto& matter = model.getMatterSubsystem();
 
-    // total forces / moments
-    // =========================================================================
-    // method 1:
-    // =========================================================================
+        // total forces / moments
+        // =========================================================================
+        // method 1:
+        // =========================================================================
 #ifdef ID_METHOD
-    // get applied mobility (generalized) forces generated by components of the
-    // model, like actuators
-    const Vector& appliedMobilityForces =
-            model.getMultibodySystem().getMobilityForces(state,
-                                                         Stage::Dynamics);
+        // get applied mobility (generalized) forces generated by components of
+        // the model, like actuators
+        const Vector& appliedMobilityForces =
+                model.getMultibodySystem().getMobilityForces(state,
+                                                             Stage::Dynamics);
 
-    // get all applied body forces like those from contact
-    const Vector_<SpatialVec>& appliedBodyForces =
-            model.getMultibodySystem().getRigidBodyForces(state,
-                                                          Stage::Dynamics);
+        // get all applied body forces like those from contact
+        const Vector_<SpatialVec>& appliedBodyForces =
+                model.getMultibodySystem().getRigidBodyForces(state,
+                                                              Stage::Dynamics);
 
-    // perform inverse dynamics
-    Vector tau;
-    model.getMultibodySystem()
-            .getMatterSubsystem()
-            .calcResidualForceIgnoringConstraints(state, appliedMobilityForces,
-                                                  appliedBodyForces,
-                                                  input.qDDot, tau);
+        // perform inverse dynamics
+        Vector tau;
+        model.getMultibodySystem()
+                .getMatterSubsystem()
+                .calcResidualForceIgnoringConstraints(
+                        state, appliedMobilityForces, appliedBodyForces,
+                        input.qDDot, tau);
 
-    //==========================================================================
-    // spatial forces/moments in pelvis wrt the ground
-    Vector_<SpatialVec> spatialGenForces;
-    matter.multiplyBySystemJacobian(state, tau, spatialGenForces);
-    const auto& pelvisJoint = model.getJointSet().get("ground_pelvis"); // todo
-    const auto& idx = pelvisJoint.getChildFrame().getMobilizedBodyIndex();
-    const auto& totalReactionForce = spatialGenForces[idx][1];
-    const auto& totalReactionMoment = spatialGenForces[idx][0];
+        //==========================================================================
+        // spatial forces/moments in pelvis wrt the ground
+        Vector_<SpatialVec> spatialGenForces;
+        matter.multiplyBySystemJacobian(state, tau, spatialGenForces);
+        const auto& pelvisJoint =
+                model.getJointSet().get("ground_pelvis"); // todo
+        const auto& idx = pelvisJoint.getChildFrame().getMobilizedBodyIndex();
+        const auto& totalReactionForce = spatialGenForces[idx][1];
+        const auto& totalReactionMoment = spatialGenForces[idx][0];
 #endif
 
-    // =========================================================================
-    // method 2:
-    //==========================================================================
+        // =========================================================================
+        // method 2:
+        //==========================================================================
 #ifdef NEWTON_EULER_METHOD
-    // compute body velocities and accelerations
-    SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
-    SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
-    matter.multiplyBySystemJacobian(state, input.qDot, bodyVelocities);
-    matter.calcBodyAccelerationFromUDot(state, input.qDDot, bodyAccelerations);
+        // compute body velocities and accelerations
+        SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
+        SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
+        matter.multiplyBySystemJacobian(state, input.qDot, bodyVelocities);
+        matter.calcBodyAccelerationFromUDot(state, input.qDDot,
+                                            bodyAccelerations);
 
-    // compute total force / moments
-    Vec3 totalReactionForce, totalReactionMoment;
-    for (int i = 0; i < model.getNumBodies(); ++i) {
-        const auto& body = model.getBodySet()[i];
-        const auto& id = body.getMobilizedBodyIndex();
+        // compute total force / moments
+        Vec3 totalReactionForce, totalReactionMoment;
+        for (int i = 0; i < model.getNumBodies(); ++i) {
+            const auto& body = model.getBodySet()[i];
+            const auto& bix = body.getMobilizedBodyIndex();
 
-        // F_ext = sum(m_i * (a_i - g) )
-        totalReactionForce += body.getMass() *
-                              (bodyAccelerations[id][1] - model.getGravity());
+            // F_ext = sum(m_i * (a_i - g) )
+            totalReactionForce += body.getMass() * (bodyAccelerations[bix][1] -
+                                                    model.getGravity());
 
-        // M_ext = sum( I_i * omega_dot + omega x (I_i * omega)
-        // - sum_j( r_ij x F_ij )) // todo
-        const auto& I = body.getInertia();
-        totalReactionMoment +=
-                I * bodyAccelerations[id][0] +
-                cross(bodyVelocities[id][0], I * bodyVelocities[id][0]);
-    }
+            // M_ext = sum( I_i * omega_dot + omega x (I_i * omega)
+            // - sum_j( r_ij x F_ij )) // todo
+            const auto& I = body.getInertia();
+            totalReactionMoment +=
+                    I * bodyAccelerations[bix][0] +
+                    cross(bodyVelocities[bix][0], I * bodyVelocities[bix][0]);
+        }
 #endif
-    // =========================================================================
+        // =========================================================================
 
-    // cout << state.getTime() << ", " << totalReactionForce[0] << ", "
-    //      << totalReactionForce[1] << ", " << totalReactionForce[2] << ", "
-    //      << totalReactionMoment[0] << ", " << totalReactionMoment[1] << ", "
-    //      << totalReactionMoment[2] << endl;
+        // smooth transition assumption - forces
+        Vec3 rightReactionForce, leftReactionForce;
+        seperateReactionComponents(totalReactionForce,
+                                   reactionComponentTransition, // todo
+                                   reactionComponentTransition,
+                                   rightReactionForce, leftReactionForce);
 
-    // smooth transition assumption
-    Vec3 rightReactionForce, leftReactionForce;
-    Vec3 rightReactionMoment, leftReactionMoment;
-    seperateReactionComponents(totalReactionForce, totalReactionMoment,
-                               rightReactionForce, leftReactionForce,
-                               rightReactionMoment, leftReactionMoment);
+        // smooth transition assumption - moments
+        Vec3 rightReactionMoment, leftReactionMoment;
+        seperateReactionComponents(totalReactionMoment,
+                                   reactionComponentTransition,
+                                   reactionComponentTransition,
+                                   rightReactionMoment, leftReactionMoment);
+        // point
+        Vec3 rightPoint, leftPoint;
+        computeReactionPoint(rightPoint, leftPoint);
 
-    // point
-    Vec3 rightPoint, leftPoint;
-    computeReactionPoint(rightReactionForce, leftReactionForce,
-                         rightReactionMoment, leftReactionMoment, rightPoint,
-                         leftPoint);
+        // results
+        Output rightLegOutput;
+        rightLegOutput.t = input.t;
+        rightLegOutput.force = rightReactionForce;
+        rightLegOutput.moment = rightReactionMoment;
+        rightLegOutput.point = rightPoint;
 
-    // results
-    Output rightLegOutput;
-    rightLegOutput.t = input.t;
-    rightLegOutput.force = rightReactionForce;
-    rightLegOutput.moment = rightReactionMoment;
-    rightLegOutput.point = rightPoint;
+        Output leftLegOutput;
+        leftLegOutput.t = input.t;
+        leftLegOutput.force = leftReactionForce;
+        leftLegOutput.moment = leftReactionMoment;
+        leftLegOutput.point = leftPoint;
 
-    Output leftLegOutput;
-    leftLegOutput.t = input.t;
-    leftLegOutput.force = leftReactionForce;
-    leftLegOutput.moment = leftReactionMoment;
-    leftLegOutput.point = leftPoint;
+        return {rightLegOutput, leftLegOutput};
+    } else {
+        Output rightLegOutput;
+        rightLegOutput.t = input.t;
+        rightLegOutput.force = Vec3(0.0);
+        rightLegOutput.moment = Vec3(0.0);
+        rightLegOutput.point = Vec3(0.0);
 
-    return {rightLegOutput, leftLegOutput};
+        Output leftLegOutput;
+        leftLegOutput.t = input.t;
+        leftLegOutput.force = Vec3(0.0);
+        leftLegOutput.moment = Vec3(0.0);
+        leftLegOutput.point = Vec3(0.0);
+
+        return {rightLegOutput, leftLegOutput};
+    }
 }
 
-void GRFPrediction::seperateReactionComponents(const Vec3& totalReactionForce,
-                                               const Vec3& totalReactionMoment,
-                                               Vec3& rightReactionForce,
-                                               Vec3& leftReactionForce,
-                                               Vec3& rightReactionMoment,
-                                               Vec3& leftReactionMoment) {
-    Vec3 trailingReactionForce, leadingReactionForce;
-    Vec3 trailingReactionMoment, leadingReactionMoment;
-    if (gaitphase == GaitPhaseState::GaitPhase::DOUBLE_SUPPORT) {
-        // double support
-        double time = currentTime - gaitPhaseDetector->getHeelStrikeTime();
+void GRFPrediction::seperateReactionComponents(
+        const Vec3& totalReactionComponent,
+        const TransitionFuction& anteriorComponentFunction,
+        const TransitionFuction& reactionComponentFunction,
+        Vec3& rightReactionComponent, Vec3& leftReactionComponent) {
+    Vec3 trailingReactionComponent, leadingReactionComponent;
+    switch (gaitPhaseDetector->getPhase()) {
+    case GaitPhaseState::GaitPhase::DOUBLE_SUPPORT:
+        double time = t - gaitPhaseDetector->getHeelStrikeTime();
+        Tds = gaitPhaseDetector->getDoubleSupportDuration();
 
-        // trailing leg force
-        trailingReactionForce[0] = totalReactionForce[0] *
-                                   reactionComponentTransition(time); // todo
-        // totalReactionForce[0] * anteriorForceTransition(time);
-        trailingReactionForce[1] =
-                totalReactionForce[1] * reactionComponentTransition(time);
-        trailingReactionForce[2] =
-                totalReactionForce[2] * reactionComponentTransition(time);
+        // trailing leg component
+        trailingReactionComponent[0] =
+                totalReactionComponent[0] * anteriorComponentFunction(time);
+        trailingReactionComponent[1] =
+                totalReactionComponent[1] * reactionComponentFunction(time);
+        trailingReactionComponent[2] =
+                totalReactionComponent[2] * reactionComponentFunction(time);
 
-        // trailing leg moment
-        trailingReactionMoment[0] =
-                totalReactionMoment[0] * reactionComponentTransition(time);
-        trailingReactionMoment[1] =
-                totalReactionMoment[1] * reactionComponentTransition(time);
-        trailingReactionMoment[2] =
-                totalReactionMoment[2] * reactionComponentTransition(time);
-
-        // leading leg force/moment
-        leadingReactionForce = totalReactionForce - trailingReactionForce;
-        leadingReactionMoment = totalReactionMoment - trailingReactionMoment;
+        // leading leg component
+        leadingReactionComponent =
+                totalReactionComponent - trailingReactionComponent;
 
         // assign to output
         switch (gaitPhaseDetector->getLeadingLeg()) {
         case GaitPhaseState::LeadingLeg::RIGHT:
-            rightReactionForce = leadingReactionForce;
-            leftReactionForce = trailingReactionForce;
-            rightReactionMoment = leadingReactionMoment;
-            leftReactionMoment = trailingReactionMoment;
+            rightReactionComponent = leadingReactionComponent;
+            leftReactionComponent = trailingReactionComponent;
             break;
         case GaitPhaseState::LeadingLeg::LEFT:
-            rightReactionForce = trailingReactionForce;
-            leftReactionForce = leadingReactionForce;
-            rightReactionMoment = trailingReactionMoment;
-            leftReactionMoment = leadingReactionMoment;
+            rightReactionComponent = trailingReactionComponent;
+            leftReactionComponent = leadingReactionComponent;
             break;
-        default: cerr << "invalid LeadingLeg state!" << endl; break;
+        default: cerr << "STA: invalid LeadingLeg state!" << endl; break;
         }
 
-    } else if (gaitphase == GaitPhaseState::GaitPhase::LEFT_SWING) {
-        // right stance
-        rightReactionForce = totalReactionForce;
-        rightReactionMoment = totalReactionMoment;
-        leftReactionForce = Vec3(0);
-        leftReactionMoment = Vec3(0);
+        break;
 
-    } else if (gaitphase == GaitPhaseState::GaitPhase::RIGHT_SWING) {
-        // left stance
-        rightReactionForce = Vec3(0);
-        rightReactionMoment = Vec3(0);
-        leftReactionForce = totalReactionForce;
-        leftReactionMoment = totalReactionMoment;
-    } else {
-        // invalid
-        rightReactionForce = Vec3(0);
-        rightReactionMoment = Vec3(0);
-        leftReactionForce = Vec3(0);
-        leftReactionMoment = Vec3(0);
+    case GaitPhaseState::GaitPhase::LEFT_SWING:
+        rightReactionComponent = totalReactionComponent;
+        leftReactionComponent = Vec3(0);
+        break;
+
+    case GaitPhaseState::GaitPhase::RIGHT_SWING:
+        rightReactionComponent = Vec3(0);
+        leftReactionComponent = totalReactionComponent;
+        break;
+
+    default: // Look mom! I'm flying!
+        rightReactionComponent = Vec3(0);
+        leftReactionComponent = Vec3(0);
+        break;
     }
 }
 
-void GRFPrediction::computeReactionPoint(const Vec3& rightReactionForce,
-                                         const Vec3& leftReactionForce,
-                                         const Vec3& rightReactionMoment,
-                                         const Vec3& leftReactionMoment,
-                                         SimTK::Vec3& rightPoint,
+void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
                                          SimTK::Vec3& leftPoint) {
-    // right
-    if (rightReactionForce.isFinite() && rightReactionMoment.isFinite() &&
-        !(rightReactionForce == Vec3(0))) {
-        const auto px_r = rightReactionMoment[0] / rightReactionForce[0];
-        // const auto py_r = rightReactionMoment[1] / rightReactionForce[1];
-        const auto pz_r = rightReactionMoment[2] / rightReactionForce[2];
-        rightPoint = Vec3(px_r, 0, pz_r);
-    } else {
-        rightPoint = Vec3(0);
-    }
+    // get Tss
+    Tss = gaitPhaseDetector->getSingleSupportDuration();
 
-    // left
-    if (leftReactionForce.isFinite() && leftReactionMoment.isFinite() &&
-        !(leftReactionForce == Vec3(0))) {
-        const auto px_l = leftReactionMoment[0] / leftReactionForce[0];
-        // const auto py_l = leftReactionMoment[1] / leftReactionForce[1];
-        const auto pz_l = leftReactionMoment[2] / leftReactionForce[2];
-        leftPoint = Vec3(px_l, 0, pz_l);
-    } else {
-        leftPoint = Vec3(0);
+    // CoP trajectory (linear transition from heel -> metatarsal)
+    auto copPosition = [&](const double& t, const Vec3& d) -> Vec3 {
+        const auto omega = 2.0 * Pi / Tss;
+        return -2.0 * d / (3.0 * Pi) *
+               (sin(omega * t) - 1.0 / 8.0 * sin(2.0 * omega * t) -
+                3.0 / 4.0 * omega * t);
+    };
+
+    // determine gait phase
+    switch (gaitPhaseDetector->getPhase()) {
+    case GaitPhaseState::GaitPhase::DOUBLE_SUPPORT:
+
+        // determine leading / trailing leg
+        switch (gaitPhaseDetector->getLeadingLeg()) {
+        case GaitPhaseState::LeadingLeg::RIGHT:
+            rightPoint = heelStationR->getLocationInGround(state);
+            leftPoint = toeStationL->getLocationInGround(state);
+            break;
+        case GaitPhaseState::LeadingLeg::LEFT:
+            rightPoint = toeStationR->getLocationInGround(state);
+            leftPoint = heelStationL->getLocationInGround(state);
+            break;
+        default: cerr << "CoP: invalid LeadingLeg state!" << endl; break;
+        }
+        break;
+
+    case GaitPhaseState::GaitPhase::LEFT_SWING:
+        const auto d = toeStationR->getLocationInGround(state) -
+                       heelStationR->getLocationInGround(state);
+        auto time = t - gaitPhaseDetector->getToeOffTime();
+
+        leftPoint = toeStationL->getLocationInGround(state);
+        rightPoint =
+                heelStationR->getLocationInGround(state) + copPosition(time, d);
+        break;
+
+    case GaitPhaseState::GaitPhase::RIGHT_SWING:
+        const auto d = toeStationL->getLocationInGround(state) -
+                       heelStationL->getLocationInGround(state);
+        auto time = t - gaitPhaseDetector->getToeOffTime();
+
+        rightPoint = toeStationR->getLocationInGround(state);
+        leftPoint =
+                heelStationL->getLocationInGround(state) + copPosition(time, d);
+        break;
+
+    default:
+        rightPoint = Vec3(0.0);
+        leftPoint = Vec3(0.0);
+        break;
     }
 }
-
-//==============================================================================
-// VelocityBasedPhaseDetector::VelocityBasedPhaseDetector(Model* otherModel)
-// :
-//         model(otherModel) {
-//     phaseR = GaitPhase::Phase::INVALID;
-//     phaseL = GaitPhase::Phase::INVALID;
-
-//     // add station point to the model
-//     heelStationR =
-//         new Station(model->getBodySet().get("calcn_r"), Vec3(0.012,
-//         -0.0015, -0.005));
-//     heelStationL =
-//         new Station(model->getBodySet().get("calcn_l"), Vec3(0.012,
-//         -0.0015, 0.005));
-//     toeStationR =
-//         new Station(model->getBodySet().get("toes_r"), Vec3(0.06, -0.01,
-//         -0.02));
-//     toeStationL =
-//         new Station(model->getBodySet().get("toes_l"), Vec3(0.06, -0.01,
-//         0.02));
-
-//     const auto& pelvisBody = model->getBodySet().get("pelvis");
-//     pelvisStation = new Station(pelvisBody, pelvisBody.getMassCenter());
-
-//     heelStationR->setName("heel_station_point_r");
-//     heelStationL->setName("heel_station_point_l");
-//     toeStationR->setName("toe_station_point_r");
-//     toeStationL->setName("toe_station_point_l");
-//     pelvisStation->setName("pelvis_station_point");
-
-//     model->addModelComponent(heelStationR);
-//     model->addModelComponent(heelStationL);
-//     model->addModelComponent(toeStationR);
-//     model->addModelComponent(toeStationL);
-//     model->addModelComponent(pelvisStation);
-// }
-
-// vector<GaitPhase> VelocityBasedPhaseDetector::getPhase(const
-// SimTK::State& state) {
-//     updPhase(state);
-//     return {phaseR, phaseL};
-// }
-// void VelocityBasedPhaseDetector::updPhase(const SimTK::State& state) {
-//     model->realizeAcceleration(state);
-//     const auto& rHeel = heelStationR->getVelocityInGround(state).norm();
-//     const auto& lHeel = heelStationL->getVelocityInGround(state).norm();
-//     const auto& rToe = toeStationR->getVelocityInGround(state).norm();
-//     const auto& lToe = toeStationL->getVelocityInGround(state).norm();
-//     const auto& pelvis =
-//     pelvisStation->getVelocityInGround(state).norm();
-
-//     double threshold = 20; // todo
-//     // cout << state.getTime() << ", " <<  rHeel << ", " << lHeel << ", "
-//     //      << rToe << ", " << lToe << ", " << pelvis << endl;
-
-//     // // update phase
-//     // if (rHeel > threshold && rToe > threshold) {
-//     //     phaseR = GaitPhase::Phase::SWING;
-//     // } else {
-//     //     phaseR = GaitPhase::Phase::STANCE;
-//     // }
-
-//     // if (lHeel > threshold && lToe > threshold) {
-//     //     phaseL = GaitPhase::Phase::SWING;
-//     // } else {
-//     //     phaseL = GaitPhase::Phase::STANCE;
-//     // }
-// }

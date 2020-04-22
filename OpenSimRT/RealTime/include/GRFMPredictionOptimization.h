@@ -16,12 +16,12 @@ namespace OpenSimRT {
 
 // custom contact force element
 //==============================================================================
-class RealTime_API ContactPointOnPlane {
+class RealTime_API ContactForceActuator {
  public:
-    ContactPointOnPlane();
-    ContactPointOnPlane(const OpenSim::Model& model,
-                        const std::string& bodyName, const SimTK::Vec3& point,
-                        const std::string& aName);
+    ContactForceActuator();
+    ContactForceActuator(const OpenSim::Model& model,
+                         const std::string& bodyName, const SimTK::Vec3& point,
+                         const std::string& aName);
 
     SimTK::Vector getMaxMultipliers() const;
     SimTK::Vector getMinMultipliers() const;
@@ -56,9 +56,8 @@ class RealTime_API ContactPointOnPlane {
  protected:
     SimTK::Vector maxMultipliers;
     SimTK::Vector minMultipliers;
-    const OpenSim::Body* planeBody;
-    const OpenSim::Body* pointBody;
-    mutable double distance, velocity;
+    SimTK::ReferencePtr<const OpenSim::Body> planeBody;
+    SimTK::ReferencePtr<const OpenSim::Body> pointBody;
 };
 
 // target forward declaration
@@ -79,9 +78,10 @@ class RealTime_API ContactForceAnalysis {
     };
     struct Output {
         double t;
+        SimTK::Vec3 point;
         SimTK::Vec3 force;
         SimTK::Vec3 moment;
-        SimTK::Vec3 point;
+        SimTK::Vector asVector();
     };
     struct Parameters {
         double convergence_tolerance;
@@ -90,13 +90,13 @@ class RealTime_API ContactForceAnalysis {
 
     ContactForceAnalysis(const OpenSim::Model& otherModel,
                          const Parameters& optimizationParameters);
-    void solve(const Input& input);
+    std::vector<Output> solve(const Input& input);
 
  private:
     int numContactMultipliers;
     OpenSim::Model model;
     SimTK::Vector parameterSeeds;
-    std::vector<ContactPointOnPlane*> contacts;
+    std::vector<ContactForceActuator*> contacts;
     SimTK::ReferencePtr<SimTK::Optimizer> optimizer;
     SimTK::ReferencePtr<ContactForceAnalysisTarget> problem;
 };
@@ -110,7 +110,7 @@ class RealTime_API ContactForceAnalysisTarget : public SimTK::OptimizerSystem {
 
     void initParameters(SimTK::Vector& parameterSeeds) const;
     void prepareForOptimization(const ContactForceAnalysis::Input& input) const;
-    SimTK::String printPerformance(const SimTK::Vector& parameters) const;
+    SimTK::Vector_<SimTK::SpatialVec> getForces(const SimTK::Vector& parameters) const;
     SimTK::Vector_<SimTK::SpatialVec>
     getContactForces(const SimTK::State& state,
                      const SimTK::Vector& multipliers) const;
@@ -126,12 +126,12 @@ class RealTime_API ContactForceAnalysisTarget : public SimTK::OptimizerSystem {
                      SimTK::Vector& gradient) const override;
 
  private:
-    mutable SimTK::Vector qdd;
+    mutable SimTK::Vector tau;
     mutable SimTK::State state;
 
     SimTK::ReferencePtr<OpenSim::Model> model;
     SimTK::ReferencePtr<ContactForceAnalysis> analysis;
-    std::multimap<std::string, ContactPointOnPlane*> contactsPerBodyMap;
+    std::multimap<std::string, ContactForceActuator*> contactsPerBodyMap;
 };
 
 } // namespace OpenSimRT

@@ -41,9 +41,9 @@ void run() {
     Model model(modelFile);
     model.initSystem();
 
-    // // setup external forces
-    // auto grfRightLogger = ExternalWrench::initializeLogger();
-    // auto grfLeftLogger = ExternalWrench::initializeLogger();
+    // setup external forces
+    auto grfRightLogger = ExternalWrench::initializeLogger();
+    auto grfLeftLogger = ExternalWrench::initializeLogger();
 
     // get kinematics as a table with ordered coordinates
     auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
@@ -65,7 +65,7 @@ void run() {
     ContactForceAnalysis grfm(model, parameters);
 
     // visualizer
-    // BasicModelVisualizer visualizer(model);
+    BasicModelVisualizer visualizer(model);
     // auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
     // visualizer.addDecorationGenerator(rightGRFDecorator);
     // auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
@@ -88,28 +88,27 @@ void run() {
         }
 
         // perform grfm prediction
-        grfm.solve({ikFiltered.t, q, qDot, qDDot});
+        auto grfmOutput = grfm.solve({ikFiltered.t, q, qDot, qDDot});
 
         // visualization
-        // visualizer.update(q);
+        visualizer.update(q);
         // rightGRFDecorator->update(grfRightWrench.point, grfRightWrench.force);
         // leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
 
         // log data (use filter time to align with delay)
-        // grfmLogger.appendRow(ikFiltered.t, grfmOutput[0]);
-        // grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
-        // grfLeftLogger.appendRow(grfmOutput[1].t, ~grfmOutput[1].asVector());
+        grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
+        grfLeftLogger.appendRow(grfmOutput[1].t, ~grfmOutput[1].asVector());
 
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
-//     // store results
-//     STOFileAdapter::write(grfRightLogger,
-//                           subjectDir +
-//                                   "real_time/grfm_prediction/wrench_right.sto");
-//     STOFileAdapter::write(grfLeftLogger,
-//                           subjectDir +
-//                                   "real_time/grfm_prediction/wrench_left.sto");
+    // store results
+    STOFileAdapter::write(grfRightLogger,
+                          subjectDir +
+                                  "real_time/grfm_prediction/wrench_right.sto");
+    STOFileAdapter::write(grfLeftLogger,
+                          subjectDir +
+                                  "real_time/grfm_prediction/wrench_left.sto");
 }
 
 int main(int argc, char* argv[]) {

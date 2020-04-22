@@ -38,14 +38,25 @@ Vector multiplyByJacobianT(const State& state, const Model& model,
     return generalizedForces;
 }
 
+template <typename T>
+void updateState(const T& input, const Model& model, State& state,
+                 const Stage& stage) {
+    const auto& coordinateSet = model.getCoordinatesInMultibodyTreeOrder();
+    for (int i = 0; i < coordinateSet.size(); ++i) {
+        coordinateSet[i]->setValue(state, input.q[i]);
+        coordinateSet[i]->setSpeedValue(state, input.qd[i]);
+    }
+    model.getMultibodySystem().realize(state, stage);
+}
+
 //==============================================================================
 
-ContactPointOnPlane::ContactPointOnPlane() {
+ContactForceActuator::ContactForceActuator() {
     name = "contact_force_element";
     optimal_force = 100.0;
     static_friction = 0.8;
     kinetic_friction = 0.5;
-    contact_tolerance = -1.0;
+    contact_tolerance = 0;
     contact_transition_zone = 0.01;
     v_trans = 0.1;
 
@@ -57,62 +68,63 @@ ContactPointOnPlane::ContactPointOnPlane() {
     point_location = Vec3(0, 0, 0);
 
     minMultipliers.resize(getNumMultipliers());
-    minMultipliers[0] = 0;         // normal component
-    minMultipliers[1] = -Infinity; // shear 1
-    minMultipliers[2] = -Infinity; // shear 2
+    minMultipliers = Vector(3, 0.0);
     maxMultipliers.resize(getNumMultipliers());
-    maxMultipliers = Infinity; // all componentes
+    maxMultipliers = Vector(3, 1.0);
     planeBody = nullptr;
     pointBody = nullptr;
-    distance = 0;
-    velocity = 0;
 }
 
-ContactPointOnPlane::ContactPointOnPlane(const Model& model,
-                                         const std::string& bodyName,
-                                         const Vec3& point,
-                                         const std::string& aName)
-        : ContactPointOnPlane() {
+ContactForceActuator::ContactForceActuator(const Model& model,
+                                           const std::string& bodyName,
+                                           const Vec3& point,
+                                           const std::string& aName)
+        : ContactForceActuator() {
     point_body = bodyName;
     point_location = point;
     name = aName;
-    pointBody = &model.getBodySet().get(bodyName);
-    planeBody = &model.getBodySet().get("Platform");
+    pointBody =
+            ReferencePtr<const OpenSim::Body>(model.getBodySet().get(bodyName));
+    planeBody = ReferencePtr<const OpenSim::Body>(
+            model.getBodySet().get("Platform"));
 }
 
-std::string ContactPointOnPlane::getName() const { return name; }
+std::string ContactForceActuator::getName() const { return name; }
 
-void ContactPointOnPlane::setName(const std::string& otherName) {
+void ContactForceActuator::setName(const std::string& otherName) {
     name = otherName;
 }
 
-Vector ContactPointOnPlane::getMaxMultipliers() const { return maxMultipliers; }
+Vector ContactForceActuator::getMaxMultipliers() const {
+    return maxMultipliers;
+}
 
-Vector ContactPointOnPlane::getMinMultipliers() const { return minMultipliers; }
+Vector ContactForceActuator::getMinMultipliers() const {
+    return minMultipliers;
+}
 
-double ContactPointOnPlane::getOptimalForce() const { return optimal_force; }
+double ContactForceActuator::getOptimalForce() const { return optimal_force; }
 
-void ContactPointOnPlane::setOptimalForce(double force) {
+void ContactForceActuator::setOptimalForce(double force) {
     optimal_force = force;
 }
 
-int ContactPointOnPlane::getNumMultipliers() { return 3; }
+int ContactForceActuator::getNumMultipliers() { return 3; }
 
-int ContactPointOnPlane::getNumMultiplierConstraints() { return 4; }
+int ContactForceActuator::getNumMultiplierConstraints() { return 4; }
 
-void ContactPointOnPlane::computeForceVectors(
+void ContactForceActuator::computeForceVectors(
         const State& state, const Vector& multipliers, Vec3& f_on_plane,
-        Vec3& f_on_point, Vec3& station_on_planeBody,
-        Vec3& station_on_pointBody) const {
-
+        Vec3& f_on_point, Vec3& station_on_plane, Vec3& station_on_body) const {
     // calculate force directions with respect to plane in ground frame
-    const UnitVec3 normal(planeBody->expressVectorInGround(state, plane_normal));
+    const UnitVec3 normal(
+            planeBody->expressVectorInGround(state, plane_normal));
     // calculate arbitrary vector that is perpendicular to plane normal
     const UnitVec3 shear1 = normal.perp();
     const UnitVec3 shear2 = UnitVec3(normal % shear1);
 
     // transform contact point into ground frame (=force station for pointBody)
-    station_on_pointBody =
+    station_on_body =
             pointBody->findStationLocationInGround(state, point_location);
 
     // transform plane origin into ground frame
@@ -120,11 +132,10 @@ void ContactPointOnPlane::computeForceVectors(
             planeBody->findStationLocationInGround(state, plane_origin);
 
     // compute contact point to contact plane distance
-    distance = std::abs(~(station_on_pointBody - p_origin) * normal);
+    const auto distance = ~(station_on_body - p_origin) * normal;
 
-    // calculate orthogonal projection of the contact point onto the contact
-    // plane (=force station for planeBody)
-    station_on_planeBody = station_on_pointBody - distance * normal;
+    // projection of contact point onto contact plane
+    station_on_plane = station_on_body - distance * normal;
 
     // compute relative in-plane velocity of contact point
     const Vec3 point_vel = pointBody->getVelocityInGround(state)[1];
@@ -133,62 +144,35 @@ void ContactPointOnPlane::computeForceVectors(
 
     // project v_rel into plane
     const Vec3 v_rel_in_plane = v_rel - normal * (~v_rel * normal);
-    velocity = v_rel_in_plane.norm();
+    const auto velocity = v_rel_in_plane.norm();
 
     // compute reference contact strength (depending on point to plane distance)
     double force_ref = 0;
-    if (contact_tolerance < 0) // negative values ==> distance has no effect
+    if (contact_tolerance < 0 ||
+        distance < 0) // negative values ==> distance has no effect
         force_ref = optimal_force;
-    else if (distance <= contact_tolerance + contact_transition_zone) {
-        const double arg = (-2.0 * (distance - contact_tolerance) +
+    else if (distance > 0 &&
+             distance <= contact_tolerance + contact_transition_zone) {
+        const double arg = (-2.0 * (std::abs(distance) - contact_tolerance) +
                             contact_transition_zone) /
                            contact_transition_zone;
         force_ref = 0.5 * optimal_force * (1 + std::tanh(arg * Pi));
     }
 
-    // detect if we are in the static or in the kinetic regime, if so: caculate
-    // force on plane body (normal component in opposite direction of plane
-    // normal!)
+    // detect if we are in the static or in the kinetic regime
     if (velocity <= v_trans) {
-        f_on_plane = (-multipliers[0] * normal + multipliers[1] * shear1 +
-                           multipliers[2] * shear2) *
-                          force_ref;
+        f_on_plane = (-multipliers[0] * shear1 + multipliers[1] * normal +
+                      multipliers[2] * shear2) *
+                     force_ref;
     } else {
-        // shear force in opposite direction of in-plane velocity
         const Vec3 shear =
-                multipliers[0] * kinetic_friction * v_rel_in_plane.normalize();
-        // total force
-        f_on_plane = (-multipliers[0] * normal + shear) * force_ref;
+                multipliers[1] * kinetic_friction * v_rel_in_plane.normalize();
+        f_on_plane = (-multipliers[1] * normal + shear) * force_ref;
     }
 
     // force on point body acts along the opposite direction
     f_on_point = -f_on_plane;
 }
-
-
-// void ContactPointOnPlane::computeForceVectors(
-//         const State& state, const Vector& multipliers, Vec3& f_on_plane,
-//         Vec3& f_on_point, Vec3& station_on_planeBody,
-//         Vec3& station_on_pointBody) const {
-
-//     // calculate force directions with respect to plane in ground frame
-//     const UnitVec3 normal(0, 1, 0); // y
-
-//     // transform contact point into ground frame (=force station for pointBody)
-//     station_on_pointBody =
-//             pointBody->findStationLocationInGround(state, point_location);
-
-//     // transform plane origin into ground frame
-//     const Vec3 p_origin =
-//             planeBody->findStationLocationInGround(state, plane_origin);
-
-//     // projection of the contact point onto the contact  plane
-//     distance = std::abs(~(station_on_pointBody - p_origin) * normal);
-//     station_on_planeBody = station_on_pointBody - distance * normal;
-
-//     f_on_plane = multipliers * optimal_force;
-//     f_on_point = -f_on_plane;
-// }
 
 //==============================================================================
 
@@ -206,11 +190,64 @@ ContactForceAnalysis::ContactForceAnalysis(const Model& otherModel,
             Vec3(-0.6, -0.035, 0), Vec3(0)); // todo
     model.addJoint(platformToGround);
 
-    // create contact force elements // todo
-    contacts.push_back(
-            new ContactPointOnPlane(model, "calcn_r", Vec3(0, 0, 0), "HeelR"));
-    contacts.push_back(
-            new ContactPointOnPlane(model, "calcn_l", Vec3(0, 0, 0), "HeelL"));
+    // contact force elements
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.0133, -0.0423, 0.0054), "heel_lat_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.0133, -0.0423, -0.015), "heel_med_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.0805, -0.0173, 0.0268), "mid_lat_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.11, -0.0173, -0.03), "mid_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.176, -0.029, -0.029), "met_1_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.174, -0.028, -0.002), "met_2_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.166, -0.028, 0.0168), "met_3_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.152, -0.028, 0.029), "met_4_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.1435, -0.028, 0.044), "met_5_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.233, -0.02, -0.0187), "toe_1_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.247, -0.02, 0.0133), "toe_2_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.23, -0.02, 0.028), "toe_3_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.21, -0.02, 0.04), "toe_4_r"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_r", Vec3(0.197, -0.02, 0.052), "toe_5_r"));
+
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.0133, -0.0423, -0.0054), "heel_lat_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.0133, -0.0423, 0.015), "heel_med_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.0805, -0.0173, -0.0268), "mid_lat_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.11, -0.0173, 0.03), "mid_med_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.176, -0.029, 0.029), "met_1_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.174, -0.028, 0.002), "met_2_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.166, -0.028, -0.0168), "met_3_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.152, -0.028, -0.029), "met_4_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.1435, -0.028, -0.044), "met_5_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.233, -0.02, 0.0187), "toe_1_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.247, -0.02, -0.0133), "toe_2_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.23, -0.02, -0.028), "toe_3_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.21, -0.02, -0.04), "toe_4_l"));
+    contacts.push_back(new ContactForceActuator(
+            model, "calcn_l", Vec3(0.197, -0.02, -0.052), "toe_5_l"));
 
     // number of multipliers and constraints
     for (int i = 0; i < contacts.size(); ++i) {
@@ -222,31 +259,66 @@ ContactForceAnalysis::ContactForceAnalysis(const Model& otherModel,
 
     // create optimizer
     const OptimizerAlgorithm algorithm = OptimizerAlgorithm::InteriorPoint;
-    Optimizer* optimizer = new Optimizer(*problem, algorithm);
+    optimizer = new Optimizer(*problem, algorithm);
     optimizer->setConvergenceTolerance(parameters.convergence_tolerance);
     optimizer->setConstraintTolerance(parameters.constraint_tolerance);
     optimizer->setMaxIterations(300);
-    optimizer->setDiagnosticsLevel(3);
-    optimizer->useNumericalGradient(true);
+    optimizer->setDiagnosticsLevel(0);
+    optimizer->useNumericalGradient(false);
     optimizer->useNumericalJacobian(true);
     optimizer->setLimitedMemoryHistory(100);
     optimizer->setAdvancedBoolOption("warm_start", true);
-    // optimizer->setAdvancedRealOption("expect_infeasible_problem", false);
+    optimizer->setAdvancedRealOption("expect_infeasible_problem", false);
     optimizer->setAdvancedRealOption("obj_scaling_factor", 1);
-    // optimizer->setAdvancedRealOption("nlp_scaling_max_gradient", 1);
+    optimizer->setAdvancedRealOption("nlp_scaling_max_gradient", 1);
     optimizer->setAdvancedStrOption("nlp_scaling_method", "none");
     problem->initParameters(parameterSeeds);
 }
 
-void ContactForceAnalysis::solve(const Input& input) {
+Vector ContactForceAnalysis::Output::asVector() {
+    auto output = Vector(9);
+    output[0] = point[0];
+    output[1] = point[1];
+    output[2] = point[2];
+    output[3] = force[0];
+    output[4] = force[1];
+    output[5] = force[2];
+    output[6] = moment[0];
+    output[7] = moment[1];
+    output[8] = moment[2];
+    return output;
+}
+
+std::vector<ContactForceAnalysis::Output>
+ContactForceAnalysis::solve(const Input& input) {
     try {
         problem->prepareForOptimization(input);
         optimizer->optimize(parameterSeeds);
-        std::cout << "time=" << time << " "
-                  << problem->printPerformance(parameterSeeds) << std::endl;
     } catch (SimTK::Exception::OptimizerFailed& e) {
-        std::cerr << "time=" << time << " optimization failed!" << std::endl;
+        // std::cerr << e.what() << std::endl;
     }
+
+    auto grf = problem->getForces(parameterSeeds);
+    auto mixR = model.getBodySet().get("calcn_r").getMobilizedBodyIndex();
+    auto mixL = model.getBodySet().get("calcn_l").getMobilizedBodyIndex();
+
+    const auto& rightReactionForce = grf[mixR][1];
+    const auto& leftReactionForce = grf[mixL][1];
+
+    // results
+    Output rightLegOutput;
+    rightLegOutput.t = input.t;
+    rightLegOutput.force = rightReactionForce;
+    rightLegOutput.moment = Vec3(0);
+    rightLegOutput.point = Vec3(0);
+
+    Output leftLegOutput;
+    leftLegOutput.t = input.t;
+    leftLegOutput.force = leftReactionForce;
+    leftLegOutput.moment = Vec3(0);
+    leftLegOutput.point = Vec3(0);
+
+    return {rightLegOutput, leftLegOutput};
 }
 
 //==============================================================================
@@ -277,7 +349,7 @@ ContactForceAnalysisTarget::ContactForceAnalysisTarget(
 
     // set limits
     Vector lb(getNumParameters()), ub(getNumParameters());
-    const int numMult = ContactPointOnPlane::getNumMultipliers();
+    const int numMult = ContactForceActuator::getNumMultipliers();
     int rowOffset = 0;
     for (int i = 0; i < analysis->contacts.size(); ++i) {
         lb(rowOffset, numMult) = analysis->contacts[i]->getMinMultipliers();
@@ -289,31 +361,37 @@ ContactForceAnalysisTarget::ContactForceAnalysisTarget(
 
 void ContactForceAnalysisTarget::prepareForOptimization(
         const ContactForceAnalysis::Input& input) const {
-
     // update state
-    state.updQ() = input.q;
-    state.updQDot() = input.qd;
-    state.updQDotDot() = input.qdd;
-    model->realizeDynamics(state);
+    updateState(input, *model, state, Stage::Dynamics);
 
-    // update accelerations
-    qdd = input.qdd;
+    // get applied mobility (generalized) forces
+    const Vector& appliedMobilityForces =
+            model->getMultibodySystem().getMobilityForces(state,
+                                                          Stage::Dynamics);
+
+    // get all applied body forces, e.g. gravity
+    const Vector_<SpatialVec>& appliedBodyForces =
+            model->getMultibodySystem().getRigidBodyForces(state,
+                                                           Stage::Dynamics);
+    // tau = M*(q) * q'' + C(q, q') + G(q)
+    model->getMultibodySystem()
+            .getMatterSubsystem()
+            .calcResidualForceIgnoringConstraints(state, appliedMobilityForces,
+                                                  appliedBodyForces, input.qdd,
+                                                  tau);
 }
 
 void ContactForceAnalysisTarget::initParameters(Vector& parameters) const {
     // ToDo: initialize to meaningful values e.g. between lb and ub.
-    parameters = 0;
+    parameters = Vector(getNumParameters(), 0.0);
 }
 
 int ContactForceAnalysisTarget::constraintFunc(const Vector& parameters,
                                                bool new_parameters,
                                                Vector& errors) const {
-    Vector Mqdd;
-    model->getMatterSubsystem().multiplyByM(state, qdd, Mqdd);
-
-    // M*(q) * q'' + C(q, q') + G(q) + E(lambda) = 0
-    errors = Mqdd + calcCoriolis(state, *model) + calcGravity(state, *model) +
-             multiplyByJacobianT(state, *model, getContactForces(state, parameters));
+    // tau + E(lambda) = 0
+    errors = tau + multiplyByJacobianT(state, *model,
+                                       getContactForces(state, parameters));
     return 0;
 }
 
@@ -339,12 +417,13 @@ int ContactForceAnalysisTarget::gradientFunc(const Vector& parameters,
 }
 
 Vector_<SpatialVec>
-ContactForceAnalysisTarget::getContactForces(const State& state, const Vector& multipliers) const {
+ContactForceAnalysisTarget::getContactForces(const State& state,
+                                             const Vector& multipliers) const {
     Vector_<SpatialVec> appliedContactForces;
     Vec3 F_plane, F_point, P_plane, P_point;
     appliedContactForces.resize(model->getNumBodies() + 1); // +1 for ground
 
-    const int numMult = ContactPointOnPlane::getNumMultipliers();
+    const int numMult = ContactForceActuator::getNumMultipliers();
     int rowOffset = 0;
     for (int i = 0; i < model->getBodySet().getSize(); ++i) {
         const auto& body = model->getBodySet()[i];
@@ -361,21 +440,14 @@ ContactForceAnalysisTarget::getContactForces(const State& state, const Vector& m
                         F_point, P_plane, P_point);
                 rowOffset += numMult;
                 appliedContactForces[mix][0] += Vec3(0); // todo
-                appliedContactForces[mix][1] += F_plane;
+                appliedContactForces[mix][1] += F_point;
             }
         }
     }
     return appliedContactForces;
 }
 
-String
-ContactForceAnalysisTarget::printPerformance(const Vector& parameters) const {
-    double objective;
-    Vector errors(getNumConstraints());
-    objectiveFunc(parameters, true, objective);
-    constraintFunc(parameters, true, errors);
-    std::stringstream ss;
-    ss << "performance=" << objective
-       << " constraint violation=" << sqrt(~errors * errors);
-    return ss.str();
+SimTK::Vector_<SimTK::SpatialVec>
+ContactForceAnalysisTarget::getForces(const Vector& parameters) const {
+    return getContactForces(state, parameters);
 }

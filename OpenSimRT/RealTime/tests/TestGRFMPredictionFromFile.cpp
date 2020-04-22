@@ -69,7 +69,8 @@ void run() {
 
     // // setup external forces
     // ExternalWrench::Parameters grfRightFootPar{
-    //         grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
+    //         grfRightApplyBody, grfRightForceExpressed,
+    //         grfRightPointExpressed};
     // auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
     //         grfRightPointIdentifier, grfRightForceIdentifier,
     //         grfRightTorqueIdentifier);
@@ -105,11 +106,11 @@ void run() {
     GRFPrediction grfm(model);
 
     // visualizer
-    // BasicModelVisualizer visualizer(model);
-    // auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-    // visualizer.addDecorationGenerator(rightGRFDecorator);
-    // auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-    // visualizer.addDecorationGenerator(leftGRFDecorator);
+    BasicModelVisualizer visualizer(model);
+    auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+    visualizer.addDecorationGenerator(rightGRFDecorator);
+    auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+    visualizer.addDecorationGenerator(leftGRFDecorator);
 
     // loop through kinematic frames
     for (int i = 0; i < qTable.getNumRows(); i++) {
@@ -131,16 +132,16 @@ void run() {
         auto grfmOutput = grfm.solve({ikFiltered.t, q, qDot, qDDot});
 
         // visualization
-        // visualizer.update(q);
-        // rightGRFDecorator->update(grfRightWrench.point, grfRightWrench.force);
-        // leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
+        visualizer.update(q);
+        rightGRFDecorator->update(grfmOutput[0].point, grfmOutput[0].force);
+        leftGRFDecorator->update(grfmOutput[1].point, grfmOutput[1].force);
 
         // log data (use filter time to align with delay)
         // grfmLogger.appendRow(ikFiltered.t, grfmOutput[0]);
         grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
         grfLeftLogger.appendRow(grfmOutput[1].t, ~grfmOutput[1].asVector());
 
-        // this_thread::sleep_for(chrono::milliseconds(10));
+        this_thread::sleep_for(chrono::milliseconds(16));
     }
 
     // store results
