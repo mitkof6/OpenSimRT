@@ -7,11 +7,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 ##
 # data
 
-subject_dir = os.path.abspath('../')
-experiment_dir = os.path.join(subject_dir, 'experimental_data/')
-results_dir = os.path.join(subject_dir, 'real_time/grfm_prediction/')
+subject_dir = os.path.abspath('../TR_3/')
+experiment_dir = os.path.join(subject_dir, '')
+results_dir = os.path.join(subject_dir, 'results_rt/grfm_prediction/')
 
-experiment_grf_file = os.path.join(experiment_dir, 'task_grf.mot')
+experiment_grf_file = os.path.join(experiment_dir, 'TR_3_GRF.mot')
 right_wrench_rt_file = os.path.join(results_dir, 'wrench_right.sto')
 left_wrench_rt_file = os.path.join(results_dir, 'wrench_left.sto')
 
@@ -50,36 +50,36 @@ with PdfPages(results_dir + 'grfm_estimation.pdf') as pdf:
 
     # forces
     # right
-    id_gt = experiment_grf.columns.get_loc("ground_force_vx")
+    id_gt = experiment_grf.columns.get_loc("r_ground_force_vx")
     id_est = right_wrench.columns.get_loc('f_x')
     plotXYZ(experiment_grf, right_wrench, id_gt, id_est, 'right', 'force (N)')
 
     # left
-    id_gt = experiment_grf.columns.get_loc("1_ground_force_vx")
+    id_gt = experiment_grf.columns.get_loc("l_ground_force_vx")
     id_est = left_wrench.columns.get_loc('f_x')
     plotXYZ(experiment_grf, left_wrench, id_gt, id_est, 'left', 'force (N)')
 
 
     # # torques
     # right
-    id_gt = experiment_grf.columns.get_loc("ground_torque_x")
+    id_gt = experiment_grf.columns.get_loc("r_ground_torque_x")
     id_est = right_wrench.columns.get_loc('tau_x')
     plotXYZ(experiment_grf, right_wrench, id_gt, id_est,'right', 'moment (Nm)')
 
     # left
-    id_gt = experiment_grf.columns.get_loc("1_ground_torque_x")
+    id_gt = experiment_grf.columns.get_loc("l_ground_torque_x")
     id_est = left_wrench.columns.get_loc('tau_x')
     plotXYZ(experiment_grf, left_wrench, id_gt, id_est, 'left', 'moment (Nm)')
 
 
     # # point
     # right
-    id_gt = experiment_grf.columns.get_loc("ground_force_px")
+    id_gt = experiment_grf.columns.get_loc("r_ground_force_px")
     id_est = right_wrench.columns.get_loc('p_x')
     plotXYZ(experiment_grf, right_wrench, id_gt, id_est, 'right', 'coordinate (m)')
 
     # left
-    id_gt = experiment_grf.columns.get_loc("1_ground_force_px")
+    id_gt = experiment_grf.columns.get_loc("l_ground_force_px")
     id_est = left_wrench.columns.get_loc('p_x')
     plotXYZ(experiment_grf, left_wrench, id_gt, id_est, 'left', 'coordinate (m)')
 

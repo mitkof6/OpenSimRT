@@ -147,10 +147,10 @@ void run() {
     // store results
     STOFileAdapter::write(grfRightLogger,
                           subjectDir +
-                                  "real_time/grfm_prediction/wrench_right.sto");
+                                  "TR_3/results_rt/grfm_prediction/wrench_right.sto");
     STOFileAdapter::write(grfLeftLogger,
                           subjectDir +
-                                  "real_time/grfm_prediction/wrench_left.sto");
+                                  "TR_3/results_rt/grfm_prediction/wrench_left.sto");
 }
 
 int main(int argc, char* argv[]) {

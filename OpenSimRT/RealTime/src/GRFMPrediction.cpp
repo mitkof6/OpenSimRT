@@ -45,13 +45,13 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
 
     // platform
     auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
-    platform->attachGeometry(new Brick(Vec3(1, 0.0075, 1))); // todo. dont need it
+    platform->attachGeometry(new Brick(Vec3(100, 0.0075, 100))); // todo. dont need it
     model.addBody(platform);
 
     // weld joint // todo couple platform to pelvis (tx,ty)
     auto platformToGround = new WeldJoint(
             "PlatformToGround", model.getGround(), Vec3(0), Vec3(0), *platform,
-            Vec3(-0.6, -0.035, 0), Vec3(0)); // todo
+            Vec3(0, -0.9, 0), Vec3(0)); // todo
     model.addJoint(platformToGround);
 
     // double pelvis_r_range[2] = {-Pi, Pi};
@@ -76,8 +76,6 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     // plane_ty.setName("plane_ty");
     // plane_ty.setRange(pelvis_t_range);
     // plane_ty.setDefaultValue(1);
-
-    model.addJoint(platformToGround);
 
     // contact half-space
     auto platformContact = new ContactHalfSpace();
