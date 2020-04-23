@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OpenSimDocument Version="20302">
+   <ExternalLoads name="Esther">
+      <defaults>
+         <ControlLinear name="default">
+            <is_model_control>true</is_model_control>
+            <extrapolate>true</extrapolate>
+            <default_min>-1</default_min>
+            <default_max>1</default_max>
+            <filter_on>false</filter_on>
+            <use_steps>false</use_steps>
+            <x_nodes/>
+            <min_nodes/>
+            <max_nodes/>
+            <kp>100</kp>
+            <kv>20</kv>
+         </ControlLinear>
+         <CoordinateActuator name="default">
+            <isDisabled>false</isDisabled><!--Minimum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum allowed value for control signal. Used primarily when solving
+				    for control values-->
+            <min_control>-infinity</min_control>
+            <max_control>infinity</max_control>
+            <coordinate>Unassigned</coordinate>
+            <optimal_force>300</optimal_force>
+         </CoordinateActuator>
+         <PointActuator name="default">
+            <isDisabled>false</isDisabled><!--Minimum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum allowed value for control signal. Used primarily when solving
+				    for control values-->
+            <min_control>-infinity</min_control>
+            <max_control>infinity</max_control>
+            <body/>
+            <point>[0 0 0]</point>
+            <point_is_global>false</point_is_global>
+            <direction>[-1 -0 -0]</direction>
+            <force_is_global>true</force_is_global>
+            <optimal_force>1000</optimal_force>
+         </PointActuator>
+         <TorqueActuator name="default">
+            <isDisabled>false</isDisabled><!--Minimum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum allowed value for control signal. Used primarily when solving
+				    for control values-->
+            <min_control>-infinity</min_control>
+            <max_control>infinity</max_control>
+            <bodyA>Unassigned</bodyA>
+            <bodyB>Unassigned</bodyB>
+            <torque_is_global>true</torque_is_global>
+            <axis>[-1 -0 -0]</axis>
+            <optimal_force>1</optimal_force>
+         </TorqueActuator>
+         <Thelen2003Muscle name="default">
+            <isDisabled>false</isDisabled><!--Minimum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum isometric force that the fibers can generate--><!--Optimal length of the muscle fibers--><!--Resting length of the tendon--><!--Angle between tendon and fibers at optimal fiber length--><!--Maximum contraction velocity of the fibers, in optimal fiberlengths
+				    per second--><!--time constant for ramping up of muscle activation--><!--time constant for ramping down of muscle activation--><!--maximum contraction velocity at full activation in fiber lengths per
+				    second--><!--maximum contraction velocity at low activation in fiber lengths per
+				    second--><!--tendon strain due to maximum isometric muscle force--><!--passive muscle strain due to maximum isometric muscle force--><!--shape factor for Gaussian active muscle force-length relationship--><!--exponential shape factor for passive force-length relationship--><!--passive damping in the force-velocity relationship--><!--force-velocity shape factor--><!--maximum normalized lengthening force-->
+            <min_control>0</min_control>
+            <max_control>1</max_control>
+            <GeometryPath name="">
+               <PathPointSet name="">
+                  <objects/>
+                  <groups/>
+               </PathPointSet>
+               <VisibleObject name=""><!--Set of geometry files and associated attributes, allow .vtp, .stl,
+						    .obj--><!--Three scale factors for display purposes: scaleX scaleY scaleZ--><!--transform relative to owner specified as 3 rotations (rad) followed by
+						    3 translations rX rY rZ tx ty tz--><!--Whether to show a coordinate frame--><!--Display Pref. 0:Hide 1:Wire 3:Flat 4:Shaded Can be overriden for
+						    individual geometries-->
+                  <GeometrySet name="">
+                     <objects/>
+                     <groups/>
+                  </GeometrySet>
+                  <scale_factors>[1 1 1]</scale_factors>
+                  <transform>[-0 0 -0 0 0 0]</transform>
+                  <show_axes>false</show_axes>
+                  <display_preference>4</display_preference>
+               </VisibleObject>
+               <PathWrapSet name="">
+                  <objects/>
+                  <groups/>
+               </PathWrapSet>
+            </GeometryPath>
+            <optimal_force>1</optimal_force>
+            <max_isometric_force>546</max_isometric_force>
+            <optimal_fiber_length>0.0535</optimal_fiber_length>
+            <tendon_slack_length>0.078</tendon_slack_length>
+            <pennation_angle_at_optimal>0</pennation_angle_at_optimal>
+            <max_contraction_velocity>10</max_contraction_velocity>
+            <activation_time_constant>0.01</activation_time_constant>
+            <deactivation_time_constant>0.04</deactivation_time_constant>
+            <Vmax>10</Vmax>
+            <Vmax0>5</Vmax0>
+            <FmaxTendonStrain>0.033</FmaxTendonStrain>
+            <FmaxMuscleStrain>0.6</FmaxMuscleStrain>
+            <KshapeActive>0.5</KshapeActive>
+            <KshapePassive>4</KshapePassive>
+            <damping>0.05</damping>
+            <Af>0.3</Af>
+            <Flen>1.8</Flen>
+         </Thelen2003Muscle>
+         <Schutte1993Muscle name="default">
+            <isDisabled>false</isDisabled><!--Minimum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum isometric force that the fibers can generate--><!--Optimal length of the muscle fibers--><!--Resting length of the tendon--><!--Angle between tendon and fibers at optimal fiber length--><!--Maximum contraction velocity of the fibers, in optimal fiberlengths
+				    per second--><!--Scale factor for normalizing time--><!--Parameter used in time constant of ramping up of muscle force--><!--Parameter used in time constant of ramping up and ramping down of
+				    muscle force--><!--Damping factor related to maximum contraction velocity--><!--Function representing force-length behavior of tendon--><!--Function representing active force-length behavior of muscle fibers--><!--Function representing passive force-length behavior of muscle fibers-->
+            <min_control>0</min_control>
+            <max_control>1</max_control>
+            <GeometryPath name="">
+               <PathPointSet name="">
+                  <objects/>
+                  <groups/>
+               </PathPointSet>
+               <VisibleObject name=""><!--Set of geometry files and associated attributes, allow .vtp, .stl,
+						    .obj--><!--Three scale factors for display purposes: scaleX scaleY scaleZ--><!--transform relative to owner specified as 3 rotations (rad) followed by
+						    3 translations rX rY rZ tx ty tz--><!--Whether to show a coordinate frame--><!--Display Pref. 0:Hide 1:Wire 3:Flat 4:Shaded Can be overriden for
+						    individual geometries-->
+                  <GeometrySet name="">
+                     <objects/>
+                     <groups/>
+                  </GeometrySet>
+                  <scale_factors>[1 1 1]</scale_factors>
+                  <transform>[-0 0 -0 0 0 0]</transform>
+                  <show_axes>false</show_axes>
+                  <display_preference>4</display_preference>
+               </VisibleObject>
+               <PathWrapSet name="">
+                  <objects/>
+                  <groups/>
+               </PathWrapSet>
+            </GeometryPath>
+            <optimal_force>1</optimal_force>
+            <max_isometric_force>0</max_isometric_force>
+            <optimal_fiber_length>0</optimal_fiber_length>
+            <tendon_slack_length>0</tendon_slack_length>
+            <pennation_angle_at_optimal>0</pennation_angle_at_optimal>
+            <max_contraction_velocity>10</max_contraction_velocity>
+            <time_scale>0.1</time_scale>
+            <activation1>0</activation1>
+            <activation2>0</activation2>
+            <damping>0.05</damping>
+            <tendon_force_length_curve>
+               <NaturalCubicSpline name="">
+                  <x>[-10 -0.002 -0.001 0 0.00131 0.00281 0.00431 0.00581 0.00731 0.00881 0.0103 0.0118 0.0123 9.2 9.201 9.202 20]</x>
+                  <y>[0 0 0 0 0.0108 0.0257 0.0435 0.0652 0.0915 0.123 0.161 0.208 0.227 345 345 345 345]</y>
+               </NaturalCubicSpline>
+            </tendon_force_length_curve>
+            <active_force_length_curve>
+               <NaturalCubicSpline name="">
+                  <x>[-5.307692 -4.307692 -1.923077 -0.884615 -0.269231 0.230769 0.461538 0.52725 0.62875 0.71875 0.86125 1.045 1.2175 1.43875 1.5 1.615385 2 2.961538 3.692308 5.461538 9.901902]</x>
+                  <y>[0.012188 0.021899 0.036466 0.052493 0.075312 0.114158 0.157859 0.226667 0.636667 0.856667 0.95 0.993333 0.77 0.246667 0.193821 0.133252 0.072683 0.044417 0.036341 0.021899 0.007332]</y>
+               </NaturalCubicSpline>
+            </active_force_length_curve>
+            <passive_force_length_curve>
+               <NaturalCubicSpline name="">
+                  <x>[-5 0.998 0.999 1 1.1 1.2 1.3 1.4 1.5 1.6 1.601 1.602 5]</x>
+                  <y>[0 0 0 0 0.035 0.12 0.26 0.55 1.17 2 2 2 2]</y>
+               </NaturalCubicSpline>
+            </passive_force_length_curve>
+         </Schutte1993Muscle>
+         <Delp1990Muscle name="default">
+            <isDisabled>false</isDisabled><!--Minimum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum allowed value for control signal. Used primarily when solving
+				    for control values--><!--Maximum isometric force that the fibers can generate--><!--Optimal length of the muscle fibers--><!--Resting length of the tendon--><!--Angle between tendon and fibers at optimal fiber length--><!--Maximum contraction velocity of the fibers, in optimal fiberlengths
+				    per second--><!--Scale factor for normalizing time--><!--Parameter used in time constant of ramping up of muscle force--><!--Parameter used in time constant of ramping up and ramping down of
+				    muscle force--><!--Normalized mass of the muscle between the tendon and muscle fibers--><!--Function representing force-length behavior of tendon--><!--Function representing active force-length behavior of muscle fibers--><!--Function representing passive force-length behavior of muscle fibers--><!--Function representing force-velocity behavior of muscle fibers-->
+            <min_control>0</min_control>
+            <max_control>1</max_control>
+            <GeometryPath name="">
+               <PathPointSet name="">
+                  <objects/>
+                  <groups/>
+               </PathPointSet>
+               <VisibleObject name=""><!--Set of geometry files and associated attributes, allow .vtp, .stl,
+						    .obj--><!--Three scale factors for display purposes: scaleX scaleY scaleZ--><!--transform relative to owner specified as 3 rotations (rad) followed by
+						    3 translations rX rY rZ tx ty tz--><!--Whether to show a coordinate frame--><!--Display Pref. 0:Hide 1:Wire 3:Flat 4:Shaded Can be overriden for
+						    individual geometries-->
+                  <GeometrySet name="">
+                     <objects/>
+                     <groups/>
+                  </GeometrySet>
+                  <scale_factors>[1 1 1]</scale_factors>
+                  <transform>[-0 0 -0 0 0 0]</transform>
+                  <show_axes>false</show_axes>
+                  <display_preference>4</display_preference>
+               </VisibleObject>
+               <PathWrapSet name="">
+                  <objects/>
+                  <groups/>
+               </PathWrapSet>
+            </GeometryPath>
+            <optimal_force>1</optimal_force>
+            <max_isometric_force>0</max_isometric_force>
+            <optimal_fiber_length>0</optimal_fiber_length>
+            <tendon_slack_length>0</tendon_slack_length>
+            <pennation_angle_at_optimal>0</pennation_angle_at_optimal>
+            <max_contraction_velocity>0</max_contraction_velocity>
+            <time_scale>0</time_scale>
+            <activation1>0</activation1>
+            <activation2>0</activation2>
+            <mass>0</mass>
+            <tendon_force_length_curve>
+               <NaturalCubicSpline name="">
+                  <x>[-10 -0.002 -0.001 0 0.00131 0.00281 0.00431 0.00581 0.00731 0.00881 0.0103 0.0118 0.0123 9.2 9.201 9.202 20]</x>
+                  <y>[0 0 0 0 0.0108 0.0257 0.0435 0.0652 0.0915 0.123 0.161 0.208 0.227 345 345 345 345]</y>
+               </NaturalCubicSpline>
+            </tendon_force_length_curve>
+            <active_force_length_curve>
+               <NaturalCubicSpline name="">
+                  <x>[-5.3077 -4.3077 -1.9231 -0.88462 -0.26923 0.23077 0.46154 0.52725 0.62875 0.71875 0.86125 1.045 1.2175 1.4388 1.5 1.6154 2 2.9615 3.6923 5.4615 9.9019]</x>
+                  <y>[0.012188 0.021899 0.036466 0.052493 0.075312 0.11416 0.15786 0.22667 0.63667 0.85667 0.95 0.99333 0.77 0.24667 0.19382 0.13325 0.072683 0.044417 0.036341 0.021899 0.007332]</y>
+               </NaturalCubicSpline>
+            </active_force_length_curve>
+            <passive_force_length_curve>
+               <NaturalCubicSpline name="">
+                  <x>[-5 0.998 0.999 1 1.1 1.2 1.3 1.4 1.5 1.6 1.601 1.602 5]</x>
+                  <y>[0 0 0 0 0.035 0.12 0.26 0.55 1.17 2 2 2 2]</y>
+               </NaturalCubicSpline>
+            </passive_force_length_curve>
+            <force_velocity_curve>
+               <NaturalCubicSpline name="">
+                  <x>[-1.001 -1 -0.95 -0.9 -0.85 -0.8 -0.75 -0.7 -0.65 -0.6 -0.55 -0.5 -0.45 -0.4 -0.35 -0.3 -0.25 -0.2 -0.15 -0.1 -0.05 0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1]</x>
+                  <y>[0 0 0.010417 0.021739 0.034091 0.047619 0.0625 0.078947 0.097222 0.11765 0.14063 0.16667 0.19643 0.23077 0.27083 0.31818 0.375 0.44444 0.53125 0.64286 0.79167 1 1.482 1.6016 1.6558 1.6867 1.7068 1.7208 1.7311 1.7391 1.7454 1.7505 1.7547 1.7583 1.7614 1.764 1.7663 1.7683 1.7701 1.7717 1.7732 1.7745]</y>
+               </NaturalCubicSpline>
+            </force_velocity_curve>
+         </Delp1990Muscle>
+         <CMC_Joint name="default"><!--Flag (true or false) indicating whether or not a task is enabled.--><!--Weight with which a task is tracked relative to other tasks. To track
+				    a task more tightly, make the weight larger.--><!--Name of body frame with respect to which a tracking objective is
+				    specified. The special name 'center_of_mass' refers to the system
+				    center of mass. This property is not used for tracking joint angles.--><!--Name of body frame in which the tracking objectives are expressed.
+				    This property is not used for tracking joint angles.--><!--Array of 3 flags (each true or false) specifying whether a component
+				    of a task is active.  For example, tracking the trajectory of a point
+				    in space could have three components (x,y,z).  This allows each of
+				    those to be made active (true) or inactive (false).  A task for
+				    tracking a joint coordinate only has one component.--><!--Position error feedback gain (stiffness). To achieve critical damping
+				    of errors, choose kv = 2*sqrt(kp).--><!--Velocity error feedback gain (damping). To achieve critical damping of
+				    errors, choose kv = 2*sqrt(kp).--><!--Feedforward acceleration gain.  This is normally set to 1.0, so no
+				    gain.--><!--Direction vector[3] for component 0 of a task. Joint tasks do not use
+				    this propery.--><!--Direction vector[3] for component 1 of a task. Joint tasks do not use
+				    this property.--><!--Direction vector[3] for component 2 of a task. Joint tasks do not use
+				    this property.--><!--Name of the coordinate to be tracked.--><!--Error limit on the tracking accuracy for this coordinate. If the
+				    tracking errors approach this limit, the weighting for this coordinate
+				    is increased.-->
+            <on>false</on>
+            <weight>[1 1 1]</weight>
+            <wrt_body>-1</wrt_body>
+            <express_body>-1</express_body>
+            <active>false false false</active>
+            <kp>[1 1 1]</kp>
+            <kv>[1 1 1]</kv>
+            <ka>[1 1 1]</ka>
+            <r0>[0 0 0]</r0>
+            <r1>[0 0 0]</r1>
+            <r2>[0 0 0]</r2>
+            <coordinate/>
+            <limit>0</limit>
+         </CMC_Joint>
+      </defaults>
+      <objects>
+         <ExternalForce name="Right">
+            <isDisabled>false</isDisabled><!--Name of the body the force is applied to.--><!--Name of the body the force is expressed in (default is ground).--><!--Name of the body the point is expressed in (default is ground).--><!--Identifier (string) to locate the force to be applied in the data
+				    source.--><!--Identifier (string) to locate the point to be applied in the data
+				    source.--><!--Identifier (string) to locate the torque to be applied in the data
+				    source.--><!--Name of the data source (Storage) that will supply the force data.-->
+            <applied_to_body>calcn_r</applied_to_body>
+            <force_expressed_in_body>ground</force_expressed_in_body>
+            <point_expressed_in_body>ground</point_expressed_in_body>
+            <force_identifier>r_ground_force_v</force_identifier>
+            <point_identifier>r_ground_force_p</point_identifier>
+            <torque_identifier>r_ground_torque_</torque_identifier>
+            <data_source_name>Unassigned</data_source_name>
+         </ExternalForce>
+         <ExternalForce name="Left">
+            <isDisabled>false</isDisabled><!--Name of the body the force is applied to.--><!--Name of the body the force is expressed in (default is ground).--><!--Name of the body the point is expressed in (default is ground).--><!--Identifier (string) to locate the force to be applied in the data
+				    source.--><!--Identifier (string) to locate the point to be applied in the data
+				    source.--><!--Identifier (string) to locate the torque to be applied in the data
+				    source.--><!--Name of the data source (Storage) that will supply the force data.-->
+            <applied_to_body>calcn_l</applied_to_body>
+            <force_expressed_in_body>ground</force_expressed_in_body>
+            <point_expressed_in_body>ground</point_expressed_in_body>
+            <force_identifier>l_ground_force_v</force_identifier>
+            <point_identifier>l_ground_force_p</point_identifier>
+            <torque_identifier>l_ground_torque_</torque_identifier>
+            <data_source_name>Unassigned</data_source_name>
+         </ExternalForce>
+      </objects>
+      <groups/><!--Storage file (.sto) containing (3) components of force and/or torque
+		    and point of application.Note: this file overrides the data source
+		    specified by the individual external forces if specified.--><!--Optional motion file (.mot) or storage file (.sto) containing the
+		    model kinematics used to transform a point expressed in ground to the
+		    body of force application.If the point is not expressed in ground, the
+		    point is not transformed--><!--Optional low-pass cut-off frequency for filtering the model kinematics
+		    corresponding used to transform the point of application. A negative
+		    value results in no filtering. The default value is -1.0, so no
+		    filtering.-->
+      <datafile>F:\PHD\Matlab_Output_Files\Esther\Treadmill\TR_3\TR_3_GRF.mot</datafile>
+      <external_loads_model_kinematics_file>F:\PHD\Matlab_Output_Files\Esther\Treadmill\Hamn_new\Results\KS\TR_3_IK_Esther.mot</external_loads_model_kinematics_file>
+      <lowpass_cutoff_frequency_for_load_kinematics>6</lowpass_cutoff_frequency_for_load_kinematics>
+   </ExternalLoads>
+</OpenSimDocument>

@@ -7,6 +7,7 @@
 #include <OpenSim/Simulation/Model/ContactSphere.h>
 #include <OpenSim/Simulation/Model/Muscle.h>
 #include <OpenSim/Simulation/SimbodyEngine/WeldJoint.h>
+#include <OpenSim/Simulation/SimbodyEngine/PlanarJoint.h>
 
 using namespace std;
 using namespace OpenSim;
@@ -44,13 +45,38 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
 
     // platform
     auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
-    platform->attachGeometry(new Brick(Vec3(1, 0.0075, 1))); // todo
+    platform->attachGeometry(new Brick(Vec3(1, 0.0075, 1))); // todo. dont need it
     model.addBody(platform);
 
-    // weld joint
+    // weld joint // todo couple platform to pelvis (tx,ty)
     auto platformToGround = new WeldJoint(
             "PlatformToGround", model.getGround(), Vec3(0), Vec3(0), *platform,
             Vec3(-0.6, -0.035, 0), Vec3(0)); // todo
+    model.addJoint(platformToGround);
+
+    // double pelvis_r_range[2] = {-Pi, Pi};
+    // double pelvis_t_range[2] = {-1, 2};
+
+    // //! New coordinates cause issues with state update.
+    // Coordinate& plane_rz =
+    //         platformToPelvis->updCoordinate(PlanarJoint::Coord::RotationZ);
+    // plane_rz.setName("plane_rz");
+    // plane_rz.setRange(pelvis_r_range);
+    // plane_rz.setDefaultValue(convertDegreesToRadians(0));
+    // // plane_rz.setDefaultLocked(true);
+
+    // Coordinate& plane_tx =
+    //         platformToPelvis->updCoordinate(PlanarJoint::Coord::TranslationX);
+    // plane_tx.setName("plane_tx");
+    // plane_tx.setRange(pelvis_t_range);
+    // plane_tx.setDefaultValue(0);
+
+    // Coordinate& plane_ty =
+    //         platformToPelvis->updCoordinate(PlanarJoint::Coord::TranslationY);
+    // plane_ty.setName("plane_ty");
+    // plane_ty.setRange(pelvis_t_range);
+    // plane_ty.setDefaultValue(1);
+
     model.addJoint(platformToGround);
 
     // contact half-space
@@ -442,7 +468,7 @@ void GRFPrediction::seperateReactionComponents(
         Vec3& rightReactionComponent, Vec3& leftReactionComponent) {
     Vec3 trailingReactionComponent, leadingReactionComponent;
     switch (gaitPhaseDetector->getPhase()) {
-    case GaitPhaseState::GaitPhase::DOUBLE_SUPPORT:
+    case GaitPhaseState::GaitPhase::DOUBLE_SUPPORT: {
         double time = t - gaitPhaseDetector->getHeelStrikeTime();
         Tds = gaitPhaseDetector->getDoubleSupportDuration();
 
@@ -460,33 +486,34 @@ void GRFPrediction::seperateReactionComponents(
 
         // assign to output
         switch (gaitPhaseDetector->getLeadingLeg()) {
-        case GaitPhaseState::LeadingLeg::RIGHT:
+        case GaitPhaseState::LeadingLeg::RIGHT: {
             rightReactionComponent = leadingReactionComponent;
             leftReactionComponent = trailingReactionComponent;
-            break;
-        case GaitPhaseState::LeadingLeg::LEFT:
+        } break;
+        case GaitPhaseState::LeadingLeg::LEFT: {
             rightReactionComponent = trailingReactionComponent;
             leftReactionComponent = leadingReactionComponent;
-            break;
-        default: cerr << "STA: invalid LeadingLeg state!" << endl; break;
+        } break;
+        case GaitPhaseState::LeadingLeg::INVALID: {
+            cerr << "STA: invalid LeadingLeg state!" << endl;
+        } break;
         }
+    } break;
 
-        break;
-
-    case GaitPhaseState::GaitPhase::LEFT_SWING:
+    case GaitPhaseState::GaitPhase::LEFT_SWING: {
         rightReactionComponent = totalReactionComponent;
         leftReactionComponent = Vec3(0);
-        break;
+    } break;
 
-    case GaitPhaseState::GaitPhase::RIGHT_SWING:
+    case GaitPhaseState::GaitPhase::RIGHT_SWING: {
         rightReactionComponent = Vec3(0);
         leftReactionComponent = totalReactionComponent;
-        break;
+    } break;
 
-    default: // Look mom! I'm flying!
+    default: { // Look mom, I'm flying!
         rightReactionComponent = Vec3(0);
         leftReactionComponent = Vec3(0);
-        break;
+    } break;
     }
 }
 
@@ -505,23 +532,24 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
 
     // determine gait phase
     switch (gaitPhaseDetector->getPhase()) {
-    case GaitPhaseState::GaitPhase::DOUBLE_SUPPORT:
-
+    case GaitPhaseState::GaitPhase::DOUBLE_SUPPORT: {
         // determine leading / trailing leg
         switch (gaitPhaseDetector->getLeadingLeg()) {
-        case GaitPhaseState::LeadingLeg::RIGHT:
+        case GaitPhaseState::LeadingLeg::RIGHT: {
             rightPoint = heelStationR->getLocationInGround(state);
             leftPoint = toeStationL->getLocationInGround(state);
-            break;
-        case GaitPhaseState::LeadingLeg::LEFT:
+        } break;
+        case GaitPhaseState::LeadingLeg::LEFT: {
             rightPoint = toeStationR->getLocationInGround(state);
             leftPoint = heelStationL->getLocationInGround(state);
-            break;
-        default: cerr << "CoP: invalid LeadingLeg state!" << endl; break;
+        } break;
+        case GaitPhaseState::LeadingLeg::INVALID: {
+            cerr << "CoP: invalid LeadingLeg state!" << endl;
+        } break;
         }
-        break;
+    } break;
 
-    case GaitPhaseState::GaitPhase::LEFT_SWING:
+    case GaitPhaseState::GaitPhase::LEFT_SWING: {
         const auto d = toeStationR->getLocationInGround(state) -
                        heelStationR->getLocationInGround(state);
         auto time = t - gaitPhaseDetector->getToeOffTime();
@@ -529,9 +557,9 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
         leftPoint = toeStationL->getLocationInGround(state);
         rightPoint =
                 heelStationR->getLocationInGround(state) + copPosition(time, d);
-        break;
+    } break;
 
-    case GaitPhaseState::GaitPhase::RIGHT_SWING:
+    case GaitPhaseState::GaitPhase::RIGHT_SWING: {
         const auto d = toeStationL->getLocationInGround(state) -
                        heelStationL->getLocationInGround(state);
         auto time = t - gaitPhaseDetector->getToeOffTime();
@@ -539,11 +567,11 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
         rightPoint = toeStationR->getLocationInGround(state);
         leftPoint =
                 heelStationL->getLocationInGround(state) + copPosition(time, d);
-        break;
+    } break;
 
-    default:
+    default: {
         rightPoint = Vec3(0.0);
         leftPoint = Vec3(0.0);
-        break;
+    } break;
     }
 }
