@@ -7,7 +7,6 @@
 #include <OpenSim/Simulation/Model/ContactSphere.h>
 #include <OpenSim/Simulation/Model/Muscle.h>
 #include <OpenSim/Simulation/SimbodyEngine/WeldJoint.h>
-#include <OpenSim/Simulation/SimbodyEngine/PlanarJoint.h>
 
 using namespace std;
 using namespace OpenSim;
@@ -47,16 +46,17 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
     model.addBody(platform);
 
-    // weld joint // todo couple platform to pelvis (tx,ty)
-    auto platformToGround = new WeldJoint(
-            "PlatformToGround", model.getGround(), Vec3(0), Vec3(0), *platform,
-            Vec3(0, -0.9, 0), Vec3(0)); // todo
+    // weld joint
+    auto platformToGround =
+            new WeldJoint("PlatformToGround", model.getGround(), Vec3(0),
+                          Vec3(0), *platform, Vec3(0, 0.02191189, 0),
+                          Vec3(0)); // todo
     model.addJoint(platformToGround);
 
     // contact half-space
     auto platformContact = new ContactHalfSpace();
     platformContact->setName("PlatformContact");
-    platformContact->setLocation(Vec3(0.0, -0.0075, 0.0)); // todo
+    platformContact->setLocation(Vec3(0));
     platformContact->setOrientation(Vec3(0.0, 0.0, -Pi / 2.0));
     platformContact->setBody(*platform);
     model.addContactGeometry(platformContact);
@@ -68,16 +68,16 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     auto leftToeContact = new ContactSphere();
     rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005));  // todo
     leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005));    // todo
-    rightToeContact->setLocation(Vec3(0.055, 0.008, -0.01));      // todo
-    leftToeContact->setLocation(Vec3(0.055, 0.008, 0.01));        // todo
+    rightToeContact->setLocation(Vec3(0.055, 0.01, -0.01));       // todo
+    leftToeContact->setLocation(Vec3(0.055, 0.01, 0.01));         // todo
     rightHeelContact->setBody(model.getBodySet().get("calcn_r")); // todo
     leftHeelContact->setBody(model.getBodySet().get("calcn_l"));  // todo
     rightToeContact->setBody(model.getBodySet().get("toes_r"));   // todo
     leftToeContact->setBody(model.getBodySet().get("toes_l"));    // todo
-    rightHeelContact->setRadius(0.035);                           // todo
-    leftHeelContact->setRadius(0.035);                            // todo
-    rightToeContact->setRadius(0.03);                             // todo
-    leftToeContact->setRadius(0.03);                              // todo
+    rightHeelContact->setRadius(0.01);                            // todo
+    leftHeelContact->setRadius(0.01);                             // todo
+    rightToeContact->setRadius(0.01);                             // todo
+    leftToeContact->setRadius(0.01);                              // todo
     rightHeelContact->setName("RHeelContact");
     leftHeelContact->setName("LHeelContact");
     rightToeContact->setName("RToeContact");
@@ -384,6 +384,9 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
                     I * bodyAccelerations[bix][0] +
                     cross(bodyVelocities[bix][0], I * bodyVelocities[bix][0]);
         }
+        totalReactionMoment[0] =0;
+        totalReactionMoment[2] =0;
+
 #endif
         // =========================================================================
 
@@ -528,9 +531,11 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
                        heelStationR->getLocationInGround(state);
         auto time = t - gaitPhaseDetector->getToeOffTime();
 
-        leftPoint = toeStationL->getLocationInGround(state);
-        rightPoint =
-                heelStationR->getLocationInGround(state) + copPosition(time, d);
+        leftPoint = Vec3(0);
+        rightPoint = pointProjectionOnPlane(
+                heelStationR->getLocationInGround(state) + copPosition(time, d),
+                Vec3(0, 0.02191189, 0), Vec3(0, 1, 0));
+
     } break;
 
     case GaitPhaseState::GaitPhase::RIGHT_SWING: {
@@ -538,9 +543,11 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
                        heelStationL->getLocationInGround(state);
         auto time = t - gaitPhaseDetector->getToeOffTime();
 
-        rightPoint = toeStationR->getLocationInGround(state);
-        leftPoint =
-                heelStationL->getLocationInGround(state) + copPosition(time, d);
+        rightPoint = Vec3(0);
+        leftPoint = pointProjectionOnPlane(
+                heelStationL->getLocationInGround(state) + copPosition(time, d),
+                Vec3(0, 0.02191189, 0), Vec3(0, 1, 0));
+
     } break;
 
     default: {

@@ -141,7 +141,7 @@ void run() {
         grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
         grfLeftLogger.appendRow(grfmOutput[1].t, ~grfmOutput[1].asVector());
 
-        this_thread::sleep_for(chrono::milliseconds(16));
+        // this_thread::sleep_for(chrono::milliseconds(16));
     }
 
     // store results

@@ -30,7 +30,7 @@ def rmse_metric(s1, s2):
 
     # if s2.index[0] < 0:
     #     s2.index = s2.index - s2.index[0]
-        
+
     t1_0 = s1.index[0]
     t1_f = s1.index[-1]
     t2_0 = s2.index[0]
@@ -64,7 +64,7 @@ def read_from_storage(file_name, to_filter=False):
     tuple: (labels, time, data)
     """
     sto = opensim.Storage(file_name)
-    sto.resampleLinear(0.01)
+    # sto.resampleLinear(0.01)
     if to_filter:
         sto.lowpassFIR(4, 6)
 
@@ -196,7 +196,7 @@ def subject_specific_isometric_force(generic_model_file, subject_model_file,
     model_generic = opensim.Model(generic_model_file)
     state_generic = model_generic.initSystem()
     mass_generic = model_generic.getTotalMass(state_generic)
-    
+
     model_subject = opensim.Model(subject_model_file)
     state_subject = model_subject.initSystem()
     mass_subject = model_subject.getTotalMass(state_subject)
