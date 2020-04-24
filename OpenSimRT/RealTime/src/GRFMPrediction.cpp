@@ -45,7 +45,6 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
 
     // platform
     auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
-    platform->attachGeometry(new Brick(Vec3(100, 0.0075, 100))); // todo. dont need it
     model.addBody(platform);
 
     // weld joint // todo couple platform to pelvis (tx,ty)
@@ -53,29 +52,6 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
             "PlatformToGround", model.getGround(), Vec3(0), Vec3(0), *platform,
             Vec3(0, -0.9, 0), Vec3(0)); // todo
     model.addJoint(platformToGround);
-
-    // double pelvis_r_range[2] = {-Pi, Pi};
-    // double pelvis_t_range[2] = {-1, 2};
-
-    // //! New coordinates cause issues with state update.
-    // Coordinate& plane_rz =
-    //         platformToPelvis->updCoordinate(PlanarJoint::Coord::RotationZ);
-    // plane_rz.setName("plane_rz");
-    // plane_rz.setRange(pelvis_r_range);
-    // plane_rz.setDefaultValue(convertDegreesToRadians(0));
-    // // plane_rz.setDefaultLocked(true);
-
-    // Coordinate& plane_tx =
-    //         platformToPelvis->updCoordinate(PlanarJoint::Coord::TranslationX);
-    // plane_tx.setName("plane_tx");
-    // plane_tx.setRange(pelvis_t_range);
-    // plane_tx.setDefaultValue(0);
-
-    // Coordinate& plane_ty =
-    //         platformToPelvis->updCoordinate(PlanarJoint::Coord::TranslationY);
-    // plane_ty.setName("plane_ty");
-    // plane_ty.setRange(pelvis_t_range);
-    // plane_ty.setDefaultValue(1);
 
     // contact half-space
     auto platformContact = new ContactHalfSpace();
