@@ -32,31 +32,31 @@ void run() {
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
-    // auto grfRightApplyBody =
-    //         ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
-    // auto grfRightForceExpressed =
-    //         ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
-    // auto grfRightPointExpressed =
-    //         ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
-    // auto grfRightPointIdentifier =
-    //         ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
-    // auto grfRightForceIdentifier =
-    //         ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
-    // auto grfRightTorqueIdentifier =
-    //         ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
+    auto grfRightApplyBody =
+            ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
+    auto grfRightForceExpressed =
+            ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
+    auto grfRightPointExpressed =
+            ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
+    auto grfRightPointIdentifier =
+            ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
+    auto grfRightForceIdentifier =
+            ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
+    auto grfRightTorqueIdentifier =
+            ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
 
-    // auto grfLeftApplyBody =
-    //         ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
-    // auto grfLeftForceExpressed =
-    //         ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
-    // auto grfLeftPointExpressed =
-    //         ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
-    // auto grfLeftPointIdentifier =
-    //         ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
-    // auto grfLeftForceIdentifier =
-    //         ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
-    // auto grfLeftTorqueIdentifier =
-    //         ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
+    auto grfLeftApplyBody =
+            ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
+    auto grfLeftForceExpressed =
+            ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
+    auto grfLeftPointExpressed =
+            ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
+    auto grfLeftPointIdentifier =
+            ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
+    auto grfLeftForceIdentifier =
+            ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
+    auto grfLeftTorqueIdentifier =
+            ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
@@ -67,25 +67,25 @@ void run() {
     Model model(modelFile);
     model.initSystem();
 
-    // // setup external forces
-    // ExternalWrench::Parameters grfRightFootPar{
-    //         grfRightApplyBody, grfRightForceExpressed,
-    //         grfRightPointExpressed};
-    // auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
-    //         grfRightPointIdentifier, grfRightForceIdentifier,
-    //         grfRightTorqueIdentifier);
+    // setup external forces
+    ExternalWrench::Parameters grfRightFootPar{
+            grfRightApplyBody, grfRightForceExpressed,
+            grfRightPointExpressed};
+    auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
+            grfRightPointIdentifier, grfRightForceIdentifier,
+            grfRightTorqueIdentifier);
     auto grfRightLogger = ExternalWrench::initializeLogger();
 
-    // ExternalWrench::Parameters grfLeftFootPar{
-    //         grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
-    // auto grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
-    //         grfLeftPointIdentifier, grfLeftForceIdentifier,
-    //         grfLeftTorqueIdentifier);
+    ExternalWrench::Parameters grfLeftFootPar{
+            grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
+    auto grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
+            grfLeftPointIdentifier, grfLeftForceIdentifier,
+            grfLeftTorqueIdentifier);
     auto grfLeftLogger = ExternalWrench::initializeLogger();
 
-    // vector<ExternalWrench::Parameters> wrenchParameters;
-    // wrenchParameters.push_back(grfRightFootPar);
-    // wrenchParameters.push_back(grfLeftFootPar);
+    vector<ExternalWrench::Parameters> wrenchParameters;
+    wrenchParameters.push_back(grfRightFootPar);
+    wrenchParameters.push_back(grfLeftFootPar);
 
     // get kinematics as a table with ordered coordinates
     auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
@@ -101,9 +101,16 @@ void run() {
     ikFilterParam.calculateDerivatives = true;
     LowPassSmoothFilter ikFilter(ikFilterParam);
 
-    // GaitPhaseDetector::Parameters grfm_parameters;
-    // grfm_parameters.stance_threshold = 50;
-    GRFPrediction grfm(model);
+    //setup grfm prediction
+    GRFPrediction::Parameters parameters;
+    parameters.stance_threshold = 100;
+    parameters.contact_plane_origin = Vec3(0, -0.02191189, 0);
+    parameters.contact_plane_normal = UnitVec3(0,1,0);
+    GRFPrediction grfm(model, parameters);
+
+    // initialize id and logger
+    InverseDynamics id(model, wrenchParameters);
+    auto tauLogger = id.initializeLogger();
 
     // visualizer
     BasicModelVisualizer visualizer(model);
@@ -131,13 +138,19 @@ void run() {
         // perform grfm prediction
         auto grfmOutput = grfm.solve({ikFiltered.t, q, qDot, qDDot});
 
+        ExternalWrench::Input grfRightWrench = {grfmOutput[0].point,grfmOutput[0].force,grfmOutput[0].moment};
+        ExternalWrench::Input grfLeftWrench = {grfmOutput[1].point,grfmOutput[1].force,grfmOutput[1].moment};
+        auto idOutput = id.solve(
+                {t, q, qDot, qDDot,
+                 vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
+
         // visualization
         visualizer.update(q);
         rightGRFDecorator->update(grfmOutput[0].point, grfmOutput[0].force);
         leftGRFDecorator->update(grfmOutput[1].point, grfmOutput[1].force);
 
         // log data (use filter time to align with delay)
-        // grfmLogger.appendRow(ikFiltered.t, grfmOutput[0]);
+        tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
         grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
         grfLeftLogger.appendRow(grfmOutput[1].t, ~grfmOutput[1].asVector());
 
@@ -145,6 +158,8 @@ void run() {
     }
 
     // store results
+    STOFileAdapter::write(tauLogger,
+                          subjectDir + "TR_3/results_rt/grfm_prediction/tau.sto");
     STOFileAdapter::write(grfRightLogger,
                           subjectDir +
                                   "TR_3/results_rt/grfm_prediction/wrench_right.sto");

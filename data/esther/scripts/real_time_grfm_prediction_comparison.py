@@ -33,6 +33,19 @@ right_wrench = read_from_storage(right_wrench_rt_file)
 left_wrench = read_from_storage(left_wrench_rt_file)
 gait_events = pd.read_csv(gait_events_file)
 
+# convert zeros values to NaN for the CoP
+experiment_grf.r_ground_force_px = experiment_grf.r_ground_force_px.replace(0.0, float('nan'))
+experiment_grf.r_ground_force_py = experiment_grf.r_ground_force_py.replace(0.0, float('nan'))
+experiment_grf.r_ground_force_pz = experiment_grf.r_ground_force_pz.replace(0.0, float('nan'))
+experiment_grf.l_ground_force_px = experiment_grf.l_ground_force_px.replace(0.0, float('nan'))
+experiment_grf.l_ground_force_py = experiment_grf.l_ground_force_py.replace(0.0, float('nan'))
+experiment_grf.l_ground_force_pz = experiment_grf.l_ground_force_pz.replace(0.0, float('nan'))
+right_wrench.p_x = right_wrench.p_x.replace(0.0, float('nan'))
+right_wrench.p_y = right_wrench.p_y.replace(0.0, float('nan'))
+right_wrench.p_z = right_wrench.p_z.replace(0.0, float('nan'))
+left_wrench.p_x = left_wrench.p_x.replace(0.0, float('nan'))
+left_wrench.p_y = left_wrench.p_y.replace(0.0, float('nan'))
+left_wrench.p_z = left_wrench.p_z.replace(0.0, float('nan'))
 
 def plotXYZ(gt_data_frame, est_data_frame, id_gt, id_est, hs_events, to_events, title, y_label):
     fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(8, 8))

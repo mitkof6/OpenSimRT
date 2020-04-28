@@ -66,9 +66,16 @@ class RealTime_API GRFPrediction {
         SimTK::Vec3 moment;
         SimTK::Vector asVector();
     };
+
+    struct Parameters {
+        double stance_threshold;
+        SimTK::Vec3 contact_plane_origin;
+        SimTK::UnitVec3 contact_plane_normal;
+    } parameters;
+
     SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
 
-    GRFPrediction(const OpenSim::Model&);
+    GRFPrediction(const OpenSim::Model&, const Parameters&);
     std::vector<Output> solve(const Input& input);
 
  private:
@@ -115,7 +122,8 @@ class RealTime_API GaitPhaseDetector {
 
 class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
  public:
-    ContactForceBasedPhaseDetector(const OpenSim::Model& model);
+    ContactForceBasedPhaseDetector(const OpenSim::Model&,
+                                   const GRFPrediction::Parameters&);
     void updDetector(const GRFPrediction::Input& input);
 
     // getters
@@ -134,11 +142,11 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
                                            const GaitPhaseState::LegPhase&);
 
     double Ths, Tto, Tds, Tss;
-    double threshold = 100; // todo
 
     OpenSim::Model model;
     SimTK::State state;
     GaitPhaseState::GaitPhase gaitPhase;
+    GRFPrediction::Parameters parameters;
     SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightContactForce;
     SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftContactForce;
 };

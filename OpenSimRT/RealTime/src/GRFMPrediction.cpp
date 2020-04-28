@@ -34,8 +34,10 @@ void updateState(const T& input, const Model& model, State& state,
 
 //==============================================================================
 ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
-        const Model& otherModel)
-        : model(*otherModel.clone()), Ths(-1), Tto(-1), Tds(-1), Tss(-1) {
+        const Model& otherModel,
+        const GRFPrediction::Parameters& otherParameters)
+        : model(*otherModel.clone()), parameters(otherParameters), Ths(-1),
+          Tto(-1), Tds(-1), Tss(-1) {
     phaseWindowR.init({GaitPhaseState::LegPhase::INVALID,
                        GaitPhaseState::LegPhase::INVALID});
     phaseWindowL.init({GaitPhaseState::LegPhase::INVALID,
@@ -49,7 +51,7 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     // weld joint
     auto platformToGround =
             new WeldJoint("PlatformToGround", model.getGround(), Vec3(0),
-                          Vec3(0), *platform, Vec3(0, 0.02191189, 0),
+                          Vec3(0), *platform, -parameters.contact_plane_origin,
                           Vec3(0)); // todo
     model.addJoint(platformToGround);
 
@@ -206,7 +208,7 @@ GaitPhaseState::LegPhase ContactForceBasedPhaseDetector::updLegPhase(
             return GaitPhaseState::LegPhase::SWING;
         else
             return GaitPhaseState::LegPhase::INVALID;
-    }(contactForce.norm() - threshold);
+    }(contactForce.norm() - parameters.stance_threshold);
 }
 
 bool ContactForceBasedPhaseDetector::isDetectorReady() {
@@ -241,10 +243,11 @@ GaitPhaseState::GaitPhase ContactForceBasedPhaseDetector::getPhase() {
 //==============================================================================
 //==============================================================================
 
-GRFPrediction::GRFPrediction(const Model& otherModel)
-        : model(*otherModel.clone()) {
+GRFPrediction::GRFPrediction(const Model& otherModel,
+                             const Parameters& otherParameters)
+        : model(*otherModel.clone()), parameters(otherParameters) {
     // gait phase detector
-    gaitPhaseDetector = new ContactForceBasedPhaseDetector(model);
+    gaitPhaseDetector = new ContactForceBasedPhaseDetector(model, parameters);
 
     // add station point to the model
     heelStationR = new Station(model.getBodySet().get("calcn_r"),
@@ -273,25 +276,30 @@ GRFPrediction::GRFPrediction(const Model& otherModel)
     }
 
     // define transition functions for reaction components
-    auto k1 = exp(4.0 / 9.0);
-    auto k2 = k1 * exp(-16.0 / 9.0) / 2.0;
     reactionComponentTransition = [&](const double& t) -> double {
         return exp(-pow((2.0 * t / Tds), 3));
     };
-    anteriorForceTransition = [&](const double& t) -> double {
-        auto Tp = Tds / 3.0;
-        return k1 * exp(-pow(2.0 * (t - Tp) / Tds, 2)) - 2.0 * k2 * t / Tds;
-    };
 
-    // todo. use sigmoid with "bump"
-    // double A, B, K, M, m1, m2, c;
-    // A = 0; B = 50; K = 1; M = 0.3; c = 0.02; m1 = Tds; m2 = Tp;
-    // A = 0; K = 1; B = 27.96243188;
-    // M = -0.04883987; c = 0.02999439; m1 = 0.11871468; m2 = 0.21028451;
-    // anteriorForceTransition = [&](const double& t) -> double {
-    //     return A + K / (1.0 + exp(B * (t - m1))) +
-    //             M * exp(-pow((t - m2), 2) / (2.0 * pow(c, 2)));
+    // auto k1 = exp(4.0 / 9.0);
+    // auto k2 = k1 * exp(-16.0 / 9.0) / 2.0;
+    // anteriorForceTransition = [=](const double& t) -> double {
+    //     auto Tp = Tds / 3.0;
+    //     return k1 * exp(-pow(2.0 * (t - Tp) / Tds, 2)) - 2.0 * k2 * t / Tds;
     // };
+
+    // use sigmoid with "bump" instead
+    double A, K, B, M, m1, m2, c;
+    A = 0;
+    K = 1;
+    B = 25.974456748001113;
+    M = 0.7520304912335662;
+    m1 = 0.4470939749685837;
+    m2 = 0.43955467948725574;
+    c = 0.03350169202846608;
+    anteriorForceTransition = [=](const double& t) -> double {
+        return A + K / (1.0 + exp(B * (t - m1 * Tds))) +
+               M * exp(-pow((t - m2 * Tds), 2) / (2.0 * pow(c, 2)));
+    };
 }
 
 Vector GRFPrediction::Output::asVector() {
@@ -352,8 +360,10 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
         const auto& pelvisJoint =
                 model.getJointSet().get("ground_pelvis"); // todo
         const auto& idx = pelvisJoint.getChildFrame().getMobilizedBodyIndex();
-        const auto& totalReactionForce = spatialGenForces[idx][1];
-        const auto& totalReactionMoment = spatialGenForces[idx][0];
+        auto& totalReactionForce = spatialGenForces[idx][1];
+        auto& totalReactionMoment = spatialGenForces[idx][0];
+        totalReactionMoment[0] = 0;
+        totalReactionMoment[2] = 0;
 #endif
 
         // =========================================================================
@@ -384,8 +394,8 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
                     I * bodyAccelerations[bix][0] +
                     cross(bodyVelocities[bix][0], I * bodyVelocities[bix][0]);
         }
-        totalReactionMoment[0] =0;
-        totalReactionMoment[2] =0;
+        totalReactionMoment[0] = 0;
+        totalReactionMoment[2] = 0;
 
 #endif
         // =========================================================================
@@ -393,7 +403,7 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
         // smooth transition assumption - forces
         Vec3 rightReactionForce, leftReactionForce;
         seperateReactionComponents(totalReactionForce,
-                                   reactionComponentTransition, // todo
+                                   anteriorForceTransition, // todo
                                    reactionComponentTransition,
                                    rightReactionForce, leftReactionForce);
 
@@ -456,7 +466,6 @@ void GRFPrediction::seperateReactionComponents(
                 totalReactionComponent[1] * reactionComponentFunction(time);
         trailingReactionComponent[2] =
                 totalReactionComponent[2] * reactionComponentFunction(time);
-
         // leading leg component
         leadingReactionComponent =
                 totalReactionComponent - trailingReactionComponent;
@@ -513,12 +522,24 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
         // determine leading / trailing leg
         switch (gaitPhaseDetector->getLeadingLeg()) {
         case GaitPhaseState::LeadingLeg::RIGHT: {
-            rightPoint = heelStationR->getLocationInGround(state);
-            leftPoint = toeStationL->getLocationInGround(state);
+            rightPoint = pointProjectionOnPlane(
+                    heelStationR->getLocationInGround(state),
+                    parameters.contact_plane_origin,
+                    parameters.contact_plane_normal);
+            leftPoint = pointProjectionOnPlane(
+                    toeStationL->getLocationInGround(state),
+                    parameters.contact_plane_origin,
+                    parameters.contact_plane_normal);
         } break;
         case GaitPhaseState::LeadingLeg::LEFT: {
-            rightPoint = toeStationR->getLocationInGround(state);
-            leftPoint = heelStationL->getLocationInGround(state);
+            rightPoint = pointProjectionOnPlane(
+                    toeStationR->getLocationInGround(state),
+                    parameters.contact_plane_origin,
+                    parameters.contact_plane_normal);
+            leftPoint = pointProjectionOnPlane(
+                    heelStationL->getLocationInGround(state),
+                    parameters.contact_plane_origin,
+                    parameters.contact_plane_normal);
         } break;
         case GaitPhaseState::LeadingLeg::INVALID: {
             cerr << "CoP: invalid LeadingLeg state!" << endl;
@@ -534,7 +555,8 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
         leftPoint = Vec3(0);
         rightPoint = pointProjectionOnPlane(
                 heelStationR->getLocationInGround(state) + copPosition(time, d),
-                Vec3(0, 0.02191189, 0), Vec3(0, 1, 0));
+                parameters.contact_plane_origin,
+                parameters.contact_plane_normal);
 
     } break;
 
@@ -546,8 +568,8 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
         rightPoint = Vec3(0);
         leftPoint = pointProjectionOnPlane(
                 heelStationL->getLocationInGround(state) + copPosition(time, d),
-                Vec3(0, 0.02191189, 0), Vec3(0, 1, 0));
-
+                parameters.contact_plane_origin,
+                parameters.contact_plane_normal);
     } break;
 
     default: {
