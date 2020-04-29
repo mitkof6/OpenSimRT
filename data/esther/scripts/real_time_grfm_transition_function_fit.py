@@ -63,6 +63,10 @@ if not (os.path.isfile(experiment_grf_file)):
 # read data
 experiment_grf = read_from_storage(experiment_grf_file)
 
+r_prefix = 'r_ground_'
+l_prefix = 'l_ground_'
+
+
 # ==============================================================================
 # help functions
 
@@ -102,10 +106,10 @@ def prepareMeasuredData(measurements, time, hs_id_list, to_id_list):
 
 # find HS and TO events
 gait_events = {}
-gait_events['rhs'] = detectEvent(experiment_grf.r_ground_force_vx.values, 'HS')
-gait_events['lhs'] = detectEvent(experiment_grf.l_ground_force_vx.values, 'HS')
-gait_events['rto'] = detectEvent(experiment_grf.r_ground_force_vx.values, 'TO')
-gait_events['lto'] = detectEvent(experiment_grf.l_ground_force_vx.values, 'TO')
+gait_events['rhs'] = detectEvent(experiment_grf[r_prefix + 'force_vx'].values, 'HS')
+gait_events['lhs'] = detectEvent(experiment_grf[l_prefix + 'force_vx'].values, 'HS')
+gait_events['rto'] = detectEvent(experiment_grf[r_prefix + 'force_vx'].values, 'TO')
+gait_events['lto'] = detectEvent(experiment_grf[l_prefix + 'force_vx'].values, 'TO')
 
 # assert equal number of paired (hs,to) indexes
 assert len(gait_events['rhs']) == len(gait_events['lto'])
@@ -115,18 +119,18 @@ assert len(gait_events['lhs']) == len(gait_events['rto'])
 hs_idx = np.array([gait_events['rhs'], gait_events['lhs']])
 to_idx = np.array([gait_events['lto'], gait_events['rto']])
 
-grf_fx = np.array([experiment_grf.l_ground_force_vx.values,
-                   experiment_grf.r_ground_force_vx.values])
-grf_fy = np.array([experiment_grf.l_ground_force_vy.values,
-                   experiment_grf.r_ground_force_vy.values])
-grf_fz = np.array([experiment_grf.l_ground_force_vz.values,
-                   experiment_grf.r_ground_force_vz.values])
-# grf_mx = np.array([experiment_grf.l_ground_torque_x.values,
-#                    experiment_grf.r_ground_torque_x.values])
-# grf_my = np.array([experiment_grf.l_ground_torque_y.values,
-#                    experiment_grf.r_ground_torque_y.values])
-# grf_mz = np.array([experiment_grf.l_ground_torque_z.values,
-#                    experiment_grf.r_ground_torque_z.values])
+grf_fx = np.array([experiment_grf[l_prefix + 'force_vx'].values,
+                   experiment_grf[r_prefix + 'force_vx'].values])
+grf_fy = np.array([experiment_grf[l_prefix + 'force_vy'].values,
+                   experiment_grf[r_prefix + 'force_vy'].values])
+grf_fz = np.array([experiment_grf[l_prefix + 'force_vz'].values,
+                   experiment_grf[r_prefix + 'force_vz'].values])
+# grf_mx = np.array([experiment_grf[l_prefix + 'torque_x'].values,
+#                    experiment_grf[r_prefix + 'torque_x'].values])
+# grf_my = np.array([experiment_grf[l_prefix + 'torque_y'].values,
+#                    experiment_grf[r_prefix + 'torque_y'].values])
+# grf_mz = np.array([experiment_grf[l_prefix + 'torque_z'].values,
+#                    experiment_grf[r_prefix + 'torque_z'].values])
 
 grf_data = [grf_fx, grf_fy, grf_fz]
 curves = [sigmoid_with_bump, logistic, logistic]
@@ -142,7 +146,7 @@ with PdfPages(results_dir + 'transition_curve_fit.pdf') as pdf,\
 
         # create data vector with measured data
         ydata, xdata = prepareMeasuredData(
-            data, experiment_grf.time.values, hs_idx, to_idx)
+            data, experiment_grf['time'].values, hs_idx, to_idx)
 
         # fit curve to measured data
         params, cov = curve_fit(

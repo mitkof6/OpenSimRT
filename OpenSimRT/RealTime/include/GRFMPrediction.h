@@ -100,7 +100,7 @@ class RealTime_API GRFPrediction {
 
     void seperateReactionComponents(
             const SimTK::Vec3& totalReactionComponent,
-            const TransitionFuction& anteriorForceFunction,
+            const TransitionFuction& anteriorComponentFunction,
             const TransitionFuction& verticalComponentFunction,
             const TransitionFuction& lateralComponentFunction,
             SimTK::Vec3& rightReactionComponent,
