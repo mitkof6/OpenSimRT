@@ -29,6 +29,7 @@ void run() {
     INIReader ini(INI_FILE);
     auto section = "TEST_GRFM_PREDICTION_FROM_FILE";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+    auto resultsDir = DATA_DIR + ini.getString(section, "RESULTS_DIR", "");
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
@@ -58,6 +59,8 @@ void run() {
     auto grfLeftTorqueIdentifier =
             ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
 
+    auto platform_offset = ini.getReal(section, "PLATFORM_OFFSET", 0.0);
+
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
     auto delay = ini.getInteger(section, "DELAY", 0);
@@ -69,8 +72,7 @@ void run() {
 
     // setup external forces
     ExternalWrench::Parameters grfRightFootPar{
-            grfRightApplyBody, grfRightForceExpressed,
-            grfRightPointExpressed};
+            grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
     auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
             grfRightPointIdentifier, grfRightForceIdentifier,
             grfRightTorqueIdentifier);
@@ -101,11 +103,11 @@ void run() {
     ikFilterParam.calculateDerivatives = true;
     LowPassSmoothFilter ikFilter(ikFilterParam);
 
-    //setup grfm prediction
+    // setup grfm prediction
     GRFPrediction::Parameters parameters;
     parameters.stance_threshold = 100;
-    parameters.contact_plane_origin = Vec3(0, -0.02191189, 0);
-    parameters.contact_plane_normal = UnitVec3(0,1,0);
+    parameters.contact_plane_origin = Vec3(0.0, platform_offset, 0.0);
+    parameters.contact_plane_normal = UnitVec3(0, 1, 0);
     GRFPrediction grfm(model, parameters);
 
     // initialize id and logger
@@ -131,15 +133,15 @@ void run() {
         auto qDot = ikFiltered.xDot;
         auto qDDot = ikFiltered.xDDot;
 
-        if (!ikFiltered.isValid) {
-            continue;
-        }
+        if (!ikFiltered.isValid) { continue; }
 
         // perform grfm prediction
         auto grfmOutput = grfm.solve({ikFiltered.t, q, qDot, qDDot});
 
-        ExternalWrench::Input grfRightWrench = {grfmOutput[0].point,grfmOutput[0].force,grfmOutput[0].moment};
-        ExternalWrench::Input grfLeftWrench = {grfmOutput[1].point,grfmOutput[1].force,grfmOutput[1].moment};
+        ExternalWrench::Input grfRightWrench = {
+                grfmOutput[0].point, grfmOutput[0].force, grfmOutput[0].moment};
+        ExternalWrench::Input grfLeftWrench = {
+                grfmOutput[1].point, grfmOutput[1].force, grfmOutput[1].moment};
         auto idOutput = id.solve(
                 {t, q, qDot, qDDot,
                  vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
@@ -158,14 +160,9 @@ void run() {
     }
 
     // store results
-    STOFileAdapter::write(tauLogger,
-                          subjectDir + "TR_3/results_rt/grfm_prediction/tau.sto");
-    STOFileAdapter::write(grfRightLogger,
-                          subjectDir +
-                                  "TR_3/results_rt/grfm_prediction/wrench_right.sto");
-    STOFileAdapter::write(grfLeftLogger,
-                          subjectDir +
-                                  "TR_3/results_rt/grfm_prediction/wrench_left.sto");
+    STOFileAdapter::write(tauLogger, resultsDir + "tau.sto");
+    STOFileAdapter::write(grfRightLogger, resultsDir + "wrench_right.sto");
+    STOFileAdapter::write(grfLeftLogger, resultsDir + "wrench_left.sto");
 }
 
 int main(int argc, char* argv[]) {

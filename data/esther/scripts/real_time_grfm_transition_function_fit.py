@@ -152,7 +152,7 @@ with PdfPages(results_dir + 'transition_curve_fit.pdf') as pdf,\
         text_file.write(
             '// {} {} parameters\n'.format(titles[i], function.__name__))
         for j, v in enumerate(params):
-            text_file.write('{} = {};\n'.format(
+            text_file.write('double {} = {};\n'.format(
                 function.__code__.co_varnames[1:][j], v))
         text_file.write('\n\n')
 

@@ -52,7 +52,7 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     auto platformToGround =
             new WeldJoint("PlatformToGround", model.getGround(), Vec3(0),
                           Vec3(0), *platform, -parameters.contact_plane_origin,
-                          Vec3(0)); // todo
+                          Vec3(0));
     model.addJoint(platformToGround);
 
     // contact half-space
@@ -68,18 +68,18 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     auto leftHeelContact = new ContactSphere();
     auto rightToeContact = new ContactSphere();
     auto leftToeContact = new ContactSphere();
-    rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005));  // todo
-    leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005));    // todo
-    rightToeContact->setLocation(Vec3(0.055, 0.01, -0.01));       // todo
-    leftToeContact->setLocation(Vec3(0.055, 0.01, 0.01));         // todo
-    rightHeelContact->setBody(model.getBodySet().get("calcn_r")); // todo
-    leftHeelContact->setBody(model.getBodySet().get("calcn_l"));  // todo
-    rightToeContact->setBody(model.getBodySet().get("toes_r"));   // todo
-    leftToeContact->setBody(model.getBodySet().get("toes_l"));    // todo
-    rightHeelContact->setRadius(0.01);                            // todo
-    leftHeelContact->setRadius(0.01);                             // todo
-    rightToeContact->setRadius(0.01);                             // todo
-    leftToeContact->setRadius(0.01);                              // todo
+    rightHeelContact->setLocation(Vec3(0.012, -0.0015, -0.005));
+    leftHeelContact->setLocation(Vec3(0.012, -0.0015, 0.005));
+    rightToeContact->setLocation(Vec3(0.055, 0.01, -0.01));
+    leftToeContact->setLocation(Vec3(0.055, 0.01, 0.01));
+    rightHeelContact->setBody(model.getBodySet().get("calcn_r"));
+    leftHeelContact->setBody(model.getBodySet().get("calcn_l"));
+    rightToeContact->setBody(model.getBodySet().get("toes_r"));
+    leftToeContact->setBody(model.getBodySet().get("toes_l"));
+    rightHeelContact->setRadius(0.01);
+    leftHeelContact->setRadius(0.01);
+    rightToeContact->setRadius(0.01);
+    leftToeContact->setRadius(0.01);
     rightHeelContact->setName("RHeelContact");
     leftHeelContact->setName("LHeelContact");
     rightToeContact->setName("RToeContact");
@@ -89,7 +89,7 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     model.addContactGeometry(rightToeContact);
     model.addContactGeometry(leftToeContact);
 
-    // contact parameters // todo
+    // contact parameters
     double stiffness = 2e6;
     double dissipation = 1.0;
     double staticFriction = 0.9;
@@ -120,6 +120,21 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
 
     // initialize system
     state = model.initSystem();
+
+    // detect HS and TO events - help functions
+    detectHS = [](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
+        return (w.data[0] == GaitPhaseState::LegPhase::SWING &&
+                w.data[1] == GaitPhaseState::LegPhase::STANCE)
+                       ? true
+                       : false;
+    };
+
+    detectTO = [](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
+        return (w.data[0] == GaitPhaseState::LegPhase::STANCE &&
+                w.data[1] == GaitPhaseState::LegPhase::SWING)
+                       ? true
+                       : false;
+    };
 }
 
 void ContactForceBasedPhaseDetector::updDetector(
@@ -134,21 +149,6 @@ void ContactForceBasedPhaseDetector::updDetector(
     // push to sliding window
     phaseWindowR.insert(phaseR);
     phaseWindowL.insert(phaseL);
-
-    // detect HS and TO events - help functions
-    auto detectHS = [&](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
-        return (w.data[0] == GaitPhaseState::LegPhase::SWING &&
-                w.data[1] == GaitPhaseState::LegPhase::STANCE)
-                       ? true
-                       : false;
-    };
-
-    auto detectTO = [&](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
-        return (w.data[0] == GaitPhaseState::LegPhase::STANCE &&
-                w.data[1] == GaitPhaseState::LegPhase::SWING)
-                       ? true
-                       : false;
-    };
 
     // udpate time constants
     Tto = (detectTO(phaseWindowR) || detectTO(phaseWindowL)) ? state.getTime()
@@ -276,10 +276,11 @@ GRFPrediction::GRFPrediction(const Model& otherModel,
     }
 
     // define transition functions for reaction components
-    reactionComponentTransition = [&](const double& t) -> double {
+    exponentialTransition = [&](const double& t) -> double {
         return exp(-pow((2.0 * t / Tds), 3));
     };
 
+    // // Anterior GRF (f_x) sigmoid_with_bump parameters
     // auto k1 = exp(4.0 / 9.0);
     // auto k2 = k1 * exp(-16.0 / 9.0) / 2.0;
     // anteriorForceTransition = [=](const double& t) -> double {
@@ -287,19 +288,51 @@ GRFPrediction::GRFPrediction(const Model& otherModel,
     //     return k1 * exp(-pow(2.0 * (t - Tp) / Tds, 2)) - 2.0 * k2 * t / Tds;
     // };
 
-    // use sigmoid with "bump" instead
-    double A, K, B, M, m1, m2, c;
-    A = 0;
-    K = 1;
-    B = 25.974456748001113;
-    M = 0.7520304912335662;
-    m1 = 0.4470939749685837;
-    m2 = 0.43955467948725574;
-    c = 0.03350169202846608;
-    anteriorForceTransition = [=](const double& t) -> double {
+    // Anterior GRF (f_x) sigmoid_with_bump parameters
+    anteriorForceTransition = [&](const double& t) -> double {
+        double A = 0;
+        double K = 1;
+        double B = 25.974456748001113;
+        double M = 0.7520304912335662;
+        double m1 = 0.4470939749685837;
+        double m2 = 0.43955467948725574;
+        double c = 0.03350169202846608;
         return A + K / (1.0 + exp(B * (t - m1 * Tds))) +
                M * exp(-pow((t - m2 * Tds), 2) / (2.0 * pow(c, 2)));
     };
+
+    // Vertical GRF (f_y) logistic parameters
+    verticalForceTransition = [&](const double& t) -> double {
+        double A = 1.1193681826492452;
+        double K = -1.6038212670613377;
+        double C = 3.037706815056258;
+        double B = 61.29534891423534;
+        double Q = 0.5067639996015457;
+        double m = 0.9396455521564754;
+        double v = 0.42306183726767493;
+        return A + K / pow((C + Q * exp(-B * (t - m * Tds))), v);
+    };
+
+    // Lateral GRF (f_z) logistic parameters
+    lateralForceTransition = [&](const double& t) -> double {
+        double A = 1.1320519858489442;
+        double K = -2.80801945666771;
+        double C = 3.2237306408637867;
+        double B = 55.194506993478576;
+        double Q = 0.3923571148441916;
+        double m = 0.7334108958330988;
+        double v = 0.7682144104771099;
+        return A + K / pow((C + Q * exp(-B * (t - m * Tds))), v);
+    };
+
+    // CoP trajectory (linear transition from heel -> metatarsal)
+    copPosition = [&](const double& t, const Vec3& d) -> Vec3 {
+        const auto omega = 2.0 * Pi / Tss;
+        return -2.0 * d / (3.0 * Pi) *
+               (sin(omega * t) - 1.0 / 8.0 * sin(2.0 * omega * t) -
+                3.0 / 4.0 * omega * t);
+    };
+
 }
 
 Vector GRFPrediction::Output::asVector() {
@@ -358,7 +391,7 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
         Vector_<SpatialVec> spatialGenForces;
         matter.multiplyBySystemJacobian(state, tau, spatialGenForces);
         const auto& pelvisJoint =
-                model.getJointSet().get("ground_pelvis"); // todo
+                model.getJointSet().get("ground_pelvis");
         const auto& idx = pelvisJoint.getChildFrame().getMobilizedBodyIndex();
         auto& totalReactionForce = spatialGenForces[idx][1];
         auto& totalReactionMoment = spatialGenForces[idx][0];
@@ -403,15 +436,17 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
         // smooth transition assumption - forces
         Vec3 rightReactionForce, leftReactionForce;
         seperateReactionComponents(totalReactionForce,
-                                   anteriorForceTransition, // todo
-                                   reactionComponentTransition,
+                                   anteriorForceTransition,
+                                   verticalForceTransition,
+                                   lateralForceTransition,
                                    rightReactionForce, leftReactionForce);
 
         // smooth transition assumption - moments
         Vec3 rightReactionMoment, leftReactionMoment;
         seperateReactionComponents(totalReactionMoment,
-                                   reactionComponentTransition,
-                                   reactionComponentTransition,
+                                   exponentialTransition,
+                                   exponentialTransition,
+                                   exponentialTransition,
                                    rightReactionMoment, leftReactionMoment);
         // point
         Vec3 rightPoint, leftPoint;
@@ -451,7 +486,8 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
 void GRFPrediction::seperateReactionComponents(
         const Vec3& totalReactionComponent,
         const TransitionFuction& anteriorComponentFunction,
-        const TransitionFuction& reactionComponentFunction,
+        const TransitionFuction& verticalComponentFunction,
+        const TransitionFuction& lateralComponentFunction,
         Vec3& rightReactionComponent, Vec3& leftReactionComponent) {
     Vec3 trailingReactionComponent, leadingReactionComponent;
     switch (gaitPhaseDetector->getPhase()) {
@@ -463,9 +499,9 @@ void GRFPrediction::seperateReactionComponents(
         trailingReactionComponent[0] =
                 totalReactionComponent[0] * anteriorComponentFunction(time);
         trailingReactionComponent[1] =
-                totalReactionComponent[1] * reactionComponentFunction(time);
+                totalReactionComponent[1] * verticalComponentFunction(time);
         trailingReactionComponent[2] =
-                totalReactionComponent[2] * reactionComponentFunction(time);
+                totalReactionComponent[2] * lateralComponentFunction(time);
         // leading leg component
         leadingReactionComponent =
                 totalReactionComponent - trailingReactionComponent;
@@ -507,14 +543,6 @@ void GRFPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
                                          SimTK::Vec3& leftPoint) {
     // get Tss
     Tss = gaitPhaseDetector->getSingleSupportDuration();
-
-    // CoP trajectory (linear transition from heel -> metatarsal)
-    auto copPosition = [&](const double& t, const Vec3& d) -> Vec3 {
-        const auto omega = 2.0 * Pi / Tss;
-        return -2.0 * d / (3.0 * Pi) *
-               (sin(omega * t) - 1.0 / 8.0 * sin(2.0 * omega * t) -
-                3.0 / 4.0 * omega * t);
-    };
 
     // determine gait phase
     switch (gaitPhaseDetector->getPhase()) {

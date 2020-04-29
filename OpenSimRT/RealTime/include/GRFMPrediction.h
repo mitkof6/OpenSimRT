@@ -49,7 +49,9 @@ class RealTime_API GaitPhaseState {
 
 // =============================================================================
 class RealTime_API GRFPrediction {
-    typedef std::function<double(double)> TransitionFuction;
+    typedef std::function<double(const double&)> TransitionFuction;
+    typedef std::function<SimTK::Vec3(const double&, const SimTK::Vec3&)>
+            CoPTrajectory;
 
  public:
     struct Input {
@@ -73,20 +75,23 @@ class RealTime_API GRFPrediction {
         SimTK::UnitVec3 contact_plane_normal;
     } parameters;
 
-    SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
 
     GRFPrediction(const OpenSim::Model&, const Parameters&);
     std::vector<Output> solve(const Input& input);
 
  private:
     TransitionFuction anteriorForceTransition;
-    TransitionFuction reactionComponentTransition;
+    TransitionFuction verticalForceTransition;
+    TransitionFuction lateralForceTransition;
+    TransitionFuction exponentialTransition;
+    CoPTrajectory copPosition;
 
     double t, Tds, Tss;
 
     OpenSim::Model model;
     SimTK::State state;
     GaitPhaseState::GaitPhase gaitphase;
+    SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
 
     SimTK::ReferencePtr<OpenSim::Station> heelStationR;
     SimTK::ReferencePtr<OpenSim::Station> heelStationL;
@@ -96,7 +101,8 @@ class RealTime_API GRFPrediction {
     void seperateReactionComponents(
             const SimTK::Vec3& totalReactionComponent,
             const TransitionFuction& anteriorForceFunction,
-            const TransitionFuction& reactionComponentFunction,
+            const TransitionFuction& verticalComponentFunction,
+            const TransitionFuction& lateralComponentFunction,
             SimTK::Vec3& rightReactionComponent,
             SimTK::Vec3& leftReactionComponent);
 
@@ -122,6 +128,9 @@ class RealTime_API GaitPhaseDetector {
 
 class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
  public:
+    using DetectEventFunction =
+            std::function<bool(const SlidingWindow<GaitPhaseState::LegPhase>&)>;
+
     ContactForceBasedPhaseDetector(const OpenSim::Model&,
                                    const GRFPrediction::Parameters&);
     void updDetector(const GRFPrediction::Input& input);
@@ -140,6 +149,8 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
     GaitPhaseState::LegPhase updLegPhase(const OpenSim::HuntCrossleyForce*);
     GaitPhaseState::GaitPhase updGaitPhase(const GaitPhaseState::LegPhase&,
                                            const GaitPhaseState::LegPhase&);
+    DetectEventFunction detectHS;
+    DetectEventFunction detectTO;
 
     double Ths, Tto, Tds, Tss;
 
