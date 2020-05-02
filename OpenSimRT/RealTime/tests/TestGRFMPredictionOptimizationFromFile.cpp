@@ -29,8 +29,11 @@ void run() {
     INIReader ini(INI_FILE);
     auto section = "TEST_GRFM_PREDICTION_FROM_FILE";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+    auto resultsDir = DATA_DIR + ini.getString(section, "RESULTS_DIR", "");
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
+
+    auto platform_offset = ini.getReal(section, "PLATFORM_OFFSET", 0);
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
@@ -62,14 +65,15 @@ void run() {
     ContactForceAnalysis::Parameters parameters;
     parameters.convergence_tolerance = 1e-4;
     parameters.constraint_tolerance = 1e-6;
+    parameters.platform_offset = Vec3(0, platform_offset, 0);
     ContactForceAnalysis grfm(model, parameters);
 
     // visualizer
     BasicModelVisualizer visualizer(model);
-    // auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-    // visualizer.addDecorationGenerator(rightGRFDecorator);
-    // auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-    // visualizer.addDecorationGenerator(leftGRFDecorator);
+    auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+    visualizer.addDecorationGenerator(rightGRFDecorator);
+    auto leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+    visualizer.addDecorationGenerator(leftGRFDecorator);
 
     // loop through kinematic frames
     for (int i = 0; i < qTable.getNumRows(); i++) {
@@ -83,17 +87,15 @@ void run() {
         auto qDot = ikFiltered.xDot;
         auto qDDot = ikFiltered.xDDot;
 
-        if (!ikFiltered.isValid) {
-            continue;
-        }
+        if (!ikFiltered.isValid) { continue; }
 
         // perform grfm prediction
         auto grfmOutput = grfm.solve({ikFiltered.t, q, qDot, qDDot});
 
         // visualization
         visualizer.update(q);
-        // rightGRFDecorator->update(grfRightWrench.point, grfRightWrench.force);
-        // leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
+        rightGRFDecorator->update(grfmOutput[0].point, grfmOutput[0].force);
+        leftGRFDecorator->update(grfmOutput[1].point, grfmOutput[1].force);
 
         // log data (use filter time to align with delay)
         grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
@@ -103,12 +105,9 @@ void run() {
     }
 
     // store results
-    STOFileAdapter::write(grfRightLogger,
-                          subjectDir +
-                                  "real_time/grfm_prediction/wrench_right.sto");
-    STOFileAdapter::write(grfLeftLogger,
-                          subjectDir +
-                                  "real_time/grfm_prediction/wrench_left.sto");
+    // STOFileAdapter::write(tauLogger, resultsDir + "tau.sto");
+    STOFileAdapter::write(grfRightLogger, resultsDir + "wrench_right.sto");
+    STOFileAdapter::write(grfLeftLogger, resultsDir + "wrench_left.sto");
 }
 
 int main(int argc, char* argv[]) {

@@ -4,32 +4,13 @@
 
 #include <OpenSim/OpenSim.h>
 
+using namespace std;
 using namespace SimTK;
 using namespace OpenSim;
 using namespace OpenSimRT;
 
 // help functions
 //==============================================================================
-Vector calcGravity(const State& s, const Model& model) {
-    Vector g;
-    model.getMatterSubsystem().multiplyBySystemJacobianTranspose(
-            s, model.getGravityForce().getBodyForces(s), g);
-    return -g;
-}
-
-Vector calcCoriolis(const State& s, const Model& model) {
-    Vector c;
-    model.getMatterSubsystem().calcResidualForceIgnoringConstraints(
-            s, Vector(0), Vector_<SpatialVec>(0), Vector(0), c);
-    return c;
-}
-
-Matrix calcM(const State& s, const Model& model) {
-    Matrix M;
-    model.getMatterSubsystem().calcM(s, M);
-    return M;
-}
-
 Vector multiplyByJacobianT(const State& state, const Model& model,
                            const Vector_<SpatialVec>& spatialForces) {
     Vector generalizedForces;
@@ -51,44 +32,37 @@ void updateState(const T& input, const Model& model, State& state,
 
 //==============================================================================
 
-ContactForceActuator::ContactForceActuator() {
-    name = "contact_force_element";
-    optimal_force = 100.0;
-    static_friction = 0.8;
-    kinetic_friction = 0.5;
-    contact_tolerance = 0;
-    contact_transition_zone = 0.01;
-    v_trans = 0.1;
-
-    plane_body = "ground";
-    plane_origin = Vec3(0, 0, 0);
-    plane_normal = Vec3(0, 1, 0);
-
-    point_body = "ground";
-    point_location = Vec3(0, 0, 0);
-
-    minMultipliers.resize(getNumMultipliers());
-    minMultipliers = Vector(3, 0.0);
-    maxMultipliers.resize(getNumMultipliers());
-    maxMultipliers = Vector(3, 1.0);
-    planeBody = nullptr;
-    pointBody = nullptr;
-}
-
 ContactForceActuator::ContactForceActuator(const Model& model,
                                            const std::string& bodyName,
-                                           const Vec3& point,
-                                           const std::string& aName)
-        : ContactForceActuator() {
-    point_body = bodyName;
-    point_location = point;
+                                           const Vec3& pointOrigin,
+                                           const Vec3& planeOrigin,
+                                           const std::string& aName) {
     name = aName;
+
+    optimal_force = 200.0;
+    // static_friction = 0.8;
+    // kinetic_friction = 0.5;
+    // contact_tolerance = 0;
+    // contact_transition_zone = 0.01;
+    // v_trans = 0.1;
+
+    minMultipliers.resize(getNumMultipliers());
+    maxMultipliers.resize(getNumMultipliers());
+    minMultipliers = Vector(3, -Infinity);
+    minMultipliers[1] = 0;
+    maxMultipliers = Vector(3, Infinity);
+
+    point_body = bodyName;
+    point_location = pointOrigin;
+    plane_origin = planeOrigin;
+    plane_normal = Vec3(0, 1, 0);
+
     pointBody =
             ReferencePtr<const OpenSim::Body>(model.getBodySet().get(bodyName));
-    planeBody = ReferencePtr<const OpenSim::Body>(
-            model.getBodySet().get("Platform"));
 }
 
+//==============================================================================
+// getters/setters
 std::string ContactForceActuator::getName() const { return name; }
 
 void ContactForceActuator::setName(const std::string& otherName) {
@@ -113,153 +87,177 @@ int ContactForceActuator::getNumMultipliers() { return 3; }
 
 int ContactForceActuator::getNumMultiplierConstraints() { return 4; }
 
+//==============================================================================
+
 void ContactForceActuator::computeForceVectors(
-        const State& state, const Vector& multipliers, Vec3& f_on_plane,
-        Vec3& f_on_point, Vec3& station_on_plane, Vec3& station_on_body) const {
+        const State& state, const Vector& multipliers,
+        ContactWrench& planeWrench, ContactWrench& bodyWrench) const {
     // calculate force directions with respect to plane in ground frame
-    const UnitVec3 normal(
-            planeBody->expressVectorInGround(state, plane_normal));
-    // calculate arbitrary vector that is perpendicular to plane normal
-    const UnitVec3 shear1 = normal.perp();
-    const UnitVec3 shear2 = UnitVec3(normal % shear1);
+    const UnitVec3 normal(plane_normal);
+    // const UnitVec3 shear1 = normal.perp();
+    // const UnitVec3 shear2 = UnitVec3(normal % shear1);
 
     // transform contact point into ground frame (=force station for pointBody)
-    station_on_body =
+    bodyWrench.point =
             pointBody->findStationLocationInGround(state, point_location);
 
-    // transform plane origin into ground frame
-    const Vec3 p_origin =
-            planeBody->findStationLocationInGround(state, plane_origin);
-
     // compute contact point to contact plane distance
-    const auto distance = ~(station_on_body - p_origin) * normal;
+    const auto distance = ~(bodyWrench.point - plane_origin) * normal;
 
     // projection of contact point onto contact plane
-    station_on_plane = station_on_body - distance * normal;
+    planeWrench.point = bodyWrench.point - distance * normal;
 
-    // compute relative in-plane velocity of contact point
-    const Vec3 point_vel = pointBody->getVelocityInGround(state)[1];
-    const Vec3 plane_vel = planeBody->getVelocityInGround(state)[1];
-    const Vec3 v_rel = point_vel - plane_vel;
+    // // compute relative in-plane velocity of contact point
+    // const Vec3 point_vel = pointBody->getVelocityInGround(state)[1];
+    // const Vec3 v_rel_in_plane = point_vel - normal * (~point_vel * normal);
+    // const auto velocity = v_rel_in_plane.norm();
 
-    // project v_rel into plane
-    const Vec3 v_rel_in_plane = v_rel - normal * (~v_rel * normal);
-    const auto velocity = v_rel_in_plane.norm();
+    // // compute reference contact strength (depending on point to plane
+    // distance) double force_ref = 0; if (contact_tolerance < 0 || distance <
+    // 0)
+    //     force_ref = optimal_force;
+    // else if (distance > 0 &&
+    //          distance <= contact_tolerance + contact_transition_zone) {
+    //     const double arg = (-2.0 * (std::abs(distance) - contact_tolerance) +
+    //                         contact_transition_zone) /
+    //                        contact_transition_zone;
+    //     force_ref = 0.5 * optimal_force * (1 + std::tanh(arg * Pi));
+    // }
 
-    // compute reference contact strength (depending on point to plane distance)
-    double force_ref = 0;
-    if (contact_tolerance < 0 ||
-        distance < 0) // negative values ==> distance has no effect
-        force_ref = optimal_force;
-    else if (distance > 0 &&
-             distance <= contact_tolerance + contact_transition_zone) {
-        const double arg = (-2.0 * (std::abs(distance) - contact_tolerance) +
-                            contact_transition_zone) /
-                           contact_transition_zone;
-        force_ref = 0.5 * optimal_force * (1 + std::tanh(arg * Pi));
-    }
-
-    // detect if we are in the static or in the kinetic regime
-    if (velocity <= v_trans) {
-        f_on_plane = (-multipliers[0] * shear1 + multipliers[1] * normal +
-                      multipliers[2] * shear2) *
-                     force_ref;
-    } else {
-        const Vec3 shear =
-                multipliers[1] * kinetic_friction * v_rel_in_plane.normalize();
-        f_on_plane = (-multipliers[1] * normal + shear) * force_ref;
-    }
+    // // detect if we are in the static or in the kinetic regime
+    // if (velocity <= v_trans) {
+    //     f_on_plane = (-multipliers[0] * shear1 + multipliers[1] * normal +
+    //                   multipliers[2] * shear2) *
+    //                  force_ref;
+    // } else {
+    //     const Vec3 shear =
+    //             multipliers[1] * kinetic_friction *
+    //             v_rel_in_plane.normalize();
+    //     f_on_plane = (-multipliers[1] * normal + shear) * force_ref;
+    // }
+    double force_ref = (distance <= 0) ? optimal_force : 0;
+    planeWrench.force =
+            Vec3(multipliers[0], multipliers[1], multipliers[2]) * force_ref;
 
     // force on point body acts along the opposite direction
-    f_on_point = -f_on_plane;
+    planeWrench.moment = Vec3(0); // todo
+    bodyWrench.force = -planeWrench.force;
+    bodyWrench.moment = -planeWrench.moment;
 }
+// void ContactForceActuator::computeForceGradient(
+//         const SimTK::State& state, const SimTK::Vector& multipliers) const {
+//     const UnitVec3 normal(plane_normal);
+//     const auto& point =
+//             pointBody->findStationLocationInGround(state, point_location);
+//     const auto distance = ~(point - plane_origin) * normal;
+
+//     double force_ref = (distance <= 0) ? optimal_force : 0;
+// }
 
 //==============================================================================
 
 ContactForceAnalysis::ContactForceAnalysis(const Model& otherModel,
                                            const Parameters& parameters)
         : model(*otherModel.clone()), numContactMultipliers(0) {
-    // platform
-    auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
-    platform->attachGeometry(new Brick(Vec3(1, 0.0075, 1))); // todo
-    model.addBody(platform);
-
-    // weld joint
-    auto platformToGround = new WeldJoint(
-            "PlatformToGround", model.getGround(), Vec3(0), Vec3(0), *platform,
-            Vec3(-0.6, -0.035, 0), Vec3(0)); // todo
-    model.addJoint(platformToGround);
-
     // contact force elements
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.0133, -0.0423, 0.0054), "heel_lat_r"));
+            model, "calcn_r", Vec3(0.0133, -0.01, 0.0054),
+            parameters.platform_offset, "heel_lat_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.0133, -0.0423, -0.015), "heel_med_r"));
+            model, "calcn_r", Vec3(0.0133, -0.01, -0.015),
+            parameters.platform_offset, "heel_med_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.0805, -0.0173, 0.0268), "mid_lat_r"));
+            model, "calcn_r", Vec3(0.0805, -0.01, 0.0268),
+            parameters.platform_offset, "mid_lat_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.11, -0.0173, -0.03), "mid_r"));
+            model, "calcn_r", Vec3(0.110, -0.01, -0.030),
+            parameters.platform_offset, "mid_med_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.176, -0.029, -0.029), "met_1_r"));
+            model, "calcn_r", Vec3(0.176, 0.005, -0.029),
+            parameters.platform_offset, "met_1_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.174, -0.028, -0.002), "met_2_r"));
+            model, "calcn_r", Vec3(0.174, 0.005, -0.002),
+            parameters.platform_offset, "met_2_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.166, -0.028, 0.0168), "met_3_r"));
+            model, "calcn_r", Vec3(0.166, 0.005, 0.0168),
+            parameters.platform_offset, "met_3_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.152, -0.028, 0.029), "met_4_r"));
+            model, "calcn_r", Vec3(0.1520, 0.005, 0.029),
+            parameters.platform_offset, "met_4_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.1435, -0.028, 0.044), "met_5_r"));
+            model, "calcn_r", Vec3(0.1435, 0.005, 0.044),
+            parameters.platform_offset, "met_5_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.233, -0.02, -0.0187), "toe_1_r"));
+            model, "calcn_r", Vec3(0.233, 0.015, -0.0187),
+            parameters.platform_offset, "toe_1_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.247, -0.02, 0.0133), "toe_2_r"));
+            model, "calcn_r", Vec3(0.247, 0.015, 0.0133),
+            parameters.platform_offset, "toe_2_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.23, -0.02, 0.028), "toe_3_r"));
+            model, "calcn_r", Vec3(0.230, 0.015, 0.028),
+            parameters.platform_offset, "toe_3_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.21, -0.02, 0.04), "toe_4_r"));
+            model, "calcn_r", Vec3(0.210, 0.015, 0.040),
+            parameters.platform_offset, "toe_4_r"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_r", Vec3(0.197, -0.02, 0.052), "toe_5_r"));
+            model, "calcn_r", Vec3(0.197, 0.015, 0.052),
+            parameters.platform_offset, "toe_5_r"));
 
+    // left
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.0133, -0.0423, -0.0054), "heel_lat_l"));
+            model, "calcn_l", Vec3(0.0133, -0.01, -0.0054),
+            parameters.platform_offset, "heel_lat_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.0133, -0.0423, 0.015), "heel_med_l"));
+            model, "calcn_l", Vec3(0.0133, -0.01, 0.015),
+            parameters.platform_offset, "heel_med_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.0805, -0.0173, -0.0268), "mid_lat_l"));
+            model, "calcn_l", Vec3(0.0805, -0.01, -0.0268),
+            parameters.platform_offset, "mid_lat_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.11, -0.0173, 0.03), "mid_med_l"));
+            model, "calcn_l", Vec3(0.110, -0.01, 0.030),
+            parameters.platform_offset, "mid_med_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.176, -0.029, 0.029), "met_1_l"));
+            model, "calcn_l", Vec3(0.176, 0.005, 0.029),
+            parameters.platform_offset, "met_1_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.174, -0.028, 0.002), "met_2_l"));
+            model, "calcn_l", Vec3(0.174, 0.005, 0.002),
+            parameters.platform_offset, "met_2_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.166, -0.028, -0.0168), "met_3_l"));
+            model, "calcn_l", Vec3(0.166, 0.005, -0.0168),
+            parameters.platform_offset, "met_3_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.152, -0.028, -0.029), "met_4_l"));
+            model, "calcn_l", Vec3(0.152, 0.005, -0.029),
+            parameters.platform_offset, "met_4_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.1435, -0.028, -0.044), "met_5_l"));
+            model, "calcn_l", Vec3(0.1435, 0.005, -0.044),
+            parameters.platform_offset, "met_5_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.233, -0.02, 0.0187), "toe_1_l"));
+            model, "calcn_l", Vec3(0.233, 0.015, 0.0187),
+            parameters.platform_offset, "toe_1_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.247, -0.02, -0.0133), "toe_2_l"));
+            model, "calcn_l", Vec3(0.247, 0.015, -0.0133),
+            parameters.platform_offset, "toe_2_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.23, -0.02, -0.028), "toe_3_l"));
+            model, "calcn_l", Vec3(0.230, 0.015, 0.010),
+            parameters.platform_offset, "toe_3_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.21, -0.02, -0.04), "toe_4_l"));
+            model, "calcn_l", Vec3(0.210, 0.015, -0.04),
+            parameters.platform_offset, "toe_4_l"));
     contacts.push_back(new ContactForceActuator(
-            model, "calcn_l", Vec3(0.197, -0.02, -0.052), "toe_5_l"));
+            model, "calcn_l", Vec3(0.197, 0.015, -0.052),
+            parameters.platform_offset, "toe_5_l"));
 
     // number of multipliers and constraints
     for (int i = 0; i < contacts.size(); ++i) {
-        numContactMultipliers += contacts[i]->getNumMultipliers();
+        numContactMultipliers +=
+                contacts[i]->getNumMultipliers(); // contacts x 3
     }
 
     // create new static optimization problem
     problem = new ContactForceAnalysisTarget(&model, this);
 
     // create optimizer
-    const OptimizerAlgorithm algorithm = OptimizerAlgorithm::InteriorPoint;
-    optimizer = new Optimizer(*problem, algorithm);
+    optimizer = new Optimizer(*problem, OptimizerAlgorithm::InteriorPoint);
     optimizer->setConvergenceTolerance(parameters.convergence_tolerance);
     optimizer->setConstraintTolerance(parameters.constraint_tolerance);
     optimizer->setMaxIterations(300);
@@ -272,7 +270,7 @@ ContactForceAnalysis::ContactForceAnalysis(const Model& otherModel,
     optimizer->setAdvancedRealOption("obj_scaling_factor", 1);
     optimizer->setAdvancedRealOption("nlp_scaling_max_gradient", 1);
     optimizer->setAdvancedStrOption("nlp_scaling_method", "none");
-    problem->initParameters(parameterSeeds);
+    problem->initParameters(parameterSeeds, 0.0);
 }
 
 Vector ContactForceAnalysis::Output::asVector() {
@@ -292,18 +290,24 @@ Vector ContactForceAnalysis::Output::asVector() {
 std::vector<ContactForceAnalysis::Output>
 ContactForceAnalysis::solve(const Input& input) {
     try {
+        // problem->initParameters(parameterSeeds, 1);
         problem->prepareForOptimization(input);
         optimizer->optimize(parameterSeeds);
     } catch (SimTK::Exception::OptimizerFailed& e) {
         // std::cerr << e.what() << std::endl;
     }
 
-    auto grf = problem->getForces(parameterSeeds);
+    auto grf = problem->getContactForces(parameterSeeds);
     auto mixR = model.getBodySet().get("calcn_r").getMobilizedBodyIndex();
     auto mixL = model.getBodySet().get("calcn_l").getMobilizedBodyIndex();
 
-    const auto& rightReactionForce = grf[mixR][1];
-    const auto& leftReactionForce = grf[mixL][1];
+    const auto& rightReactionForce = -grf[mixR][1];
+    const auto& leftReactionForce = -grf[mixL][1];
+
+    // std::cout << parameterSeeds << std::endl;
+    std::cout << input.t << "," << rightReactionForce[0] << ","
+              << rightReactionForce[1] << "," << rightReactionForce[2]
+              << std::endl;
 
     // results
     Output rightLegOutput;
@@ -339,8 +343,8 @@ ContactForceAnalysisTarget::ContactForceAnalysisTarget(
         model->updMuscles()[i].setAppliesForce(state, false);
     }
 
-    // disable controllers
-    model->setAllControllersEnabled(false);
+    // // disable controllers
+    // model->setAllControllersEnabled(false);
 
     // set the structure of the problem
     setNumParameters(analysis->numContactMultipliers); // contacts x 3
@@ -381,17 +385,18 @@ void ContactForceAnalysisTarget::prepareForOptimization(
                                                   tau);
 }
 
-void ContactForceAnalysisTarget::initParameters(Vector& parameters) const {
+void ContactForceAnalysisTarget::initParameters(Vector& parameters,
+                                                double&& value) const {
     // ToDo: initialize to meaningful values e.g. between lb and ub.
-    parameters = Vector(getNumParameters(), 0.0);
+    parameters = Vector(getNumParameters(), value);
 }
 
 int ContactForceAnalysisTarget::constraintFunc(const Vector& parameters,
                                                bool new_parameters,
                                                Vector& errors) const {
     // tau + E(lambda) = 0
-    errors = tau + multiplyByJacobianT(state, *model,
-                                       getContactForces(state, parameters));
+    errors = tau +
+             multiplyByJacobianT(state, *model, getContactForces(parameters));
     return 0;
 }
 
@@ -417,37 +422,24 @@ int ContactForceAnalysisTarget::gradientFunc(const Vector& parameters,
 }
 
 Vector_<SpatialVec>
-ContactForceAnalysisTarget::getContactForces(const State& state,
-                                             const Vector& multipliers) const {
+ContactForceAnalysisTarget::getContactForces(const Vector& multipliers) const {
     Vector_<SpatialVec> appliedContactForces;
-    Vec3 F_plane, F_point, P_plane, P_point;
-    appliedContactForces.resize(model->getNumBodies() + 1); // +1 for ground
+    ContactForceActuator::ContactWrench planeWrench, bodyWrench;
+    appliedContactForces.resize(model->getMatterSubsystem().getNumBodies())
+            .setToZero();
 
     const int numMult = ContactForceActuator::getNumMultipliers();
     int rowOffset = 0;
-    for (int i = 0; i < model->getBodySet().getSize(); ++i) {
-        const auto& body = model->getBodySet()[i];
-        const auto& bodyName = body.getName();
-        const auto& mix = body.getMobilizedBodyIndex();
+    for (auto elem : contactsPerBodyMap) {
+        const auto& mbix =
+                model->getBodySet().get(elem.first).getMobilizedBodyIndex();
 
-        if (contactsPerBodyMap.find(bodyName) != contactsPerBodyMap.end()) {
-            const auto& contactsInBody =
-                    contactsPerBodyMap.equal_range(bodyName);
-            for (auto itr = contactsInBody.first; itr != contactsInBody.second;
-                 ++itr) {
-                itr->second->computeForceVectors(
-                        state, multipliers(rowOffset, numMult), F_plane,
-                        F_point, P_plane, P_point);
-                rowOffset += numMult;
-                appliedContactForces[mix][0] += Vec3(0); // todo
-                appliedContactForces[mix][1] += F_point;
-            }
-        }
+        elem.second->computeForceVectors(state, multipliers(rowOffset, numMult),
+                                         planeWrench, bodyWrench);
+        rowOffset += numMult;
+        appliedContactForces[mbix][0] += bodyWrench.moment;
+        appliedContactForces[mbix][1] += bodyWrench.force;
     }
-    return appliedContactForces;
-}
 
-SimTK::Vector_<SimTK::SpatialVec>
-ContactForceAnalysisTarget::getForces(const Vector& parameters) const {
-    return getContactForces(state, parameters);
+    return appliedContactForces;
 }

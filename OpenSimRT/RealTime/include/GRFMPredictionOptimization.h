@@ -18,10 +18,16 @@ namespace OpenSimRT {
 //==============================================================================
 class RealTime_API ContactForceActuator {
  public:
+    struct ContactWrench {
+        SimTK::Vec3 force;
+        SimTK::Vec3 moment;
+        SimTK::Vec3 point;
+    };
+
     ContactForceActuator();
-    ContactForceActuator(const OpenSim::Model& model,
-                         const std::string& bodyName, const SimTK::Vec3& point,
-                         const std::string& aName);
+    ContactForceActuator(const OpenSim::Model&, const std::string&,
+                         const SimTK::Vec3&, const SimTK::Vec3&,
+                         const std::string&);
 
     SimTK::Vector getMaxMultipliers() const;
     SimTK::Vector getMinMultipliers() const;
@@ -34,10 +40,10 @@ class RealTime_API ContactForceActuator {
 
     void computeForceVectors(const SimTK::State& s,
                              const SimTK::Vector& multipliers,
-                             SimTK::Vec3& f_on_plane_in_G,
-                             SimTK::Vec3& f_on_point_in_G,
-                             SimTK::Vec3& station_on_planeBody_in_G,
-                             SimTK::Vec3& station_on_pointBody_in_G) const;
+                             ContactWrench& planeWrench,
+                             ContactWrench& bodyWrench) const;
+    // void computeForceGradient(const SimTK::State& s,
+    //                           const SimTK::Vector& multipliers) const;
 
  public:
     std::string name;
@@ -56,7 +62,7 @@ class RealTime_API ContactForceActuator {
  protected:
     SimTK::Vector maxMultipliers;
     SimTK::Vector minMultipliers;
-    SimTK::ReferencePtr<const OpenSim::Body> planeBody;
+    // SimTK::ReferencePtr<const OpenSim::Body> planeBody;
     SimTK::ReferencePtr<const OpenSim::Body> pointBody;
 };
 
@@ -86,6 +92,7 @@ class RealTime_API ContactForceAnalysis {
     struct Parameters {
         double convergence_tolerance;
         double constraint_tolerance;
+        SimTK::Vec3 platform_offset;
     };
 
     ContactForceAnalysis(const OpenSim::Model& otherModel,
@@ -108,12 +115,10 @@ class RealTime_API ContactForceAnalysisTarget : public SimTK::OptimizerSystem {
     ContactForceAnalysisTarget(OpenSim::Model* otherModel,
                                ContactForceAnalysis* otherAnalysis);
 
-    void initParameters(SimTK::Vector& parameterSeeds) const;
+    void initParameters(SimTK::Vector& parameterSeeds, double&&) const;
     void prepareForOptimization(const ContactForceAnalysis::Input& input) const;
-    SimTK::Vector_<SimTK::SpatialVec> getForces(const SimTK::Vector& parameters) const;
     SimTK::Vector_<SimTK::SpatialVec>
-    getContactForces(const SimTK::State& state,
-                     const SimTK::Vector& multipliers) const;
+    getContactForces(const SimTK::Vector& multipliers) const;
 
  protected:
     int constraintFunc(const SimTK::Vector& parameters, bool new_parameters,
