@@ -39,7 +39,6 @@ class ExamplePacketListener : public osc::OscPacketListener {
                                 const IpEndpointName& remoteEndpoint) {
         (void) remoteEndpoint; // suppress unused parameter warning
         try {
-            cout << m.AddressPattern() << endl;
             if (std::strcmp(m.AddressPattern(), "/quaternion") == 0) {
                 osc::ReceivedMessageArgumentStream args = m.ArgumentStream();
                 float q1, q2, q3, q4;
@@ -95,7 +94,7 @@ void run() {
 
             p.Clear();
             p << osc::BeginBundleImmediate
-              << osc::BeginMessage("/wifi/send/port") << port
+              << osc::BeginMessage("/wifi/send/port") << 8000
               << osc::EndMessage << osc::EndBundle;
             socket.Send(p.Data(), p.Size());
 
