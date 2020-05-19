@@ -27,6 +27,9 @@ option(USE_UNITY_BUILD "Enable to speed up the building" OFF)
 # build Vicon interface
 option(BUILD_VICON "Build Vicon streamer interface" OFF)
 
+# build Vicon interface
+option(BUILD_NGIMU "Build NGIMU streamer interface" ON)
+
 # build code generation (example model moment arm)
 option(BUILD_MOMENT_ARM "Build code generated moment arm projects" ON)
 

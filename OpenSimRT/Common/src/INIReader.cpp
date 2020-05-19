@@ -5,6 +5,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 #include <stdio.h>
 
 /* Nonzero to allow multi-line value parsing, in the style of Python's
