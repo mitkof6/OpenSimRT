@@ -43,7 +43,7 @@ class ExamplePacketListener : public osc::OscPacketListener {
                 osc::ReceivedMessageArgumentStream args = m.ArgumentStream();
                 float q1, q2, q3, q4;
                 args >> q1 >> q2 >> q3 >> q4 >> osc::EndMessage;
-                auto quaternion = NGIMUData::Quaternion{q1, q2, q3, q4};
+                auto quaternion = IMUData::Quaternion{q1, q2, q3, q4};
 
                 cout << "Port: " << _id << " /quaternion: " << q1 << ", " << q2 << ", " << q3
                      << ", " << q4 << endl;
@@ -127,7 +127,7 @@ void run() {
     };
 
     thread transmit(startTransmit, MASTER_IP, SEND_PORTS);
-    thread listen(startListener, MASTER_IP, RECEIVE_PORTS);
+    thread listen(startListener, "192.168.2.8", vector<int>{8000});
     transmit.join();
     listen.join();
 }
