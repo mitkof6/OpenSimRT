@@ -118,9 +118,9 @@ class NGIMU_API Manager {
     }
 
  protected:
-    // Manager() noexcept = default;
-    // Manager& operator=(const Manager&) = delete;
-    // Manager(const Manager&) = delete;
+    Manager() noexcept = default;
+    Manager& operator=(const Manager&) = delete;
+    Manager(const Manager&) = delete;
     virtual ~Manager() = default;
 
     // override for different ipmplementations

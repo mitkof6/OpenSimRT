@@ -67,7 +67,6 @@ NGIMUManager::NGIMUManager(const std::vector<std::string>& ips,
         i++;
 
         data[port].reset();
-        // data.insert(make_pair(port, new PromiseAndFuture<int>()));
     }
 }
 
