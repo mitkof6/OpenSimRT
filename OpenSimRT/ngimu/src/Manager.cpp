@@ -1,7 +1,13 @@
 #include "Manager.h"
+
 #include "IMUListener.h"
 #include "osc/OscOutboundPacketStream.h"
 #include "osc/OscReceivedElements.h"
+#include "osc/OscTypes.h"
+
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 // #include <algorithm>
 
@@ -16,14 +22,30 @@ using namespace OpenSimRT;
 
 /*******************************************************************************/
 std::ostream& operator<<(std::ostream& os, const IMUData::Quaternion& q) {
-        return os << q.q1 << " " << q.q2 << " " << q.q3 << " " << q.q4;
-    }
+    return os << q.q1 << " " << q.q2 << " " << q.q3 << " " << q.q4;
+}
+
+template <typename... Args>
+void sendMessage(UdpTransmitSocket& socket, const std::string& command,
+                 Args&&... args) {
+    auto argTuple = make_tuple(std::forward<Args>(args)...);
+    std::size_t length = sizeof...(Args);
+
+    char buffer[OUTPUT_BUFFER_SIZE];
+    osc::OutboundPacketStream p(buffer, OUTPUT_BUFFER_SIZE);
+
+    p << osc::BeginMessage(command.c_str());
+    std::apply([&p, &length](const Args&... arg) { ((p << arg), ...); },
+               argTuple);
+    p << osc::EndMessage;
+    socket.Send(p.Data(), p.Size());
+}
 
 NGIMUManager::NGIMUManager() { m_Manager = this; }
 
 NGIMUManager::NGIMUManager(const std::vector<std::string>& ips,
-                           const std::vector<int>& ports) {
-    m_Manager = this;
+                           const std::vector<int>& ports)
+        : NGIMUManager() {
     setupListeners(ips, ports);
 }
 
@@ -41,9 +63,9 @@ void NGIMUManager::setupListeners(const std::vector<std::string>& ips,
 }
 
 void NGIMUManager::setupTransmitters(const std::vector<std::string>& remoteIPs,
-                             const std::vector<int>& remotePorts,
-                             const std::string& localIP,
-                             const std::vector<int>& localPorts) {
+                                     const std::vector<int>& remotePorts,
+                                     const std::string& localIP,
+                                     const std::vector<int>& localPorts) {
     // message init
     char buffer[OUTPUT_BUFFER_SIZE];
     osc::OutboundPacketStream p(buffer, OUTPUT_BUFFER_SIZE);
@@ -52,22 +74,9 @@ void NGIMUManager::setupTransmitters(const std::vector<std::string>& remoteIPs,
         UdpTransmitSocket socket(
                 IpEndpointName(remoteIPs[i].c_str(), remotePorts[i]));
 
-        // what ip imu shall send to
-        p.Clear();
-        p << osc::BeginMessage("/wifi/send/ip") << localIP.c_str()
-          << osc::EndMessage;
-        socket.Send(p.Data(), p.Size());
-
-        // what port to send
-        p.Clear();
-        p << osc::BeginMessage("/wifi/send/port") << localPorts[i]
-          << osc::EndMessage;
-        socket.Send(p.Data(), p.Size());
-
-        // bling!
-        p.Clear();
-        p << osc::BeginMessage("/identify") << osc::EndMessage;
-        socket.Send(p.Data(), p.Size());
+        sendMessage(socket, "/wifi/send/ip", localIP.c_str());
+        sendMessage(socket, "/wifi/send/port", localPorts[i]);
+        sendMessage(socket, "/identify"); // bling!
     }
 }
 
