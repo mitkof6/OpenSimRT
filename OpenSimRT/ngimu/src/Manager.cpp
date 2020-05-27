@@ -28,15 +28,14 @@ std::ostream& operator<<(std::ostream& os, const IMUData::Quaternion& q) {
 template <typename... Args>
 void sendMessage(UdpTransmitSocket& socket, const std::string& command,
                  Args&&... args) {
-    auto argTuple = make_tuple(std::forward<Args>(args)...);
-    std::size_t length = sizeof...(Args);
+    using ArgsTuple = std::tuple<std::decay_t<Args>...>;
+    ArgsTuple argTuple = {std::forward<Args>(args)...};
 
     char buffer[OUTPUT_BUFFER_SIZE];
     osc::OutboundPacketStream p(buffer, OUTPUT_BUFFER_SIZE);
 
     p << osc::BeginMessage(command.c_str());
-    std::apply([&p, &length](const Args&... arg) { ((p << arg), ...); },
-               argTuple);
+    std::apply([&p](const Args&... arg) { ((p << arg), ...); }, argTuple);
     p << osc::EndMessage;
     socket.Send(p.Data(), p.Size());
 }
