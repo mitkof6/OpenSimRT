@@ -5,13 +5,10 @@
 #include "osc/OscReceivedElements.h"
 #include "osc/OscTypes.h"
 
+#include <iterator>
 #include <tuple>
 #include <type_traits>
 #include <utility>
-
-// #include <algorithm>
-
-// #include "range/v3/action/action.hpp"
 
 using namespace std;
 using namespace osc;
@@ -21,10 +18,14 @@ using namespace OpenSimRT;
 #define OUTPUT_BUFFER_SIZE 1024
 
 /*******************************************************************************/
+
 std::ostream& operator<<(std::ostream& os, const IMUData::Quaternion& q) {
     return os << q.q1 << " " << q.q2 << " " << q.q3 << " " << q.q4;
 }
 
+/**
+ * @brief Multi-type variadic template function to send messages to remote IP.
+ */
 template <typename... Args>
 void sendMessage(UdpTransmitSocket& socket, const std::string& command,
                  Args&&... args) {
@@ -65,10 +66,6 @@ void NGIMUManager::setupTransmitters(const std::vector<std::string>& remoteIPs,
                                      const std::vector<int>& remotePorts,
                                      const std::string& localIP,
                                      const std::vector<int>& localPorts) {
-    // message init
-    char buffer[OUTPUT_BUFFER_SIZE];
-    osc::OutboundPacketStream p(buffer, OUTPUT_BUFFER_SIZE);
-
     for (int i = 0; i < remoteIPs.size(); ++i) {
         UdpTransmitSocket socket(
                 IpEndpointName(remoteIPs[i].c_str(), remotePorts[i]));
