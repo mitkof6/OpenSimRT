@@ -7,7 +7,7 @@
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "INIReader.h"
-#include "NGIMU.h"
+#include "Manager.h"
 #include "Settings.h"
 #include "ip/UdpSocket.h"
 #include "osc/OscPacketListener.h"
@@ -34,9 +34,10 @@ void run() {
     auto SEND_PORTS = ini.getVector(section, "SEND_PORTS", vector<int>());
     auto LISTEN_PORTS = ini.getVector(section, "LISTEN_PORTS", vector<int>());
 
-    NGIMUManager manager(vector<string>(LISTEN_PORTS.size(), LISTEN_IP),
-                         LISTEN_PORTS);
-    manager.setupIMUs(IMU_IP, SEND_PORTS, LISTEN_IP, LISTEN_PORTS);
+    NGIMUManager manager;
+    manager.setupListeners(vector<string>(LISTEN_PORTS.size(), LISTEN_IP),
+                           LISTEN_PORTS);
+    manager.setupTransmitters(IMU_IP, SEND_PORTS, LISTEN_IP, LISTEN_PORTS);
 
     thread listen(&NGIMUManager::startListeners, &manager);
 

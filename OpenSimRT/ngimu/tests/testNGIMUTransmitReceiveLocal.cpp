@@ -7,7 +7,7 @@
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "INIReader.h"
-#include "NGIMU.h"
+#include "Manager.h"
 #include "Settings.h"
 #include "ip/UdpSocket.h"
 #include "osc/OscOutboundPacketStream.h"
