@@ -53,7 +53,7 @@ class IMU_API Manager {
     std::vector<ListenerAdapter*> listeners;
     Manager* m_Manager;
 
-    std::map<int, PromiseAndFuture<IMUData>> data;
+    std::map<int, PromiseAndFuture<IMUData>> buffer;
 };
 
 class IMU_API NGIMUManager : public Manager {

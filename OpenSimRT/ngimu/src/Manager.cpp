@@ -29,15 +29,20 @@ std::ostream& operator<<(std::ostream& os, const IMUData::Quaternion& q) {
 template <typename... Args>
 void sendMessage(UdpTransmitSocket& socket, const std::string& command,
                  Args&&... args) {
+    // create tuple from args to allow different types
     using ArgsTuple = std::tuple<std::decay_t<Args>...>;
     ArgsTuple argTuple = {std::forward<Args>(args)...};
 
+    // initialize message stream
     char buffer[OUTPUT_BUFFER_SIZE];
     osc::OutboundPacketStream p(buffer, OUTPUT_BUFFER_SIZE);
 
+    // create the message...
     p << osc::BeginMessage(command.c_str());
     std::apply([&p](const Args&... arg) { ((p << arg), ...); }, argTuple);
     p << osc::EndMessage;
+
+    // ...and send it
     socket.Send(p.Data(), p.Size());
 }
 
@@ -52,13 +57,16 @@ NGIMUManager::NGIMUManager(const std::vector<std::string>& ips,
 void NGIMUManager::setupListeners(const std::vector<std::string>& ips,
                                   const std::vector<int>& ports) {
     for (int i = 0; i < ports.size(); ++i) {
+        // create new listeners and sockets
         listeners.push_back(new NGIMUListener());
         udpSockets.push_back(new UdpSocket());
 
+        // assign ports and manager to listeners
         listeners[i]->port = ports[i];
         listeners[i]->manager = this;
 
-        data[ports[i]].reset();
+        // initialize manager buffer
+        buffer[ports[i]].reset();
     }
 }
 
@@ -67,9 +75,11 @@ void NGIMUManager::setupTransmitters(const std::vector<std::string>& remoteIPs,
                                      const std::string& localIP,
                                      const std::vector<int>& localPorts) {
     for (int i = 0; i < remoteIPs.size(); ++i) {
+        // create socket
         UdpTransmitSocket socket(
                 IpEndpointName(remoteIPs[i].c_str(), remotePorts[i]));
 
+        // send commands to imu
         sendMessage(socket, "/wifi/send/ip", localIP.c_str());
         sendMessage(socket, "/wifi/send/port", localPorts[i]);
         sendMessage(socket, "/identify"); // bling!
@@ -92,12 +102,12 @@ void NGIMUManager::startListenersImp() {
 }
 
 void NGIMUManager::getObservationsImp(InverseKinematics::Input& input) {
-    for (auto& x : data) {
+    for (auto& x : buffer) {
         auto imuData = x.second.get();
 
-        auto& t = imuData.t;
-        auto& q = imuData.quaternion;
-        cout << q << endl;
+        const auto& t = imuData.t;
+        const auto& q = imuData.quaternion;
+
         // transform from NGIMU earth frame to OpenSim reference system
         input.imuObservations.push_back(
                 SimTK::Rotation(SimTK::Quaternion(-q.q1, q.q2, q.q4, -q.q3)) *
