@@ -1,6 +1,7 @@
 #include "Manager.h"
 
 #include "IMUListener.h"
+#include "InverseKinematics.h"
 #include "osc/OscOutboundPacketStream.h"
 #include "osc/OscReceivedElements.h"
 #include "osc/OscTypes.h"
@@ -101,7 +102,8 @@ void NGIMUManager::startListenersImp() {
     mux.RunUntilSigInt();
 }
 
-void NGIMUManager::getObservationsImp(InverseKinematics::Input& input) {
+InverseKinematics::Input NGIMUManager::getObservationsImp() {
+    InverseKinematics::Input input;
     for (auto& x : buffer) {
         auto imuData = x.second.get();
 

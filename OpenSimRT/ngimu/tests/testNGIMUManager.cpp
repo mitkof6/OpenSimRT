@@ -41,10 +41,7 @@ void run() {
 
     thread listen(&NGIMUManager::startListeners, &manager);
 
-    while (true) {
-        InverseKinematics::Input input;
-        manager.getObservations(input);
-    }
+    while (true) { InverseKinematics::Input input = manager.getObservations(); }
     listen.join();
 }
 

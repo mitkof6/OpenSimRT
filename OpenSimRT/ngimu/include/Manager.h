@@ -36,8 +36,8 @@ class IMU_API Manager {
     inline void startListeners() { m_Manager->startListenersImp(); }
 
     //* returning copy value has issues i can't explain...
-    inline void getObservations(InverseKinematics::Input& input) {
-        m_Manager->getObservationsImp(input);
+    inline InverseKinematics::Input getObservations() {
+        m_Manager->getObservationsImp();
     }
 
  protected:
@@ -48,7 +48,7 @@ class IMU_API Manager {
 
     // override for different ipmplementations
     virtual void startListenersImp() = 0;
-    virtual void getObservationsImp(InverseKinematics::Input& input) = 0;
+    virtual InverseKinematics::Input getObservationsImp() = 0;
 
     std::vector<ListenerAdapter*> listeners;
     Manager* m_Manager;
@@ -70,7 +70,7 @@ class IMU_API NGIMUManager : public Manager {
 
  protected:
     virtual void startListenersImp() override;
-    virtual void getObservationsImp(InverseKinematics::Input& input) override;
+    virtual InverseKinematics::Input getObservationsImp() override;
 
  private:
     SocketReceiveMultiplexer mux;

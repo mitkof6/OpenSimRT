@@ -62,8 +62,8 @@ class CircularBuffer {
         // lock
         std::unique_lock<std::mutex> lock(monitor);
         // check if data are available to proceed
-        auto predicate = std::bind(&CircularBuffer::notEmpty, this, M);
-        bufferNotEmpty.wait(lock, predicate);
+        // auto predicate = std::bind(&CircularBuffer::notEmpty, this, M);
+        bufferNotEmpty.wait(lock, [this, &M](){return this->notEmpty(M);});
         // if not empty get data
         std::vector<T> result;
         result.resize(M);
