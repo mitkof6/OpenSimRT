@@ -17,7 +17,7 @@ template <typename T> struct PromiseAndFuture {
     PromiseAndFuture() { reset(); }
 
     void reset() {
-        // std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         m_promise.reset(nullptr);
         m_future.reset(nullptr);
         m_promise = std::make_unique<std::promise<T>>();
