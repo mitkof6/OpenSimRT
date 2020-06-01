@@ -115,4 +115,5 @@ InverseKinematics::Input NGIMUManager::getObservationsImp() {
                 SimTK::Rotation(SimTK::Quaternion(-q.q1, q.q2, q.q4, -q.q3)) *
                 SimTK::Rotation(-SimTK::Pi / 2, SimTK::CoordinateAxis(0)));
     }
+    return input;
 }

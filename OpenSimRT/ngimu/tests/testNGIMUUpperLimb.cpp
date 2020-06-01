@@ -48,6 +48,8 @@ void run() {
                            LISTEN_PORTS);
     manager.setupTransmitters(IMU_IP, SEND_PORTS, LISTEN_IP, LISTEN_PORTS);
 
+    std::this_thread::sleep_for(2s);
+
     // start listening
     thread listen(&NGIMUManager::startListeners, &manager);
 
@@ -55,12 +57,12 @@ void run() {
     while (true) {
         // get input
         auto input = manager.getObservations();
-        cout << input.t << endl;
-        // // solve ik
-        // auto pose = ik.solve(input);
 
-        // // visualize
-        // visualizer.update(pose.q);
+        // solve ik
+        auto pose = ik.solve(input);
+
+        // visualize
+        visualizer.update(pose.q);
     }
     listen.join();
 }

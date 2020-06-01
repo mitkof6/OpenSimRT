@@ -3,7 +3,7 @@
 
 /* #include "IMUListener.h" */
 #include "Simulation.h"
-#include "Trader.h"
+#include "PromiseAndFuture.h"
 #include "internal/IMUExports.h"
 #include "ip/UdpSocket.h"
 
@@ -35,9 +35,8 @@ class IMU_API Manager {
     // dispatch
     inline void startListeners() { m_Manager->startListenersImp(); }
 
-    //* returning copy value has issues i can't explain...
     inline InverseKinematics::Input getObservations() {
-        m_Manager->getObservationsImp();
+        return m_Manager->getObservationsImp();
     }
 
  protected:
