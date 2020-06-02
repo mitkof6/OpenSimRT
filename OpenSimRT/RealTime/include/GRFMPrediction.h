@@ -19,18 +19,30 @@
 #include <OpenSim/Simulation/Model/HuntCrossleyForce.h>
 #include <OpenSim/Simulation/Model/Model.h>
 #include <OpenSim/Simulation/SimbodyEngine/Body.h>
+#include <SimTKcommon/SmallMatrix.h>
+#include <cstddef>
 
 class RealTime_API GaitPhaseDetector; // todo
 class RealTime_API ContactForceBasedPhaseDetector;
 
 template <typename T> struct SlidingWindow {
     std::vector<T> data;
+    std::size_t capacity;
     void init(std::vector<T>&& aData) {
         data = std::forward<std::vector<T>>(aData);
+        capacity = data.size();
     }
     void insert(const T& x) {
-        data.erase(data.begin());
+        if (data.size() == capacity) data.erase(data.begin());
         data.push_back(x);
+    }
+    void setSize(const std::size_t& size) {
+        capacity = size;
+        data.reserve(size);
+    }
+    T mean() {
+        return 1.0 * std::accumulate(data.begin(), data.end(), T()) /
+            int(data.size());
     }
 };
 
@@ -75,7 +87,6 @@ class RealTime_API GRFPrediction {
         SimTK::UnitVec3 contact_plane_normal;
     } parameters;
 
-
     GRFPrediction(const OpenSim::Model&, const Parameters&);
     std::vector<Output> solve(const Input& input);
 
@@ -87,6 +98,7 @@ class RealTime_API GRFPrediction {
     CoPTrajectory copPosition;
 
     double t, Tds, Tss;
+    SlidingWindow<SimTK::Vec3> gaitDirectionBuffer;
 
     OpenSim::Model model;
     SimTK::State state;
