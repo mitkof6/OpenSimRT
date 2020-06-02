@@ -17,6 +17,8 @@ using namespace SimTK;
 #define NEWTON_EULER_METHOD
 // #define ID_METHOD
 
+#define BUFFER_SIZE 10
+
 static Vec3 projectionOnPlane(const Vec3& point, const Vec3& planeOrigin,
                               const Vec3& planeNormal) {
     return point - dot(point - planeOrigin, planeNormal) * planeNormal;
@@ -247,7 +249,7 @@ GaitPhaseState::GaitPhase ContactForceBasedPhaseDetector::getPhase() {
 GRFPrediction::GRFPrediction(const Model& otherModel,
                              const Parameters& otherParameters)
         : model(*otherModel.clone()), parameters(otherParameters) {
-    gaitDirectionBuffer.setSize(10);
+    gaitDirectionBuffer.setSize(BUFFER_SIZE);
 
     // gait phase detector
     gaitPhaseDetector = new ContactForceBasedPhaseDetector(model, parameters);
@@ -367,11 +369,15 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
                 body.getMobilizedBodyIndex());
         auto X_GB = mob.getBodyTransform(state).R();
         gaitDirectionBuffer.insert((~X_GB * Vec3(1, 0, 0)).normalize());
-        auto tempDirection = gaitDirectionBuffer.mean(); // direct passing has issues...
-        auto gaitDirection = projectionOnPlane(
-                tempDirection, Vec3(0.0, 0.0, 0.0), Vec3(0, 1, 0));
+        auto tempDirection =
+                gaitDirectionBuffer.mean(); // direct passing has issues...
+        auto gaitDirection =
+                projectionOnPlane(tempDirection, Vec3(0), Vec3(0, 1, 0));
 
-        // TODO adjust forces, moments and trasnition function for the gait direction...
+        // rotation about the vertical axis
+        auto R = SimTK::Rotation(
+                atan(dot(Vec3(0, 1, 0), cross(gaitDirection, Vec3(1, 0, 0)))),
+                Vec3(0, 1, 0));
 
         // get matter subsystem
         const auto& matter = model.getMatterSubsystem();
@@ -408,6 +414,8 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
         const auto& idx = pelvisJoint.getChildFrame().getMobilizedBodyIndex();
         auto& totalReactionForce = spatialGenForces[idx][1];
         auto& totalReactionMoment = spatialGenForces[idx][0];
+        totalReactionForce = R * totalReactionForce;
+        totalReactionMoment = R * totalReactionMoment;
         // totalReactionMoment[0] = 0;
         // totalReactionMoment[2] = 0;
 #endif
@@ -440,6 +448,8 @@ GRFPrediction::solve(const GRFPrediction::Input& input) {
                     I * bodyAccelerations[bix][0] +
                     cross(bodyVelocities[bix][0], I * bodyVelocities[bix][0]);
         }
+        totalReactionForce = R * totalReactionForce;
+        totalReactionMoment = R * totalReactionMoment;
         // totalReactionMoment[0] = 0;
         // totalReactionMoment[2] = 0;
 
