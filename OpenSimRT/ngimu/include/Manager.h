@@ -1,9 +1,8 @@
 #ifndef MANAGER_H
 #define MANAGER_H
 
-/* #include "IMUListener.h" */
-#include "Simulation.h"
 #include "PromiseAndFuture.h"
+#include "Simulation.h"
 #include "internal/IMUExports.h"
 #include "ip/UdpSocket.h"
 
@@ -13,8 +12,10 @@
 
 namespace OpenSimRT {
 
+// forward declaration
 class ListenerAdapter;
 
+// IMU data container
 struct IMU_API IMUData {
     struct Quaternion {
         double q1, q2, q3, q4;
@@ -23,18 +24,18 @@ struct IMU_API IMUData {
     Quaternion quaternion;
 };
 
+/*******************************************************************************/
+
 /**
- * @brief Interface for manager implementations for different osc libraries/imu
- * hardware
+ * @brief Base class for different manager implementations.
  *
  */
 class IMU_API Manager {
     friend class ListenerAdapter;
 
  public:
-    // dispatch
+    // interface functions used in all inherited managers
     inline void startListeners() { m_Manager->startListenersImp(); }
-
     inline InverseKinematics::Input getObservations() {
         return m_Manager->getObservationsImp();
     }
@@ -45,21 +46,28 @@ class IMU_API Manager {
     Manager(const Manager&) = delete;
     virtual ~Manager() = default;
 
-    // override for different ipmplementations
+    // override for different implementations
     virtual void startListenersImp() = 0;
     virtual InverseKinematics::Input getObservationsImp() = 0;
 
+    // pointers to generic listeners using the adapter interface class
     std::vector<ListenerAdapter*> listeners;
     Manager* m_Manager;
 
+    // data buffer IMU data.
     std::map<int, PromiseAndFuture<IMUData>> buffer;
 };
 
+
+/**
+ * @brief NGIMU Manager implementation
+ */
 class IMU_API NGIMUManager : public Manager {
  public:
     NGIMUManager();
     NGIMUManager(const std::vector<std::string>&, const std::vector<int>&);
 
+    // setup communication
     void setupListeners(const std::vector<std::string>&,
                         const std::vector<int>&);
     void setupTransmitters(const std::vector<std::string>& remoteIPs,

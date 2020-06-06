@@ -35,9 +35,6 @@ void NGIMUListener::ProcessMessage(const ReceivedMessage& m,
             auto quaternion = IMUData::Quaternion{q1, q2, q3, q4};
 
             pushDataToManagerBuffer(port, {double(timeTag), quaternion});
-
-            // cout << port << ", " << timeTag << " /quaternion " << q1
-            //      << ", " << q2 << ", " << q3 << ", " << q4 << endl;
         }
     } catch (Exception& e) {
         cout << "error while parsing message: " << m.AddressPattern() << ": "

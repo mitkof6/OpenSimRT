@@ -20,12 +20,13 @@ using namespace OpenSimRT;
 
 /*******************************************************************************/
 
+// operator overload
 std::ostream& operator<<(std::ostream& os, const IMUData::Quaternion& q) {
     return os << q.q1 << " " << q.q2 << " " << q.q3 << " " << q.q4;
 }
 
 /**
- * @brief Multi-type variadic template function to send messages to remote IP.
+ * @brief Type-agnostic variadic template function for sending messages to remote IP.
  */
 template <typename... Args>
 void sendMessage(UdpTransmitSocket& socket, const std::string& command,
@@ -47,6 +48,7 @@ void sendMessage(UdpTransmitSocket& socket, const std::string& command,
     socket.Send(p.Data(), p.Size());
 }
 
+/*******************************************************************************/
 NGIMUManager::NGIMUManager() { m_Manager = this; }
 
 NGIMUManager::NGIMUManager(const std::vector<std::string>& ips,
@@ -89,6 +91,7 @@ void NGIMUManager::setupTransmitters(const std::vector<std::string>& remoteIPs,
 
 void NGIMUManager::startListenersImp() {
     for (int i = 0; i < listeners.size(); ++i) {
+        // get IP and port info from listener
         const auto& ip = listeners[i]->ip;
         const auto& port = listeners[i]->port;
 
@@ -98,15 +101,17 @@ void NGIMUManager::startListenersImp() {
                                  dynamic_cast<PacketListener*>(listeners[i]));
         std::cout << "Start Listening on port: " << port << std::endl;
     }
-
+    // start listening..
     mux.RunUntilSigInt();
 }
 
 InverseKinematics::Input NGIMUManager::getObservationsImp() {
     InverseKinematics::Input input;
     for (auto& x : buffer) {
+        // get data for each remote IP from buffer
         auto imuData = x.second.get();
 
+        // set aliases
         const auto& t = imuData.t;
         const auto& q = imuData.quaternion;
 

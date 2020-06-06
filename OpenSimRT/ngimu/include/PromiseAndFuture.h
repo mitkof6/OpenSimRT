@@ -5,17 +5,21 @@
 #include <future>
 #include <memory>
 
-/* #include <type_traits> */
-
 namespace OpenSimRT {
 
+/**
+ * @brief Alternative implementation on the producer consumer problem
+ * for a single value of type T using a promise/future pair.
+ */
 template <typename T> struct PromiseAndFuture {
+    // use unique_ptr to renew the promise and future
     std::unique_ptr<std::promise<T>> m_promise;
     std::unique_ptr<std::future<T>> m_future;
     std::mutex m_mutex;
 
     PromiseAndFuture() { reset(); }
 
+    // reset promise and future
     void reset() {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_promise.reset(nullptr);
@@ -24,7 +28,7 @@ template <typename T> struct PromiseAndFuture {
         m_future = std::make_unique<std::future<T>>(m_promise->get_future());
     }
 
-    //  future status
+    //  get future status
     bool ready() {
         // lock, otherwise segmentation-fault can happen during reset
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -47,7 +51,6 @@ template <typename T> struct PromiseAndFuture {
         reset();
         return ret;
     }
-
 };
 } // namespace OpenSimRT
 #endif

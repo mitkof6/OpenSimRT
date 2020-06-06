@@ -10,18 +10,27 @@
 
 namespace OpenSimRT {
 
+/**
+ * @brief Interface class for IMU implementations.
+ *
+ */
 class IMU_API ListenerAdapter {
  public:
-    Manager* manager;
+    Manager* manager; // pointer to base class manager
     int port;
     std::string ip;
 
+    // push data to base class manager buffer
     void pushDataToManagerBuffer(const int& id, const IMUData&);
 
  protected:
     virtual ~ListenerAdapter(){};
 };
 
+/**
+ * @brief NGIMU listener implementation
+ *
+ */
 class IMU_API NGIMUListener : public osc::OscPacketListener,
                               public ListenerAdapter {
  public:
