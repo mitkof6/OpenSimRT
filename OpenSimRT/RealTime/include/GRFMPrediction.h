@@ -1,55 +1,60 @@
-/**
- * @file GroundReactionForcePrediction.h
- * @author your name (you@domain.com)
- * @brief
- * @version 0.1
- * @date 2019-12-10
- *
- * @copyright Copyright (c) 2019
- *
- */
-
 #ifndef GROUND_REACTION_FORCE_PREDICTION
 #define GROUND_REACTION_FORCE_PREDICTION
 
 #include "internal/RealTimeExports.h"
 
-#include <OpenSim/Common/Component.h>
-#include <OpenSim/Common/Object.h>
-#include <OpenSim/Simulation/Model/HuntCrossleyForce.h>
 #include <OpenSim/Simulation/Model/Model.h>
-#include <OpenSim/Simulation/SimbodyEngine/Body.h>
-#include <SimTKcommon/SmallMatrix.h>
-#include <cstddef>
+
+namespace OpenSimRT {
 
 class RealTime_API GaitPhaseDetector; // todo
 class RealTime_API ContactForceBasedPhaseDetector;
 
+// helper function for updating opensim state
+template <typename T>
+void updateState(const T& input, const OpenSim::Model& model,
+                 SimTK::State& state, const SimTK::Stage& stage) {
+    const auto& coordinateSet = model.getCoordinatesInMultibodyTreeOrder();
+    for (int i = 0; i < coordinateSet.size(); ++i) {
+        coordinateSet[i]->setValue(state, input.q[i]);
+        coordinateSet[i]->setSpeedValue(state, input.qDot[i]);
+    }
+    state.updTime() = input.t;
+    model.getMultibodySystem().realize(state, stage);
+}
+
+// basic sliding window
 template <typename T> struct SlidingWindow {
-    std::vector<T> data;
-    std::size_t capacity;
+    std::vector<T> data;  // sliding window data
+    std::size_t capacity; // sliding window size
+
+    // set initial values
     void init(std::vector<T>&& aData) {
         data = std::forward<std::vector<T>>(aData);
         capacity = data.size();
     }
+
+    // insert element
     void insert(const T& x) {
         if (data.size() == capacity) data.erase(data.begin());
         data.push_back(x);
     }
+
+    // reverse space in memory
     void setSize(const std::size_t& size) {
         capacity = size;
         data.reserve(size);
     }
+
+    // compute mean value
     T mean() {
         return 1.0 * std::accumulate(data.begin(), data.end(), T()) /
-            int(data.size());
+               int(data.size());
     }
 };
+/*******************************************************************************/
 
-//==============================================================================
-/**
- * \brief Defines the gait phases that are supported.
- */
+// Possible gait related phases.
 class RealTime_API GaitPhaseState {
  public:
     enum class LegPhase { INVALID, SWING, STANCE };
@@ -59,8 +64,8 @@ class RealTime_API GaitPhaseState {
     enum class LeadingLeg { INVALID, RIGHT, LEFT };
 };
 
-// =============================================================================
-class RealTime_API GRFPrediction {
+// Ground Reaction Force & Moment Prediction Module
+class RealTime_API GRFMPrediction {
     typedef std::function<double(const double&)> TransitionFuction;
     typedef std::function<SimTK::Vec3(const double&, const SimTK::Vec3&)>
             CoPTrajectory;
@@ -82,34 +87,50 @@ class RealTime_API GRFPrediction {
     };
 
     struct Parameters {
-        double stance_threshold;
+        double stance_threshold; // contact-force threshold
         SimTK::Vec3 contact_plane_origin;
         SimTK::UnitVec3 contact_plane_normal;
     } parameters;
 
-    GRFPrediction(const OpenSim::Model&, const Parameters&);
+    // constructor
+    GRFMPrediction(const OpenSim::Model&, const Parameters&);
+
+    // compute the ground reaction forces, moments and cop
     std::vector<Output> solve(const Input& input);
 
  private:
+    // transition functions based on the STA
     TransitionFuction anteriorForceTransition;
     TransitionFuction verticalForceTransition;
     TransitionFuction lateralForceTransition;
     TransitionFuction exponentialTransition;
+    // TODO experiment with different functions
+    // TODO implement for moments if required
+
+    // function that describes the CoP trajectory during gait
     CoPTrajectory copPosition;
 
-    double t, Tds, Tss;
+    double t, Tds, Tss; // current simulation time, double support and single
+                        // support period
+
+    // gait direction based on the mean value of the x_axis of the pelvis local
+    // frame
     SlidingWindow<SimTK::Vec3> gaitDirectionBuffer;
 
     OpenSim::Model model;
     SimTK::State state;
-    GaitPhaseState::GaitPhase gaitphase;
+
+    // contact-force based phase detection
     SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
+    GaitPhaseState::GaitPhase gaitphase; // gait phase during simulation
 
     SimTK::ReferencePtr<OpenSim::Station> heelStationR;
     SimTK::ReferencePtr<OpenSim::Station> heelStationL;
     SimTK::ReferencePtr<OpenSim::Station> toeStationR;
     SimTK::ReferencePtr<OpenSim::Station> toeStationL;
 
+    // separate total reaction component into right and left foot reaction
+    // components
     void seperateReactionComponents(
             const SimTK::Vec3& totalReactionComponent,
             const TransitionFuction& anteriorComponentFunction,
@@ -118,60 +139,8 @@ class RealTime_API GRFPrediction {
             SimTK::Vec3& rightReactionComponent,
             SimTK::Vec3& leftReactionComponent);
 
+    // compute the CoP on each foot
     void computeReactionPoint(SimTK::Vec3& rightPoint, SimTK::Vec3& leftPoint);
 };
-
-// =============================================================================
-/**
- * \brief Detects gait phase cycles based on ground reaction force
- * predicted by contacts.
- */
-class RealTime_API GaitPhaseDetector {
- public:
-    GaitPhaseDetector() = default;
-    virtual ~GaitPhaseDetector() = default;
-    // virtual GaitPhaseState::GaitPhase
-    // getPhase(const GRFPrediction::Input& input) = 0;
-
- protected:
-    GaitPhaseState::LeadingLeg leadingLeg;
-    SlidingWindow<GaitPhaseState::LegPhase> phaseWindowR, phaseWindowL;
-};
-
-class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
- public:
-    using DetectEventFunction =
-            std::function<bool(const SlidingWindow<GaitPhaseState::LegPhase>&)>;
-
-    ContactForceBasedPhaseDetector(const OpenSim::Model&,
-                                   const GRFPrediction::Parameters&);
-    void updDetector(const GRFPrediction::Input& input);
-
-    // getters
-    GaitPhaseState::GaitPhase getPhase();
-    const GaitPhaseState::LeadingLeg getLeadingLeg();
-    const double getHeelStrikeTime();
-    const double getToeOffTime();
-    const double getDoubleSupportDuration();
-    const double getSingleSupportDuration();
-
-    bool isDetectorReady();
-
- private:
-    GaitPhaseState::LegPhase updLegPhase(const OpenSim::HuntCrossleyForce*);
-    GaitPhaseState::GaitPhase updGaitPhase(const GaitPhaseState::LegPhase&,
-                                           const GaitPhaseState::LegPhase&);
-    DetectEventFunction detectHS;
-    DetectEventFunction detectTO;
-
-    double Ths, Tto, Tds, Tss;
-
-    OpenSim::Model model;
-    SimTK::State state;
-    GaitPhaseState::GaitPhase gaitPhase;
-    GRFPrediction::Parameters parameters;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> rightContactForce;
-    SimTK::ReferencePtr<OpenSim::HuntCrossleyForce> leftContactForce;
-};
-
+} // namespace OpenSimRT
 #endif // !GROUND_REACTION_FORCE_PREDICTION

@@ -104,11 +104,11 @@ void run() {
     LowPassSmoothFilter ikFilter(ikFilterParam);
 
     // setup grfm prediction
-    GRFPrediction::Parameters parameters;
+    GRFMPrediction::Parameters parameters;
     parameters.stance_threshold = 100;
     parameters.contact_plane_origin = Vec3(0.0, platform_offset, 0.0);
     parameters.contact_plane_normal = UnitVec3(0, 1, 0);
-    GRFPrediction grfm(model, parameters);
+    GRFMPrediction grfm(model, parameters);
 
     // initialize id and logger
     InverseDynamics id(model, wrenchParameters);
