@@ -69,7 +69,7 @@ void NGIMUManager::setupListeners(const std::vector<std::string>& ips,
         listeners[i]->manager = this;
 
         // initialize manager buffer
-        buffer[ports[i]].reset();
+        buffer[ports[i]] = new DoubleBuffer<IMUData>();
     }
 }
 
@@ -109,7 +109,7 @@ InverseKinematics::Input NGIMUManager::getObservationsImp() {
     InverseKinematics::Input input;
     for (auto& x : buffer) {
         // get data for each remote IP from buffer
-        auto imuData = x.second.get();
+        auto imuData = x.second->get();
 
         // set aliases
         const auto& t = imuData.t;

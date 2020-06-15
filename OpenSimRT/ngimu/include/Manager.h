@@ -1,7 +1,7 @@
 #ifndef MANAGER_H
 #define MANAGER_H
 
-#include "PromiseAndFuture.h"
+#include "DoubleBuffer.h"
 #include "Simulation.h"
 #include "internal/IMUExports.h"
 #include "ip/UdpSocket.h"
@@ -55,7 +55,7 @@ class IMU_API Manager {
     Manager* m_Manager;
 
     // data buffer IMU data.
-    std::map<int, PromiseAndFuture<IMUData>> buffer;
+    std::map<int, DoubleBuffer<IMUData>*> buffer;
 };
 
 

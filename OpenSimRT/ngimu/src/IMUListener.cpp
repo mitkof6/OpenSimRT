@@ -8,7 +8,7 @@ using namespace std;
 
 void ListenerAdapter::pushDataToManagerBuffer(const int& port,
                                               const IMUData& input) {
-    manager->buffer[port].set(input);
+    manager->buffer[port]->set(input);
 }
 
 void NGIMUListener::ProcessBundle(const ReceivedBundle& b,
