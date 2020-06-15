@@ -11,6 +11,7 @@
 #define INI_READER_H
 
 #include <type_traits>
+#include <vector>
 #include <map>
 #include <string>
 #include "internal/CommonExports.h"
