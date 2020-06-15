@@ -9,4 +9,3 @@ build/
 *__pycache__*
 install/
 *.pyc
-.vscode/

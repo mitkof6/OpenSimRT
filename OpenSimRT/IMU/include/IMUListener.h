@@ -28,13 +28,13 @@ class IMU_API ListenerAdapter {
 };
 
 /**
- * @brief NGIMU listener implementation
+ * @brief xio NGIMU listener implementation
  *
  */
 class IMU_API NGIMUListener : public osc::OscPacketListener,
                               public ListenerAdapter {
  public:
-    osc::TimeTag timeTag;
+    osc::TimeTag timeTag; // TODO time is measured from 1970
 
  protected:
     void ProcessBundle(const osc::ReceivedBundle&,

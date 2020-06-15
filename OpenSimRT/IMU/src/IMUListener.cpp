@@ -36,6 +36,8 @@ void NGIMUListener::ProcessMessage(const ReceivedMessage& m,
 
             pushDataToManagerBuffer(port, {double(timeTag), quaternion});
         }
+        // TODO add more patterns if necessary
+        // ...
     } catch (Exception& e) {
         cout << "error while parsing message: " << m.AddressPattern() << ": "
              << e.what() << "\n";

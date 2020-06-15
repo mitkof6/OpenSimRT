@@ -13,9 +13,6 @@
 #include "osc/OscPacketListener.h"
 #include "osc/OscReceivedElements.h"
 
-#include <OpenSim/Common/XsensDataReader.h>
-#include <OpenSim/Common/XsensDataReaderSettings.h>
-#include <OpenSim/Simulation/OpenSense/OpenSenseUtilities.h>
 #include <iostream>
 #include <thread>
 

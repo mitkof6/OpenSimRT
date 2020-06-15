@@ -107,9 +107,9 @@ void NGIMUManager::startListenersImp() {
 
 InverseKinematics::Input NGIMUManager::getObservationsImp() {
     InverseKinematics::Input input;
-    for (auto& x : buffer) {
-        // get data for each remote IP from buffer
-        auto imuData = x.second->get();
+    for (auto& mapElement : buffer) {
+        // thread-safe fetch data from buffer
+        auto imuData = mapElement.second->get();
 
         // set aliases
         const auto& t = imuData.t;

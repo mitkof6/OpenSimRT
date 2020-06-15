@@ -25,7 +25,7 @@ class Common_API INIReader {
     // Construct INIReader and parse given filename. See ini.h for more info
     // about the parsing.
     INIReader(std::string filename);
-    // Return the result of ini_parse(), i.e., 0 on success, token number of
+    // Return the result of ini_parse(), i.e., 0 on success, line number of
     // first error on parse error, or -1 on file open error.
     int parseError();
     // Get a string value from INI file, returning default_value if not found.
@@ -53,7 +53,7 @@ class Common_API INIReader {
             std::vector<T> result;
             std::string token;
             size_t pos = 0;
-            str+=delimiter; // to get the last token
+            str += delimiter; // to get the last token
             while ((pos = str.find(delimiter)) != std::string::npos) {
                 token = str.substr(0, pos);
                 if constexpr (std::is_same<T, std::string>::value) {
@@ -91,7 +91,7 @@ class Common_API INIReader {
        duration of handler call). Handler should return nonzero on success,
        zero on error.
 
-       Returns 0 on success, token number of first error on parse error
+       Returns 0 on success, line number of first error on parse error
        (doesn't stop on first error), -1 on file open error, or -2 on memory
        allocation error (only when INI_USE_STACK is zero).
     */

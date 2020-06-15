@@ -34,8 +34,10 @@ class IMU_API Manager {
     friend class ListenerAdapter;
 
  public:
-    // interface functions used in all inherited managers
+    // interface function for starting listening to sockets
     inline void startListeners() { m_Manager->startListenersImp(); }
+
+    // interface function for obtaining observations from IMU data.
     inline InverseKinematics::Input getObservations() {
         return m_Manager->getObservationsImp();
     }
@@ -54,22 +56,23 @@ class IMU_API Manager {
     std::vector<ListenerAdapter*> listeners;
     Manager* m_Manager;
 
-    // data buffer IMU data.
+    // data buffer for IMU data from each port.
     std::map<int, DoubleBuffer<IMUData>*> buffer;
 };
 
-
 /**
- * @brief NGIMU Manager implementation
+ * @brief xio NGIMU Manager implementation
  */
 class IMU_API NGIMUManager : public Manager {
  public:
     NGIMUManager();
     NGIMUManager(const std::vector<std::string>&, const std::vector<int>&);
 
-    // setup communication
+    // setup listening sockets
     void setupListeners(const std::vector<std::string>&,
                         const std::vector<int>&);
+
+    // setup transmitting messages to IMU
     void setupTransmitters(const std::vector<std::string>& remoteIPs,
                            const std::vector<int>& remotePorts,
                            const std::string& localIP,
