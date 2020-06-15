@@ -1,11 +1,3 @@
-/**
- * @file testNGIMUReceive.cpp
- *
- * \brief Reads information from two NGIMU sensors configured in master slave
- * mode.
- *
- * @author Dimitar Stanev <jimstanev@gmail.com>
- */
 #include "INIReader.h"
 #include "Manager.h"
 #include "Settings.h"
