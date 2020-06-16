@@ -1,12 +1,3 @@
-/**
- * @file TestIDFromFile.cpp
- *
- * \brief Loads results from OpenSim IK and externally applied forces and
- * executes the inverse dynamics analysis in an iterative manner in order to
- * determine the generalized forces.
- *
- * @author Dimitar Stanev <jimstanev@gmail.com>
- */
 #include "INIReader.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
