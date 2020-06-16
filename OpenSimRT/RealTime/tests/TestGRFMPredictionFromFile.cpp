@@ -1,12 +1,3 @@
-/**
- * @file TestIDFromFile.cpp
- *
- * \brief Loads results from OpenSim IK and externally applied forces and
- * executes the inverse dynamics analysis in an iterative manner in order to
- * determine the generalized forces.
- *
- * @author Dimitar Stanev <jimstanev@gmail.com>
- */
 #include "INIReader.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
@@ -17,7 +8,6 @@
 
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <iostream>
-#include <thread>
 
 using namespace std;
 using namespace OpenSim;
@@ -70,7 +60,7 @@ void run() {
     Model model(modelFile);
     model.initSystem();
 
-    // setup external forces
+    // setup external forces parameters
     ExternalWrench::Parameters grfRightFootPar{
             grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
     auto grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
@@ -138,10 +128,13 @@ void run() {
         // perform grfm prediction
         auto grfmOutput = grfm.solve({ikFiltered.t, q, qDot, qDDot});
 
+        // setup ID input
         ExternalWrench::Input grfRightWrench = {
                 grfmOutput[0].point, grfmOutput[0].force, grfmOutput[0].moment};
         ExternalWrench::Input grfLeftWrench = {
                 grfmOutput[1].point, grfmOutput[1].force, grfmOutput[1].moment};
+
+        // solve ID
         auto idOutput = id.solve(
                 {t, q, qDot, qDDot,
                  vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
@@ -155,8 +148,6 @@ void run() {
         tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
         grfRightLogger.appendRow(grfmOutput[0].t, ~grfmOutput[0].asVector());
         grfLeftLogger.appendRow(grfmOutput[1].t, ~grfmOutput[1].asVector());
-
-        // this_thread::sleep_for(chrono::milliseconds(16));
     }
 
     // store results

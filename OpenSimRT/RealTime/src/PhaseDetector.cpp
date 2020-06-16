@@ -23,6 +23,10 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     // init leading leg state
     leadingLeg = GaitPhaseState::LeadingLeg::INVALID;
 
+    //
+    // add elements to a copy of the original model
+    // ...
+
     // platform
     auto platform = new OpenSim::Body("Platform", 1.0, Vec3(0), Inertia(0));
     model.addBody(platform);
@@ -99,7 +103,7 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
     // initialize system
     state = model.initSystem();
 
-    // detect HS - transition SWING -> STANCE
+    // define function for detecting HS - transition SWING -> STANCE
     detectHS = [](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
         return (w.data[0] == GaitPhaseState::LegPhase::SWING &&
                 w.data[1] == GaitPhaseState::LegPhase::STANCE)
@@ -107,7 +111,7 @@ ContactForceBasedPhaseDetector::ContactForceBasedPhaseDetector(
                        : false;
     };
 
-    // detect TO - transition STANCE -> SWING
+    // define function for detecting TO - transition STANCE -> SWING
     detectTO = [](const SlidingWindow<GaitPhaseState::LegPhase>& w) {
         return (w.data[0] == GaitPhaseState::LegPhase::STANCE &&
                 w.data[1] == GaitPhaseState::LegPhase::SWING)
@@ -154,7 +158,7 @@ void ContactForceBasedPhaseDetector::updDetector(
 GaitPhaseState::GaitPhase ContactForceBasedPhaseDetector::updGaitPhase(
         const GaitPhaseState::LegPhase& phaseR,
         const GaitPhaseState::LegPhase& phaseL) {
-    // determine current gait phase
+    // determine current gait phase based on leg phase
     GaitPhaseState::GaitPhase phase;
     if (phaseR == GaitPhaseState::LegPhase::STANCE &&
         phaseL == GaitPhaseState::LegPhase::STANCE) {

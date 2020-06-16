@@ -7,7 +7,6 @@
 
 namespace OpenSimRT {
 
-class RealTime_API GaitPhaseDetector; // todo
 class RealTime_API ContactForceBasedPhaseDetector;
 
 // helper function for updating opensim state
@@ -23,7 +22,7 @@ void updateState(const T& input, const OpenSim::Model& model,
     model.getMultibodySystem().realize(state, stage);
 }
 
-// basic sliding window
+// basic sliding window implementation
 template <typename T> struct SlidingWindow {
     std::vector<T> data;  // sliding window data
     std::size_t capacity; // sliding window size
@@ -40,7 +39,7 @@ template <typename T> struct SlidingWindow {
         data.push_back(x);
     }
 
-    // reverse space in memory
+    // reserve space in memory
     void setSize(const std::size_t& size) {
         capacity = size;
         data.reserve(size);
@@ -113,8 +112,7 @@ class RealTime_API GRFMPrediction {
     double t, Tds, Tss; // current simulation time, double support and single
                         // support period
 
-    // gait direction based on the mean value of the x_axis of the pelvis local
-    // frame
+    // gait direction based on the average pelvis of the pelvis local frame
     SlidingWindow<SimTK::Vec3> gaitDirectionBuffer;
 
     OpenSim::Model model;
@@ -124,13 +122,13 @@ class RealTime_API GRFMPrediction {
     SimTK::ReferencePtr<ContactForceBasedPhaseDetector> gaitPhaseDetector;
     GaitPhaseState::GaitPhase gaitphase; // gait phase during simulation
 
+    // station points forming the cop trajectory
     SimTK::ReferencePtr<OpenSim::Station> heelStationR;
     SimTK::ReferencePtr<OpenSim::Station> heelStationL;
     SimTK::ReferencePtr<OpenSim::Station> toeStationR;
     SimTK::ReferencePtr<OpenSim::Station> toeStationL;
 
-    // separate total reaction component into right and left foot reaction
-    // components
+    // separate total reaction into R/L foot reaction components
     void seperateReactionComponents(
             const SimTK::Vec3& totalReactionComponent,
             const TransitionFuction& anteriorComponentFunction,

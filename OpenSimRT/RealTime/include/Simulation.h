@@ -12,7 +12,6 @@
 #include "InverseKinematics.h"
 #include "MuscleOptimization.h"
 #include "GRFMPrediction.h"
-#include "GRFMPredictionOptimization.h"
 /* #include "JointReaction.h" */
 /* #include "RealTimeAnalysis.h" */
 

@@ -47,7 +47,10 @@ left_wrench.p_x = left_wrench.p_x.replace(0.0, float('nan'))
 left_wrench.p_y = left_wrench.p_y.replace(0.0, float('nan'))
 left_wrench.p_z = left_wrench.p_z.replace(0.0, float('nan'))
 
+
 def plotXYZ(gt_data_frame, est_data_frame, id_gt, id_est, hs_events, to_events, title, y_label):
+    ''' Helper function for plotting forces/moments/cop
+    '''
     fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(8, 8))
     for i in range(3):
         ax[i].plot(gt_data_frame.time, gt_data_frame.iloc[:, i + id_gt],

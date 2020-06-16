@@ -9,8 +9,7 @@
 
 namespace OpenSimRT {
 
-// Detects gait phase cycles based on ground reaction force predicted by
-// contacts.
+// Interface class for event detection algorithms and gait-cycle related state.
 class RealTime_API GaitPhaseDetector {
  public:
     GaitPhaseDetector() = default;
@@ -21,7 +20,7 @@ class RealTime_API GaitPhaseDetector {
     SlidingWindow<GaitPhaseState::LegPhase> phaseWindowR, phaseWindowL;
 };
 
-// Gait phase detector implementation based on contact forces
+// Gait phase detector implementation based on forces between contact surfaces
 class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
  public:
     using DetectEventFunction =
@@ -32,7 +31,7 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
             const OpenSim::Model&,
             const GRFMPrediction::Parameters& parameters);
 
-    // update detector based on the IK results
+    // update detector state based on IK results
     void updDetector(const GRFMPrediction::Input& input);
 
     // determine if detector state is valid
@@ -47,21 +46,21 @@ class RealTime_API ContactForceBasedPhaseDetector : GaitPhaseDetector {
     const double getSingleSupportDuration() { return Tss; };
 
  private:
-    // update leg phase (Swing - Stance) based on contact-force values
+    // update leg phase based on contact-force values
     GaitPhaseState::LegPhase updLegPhase(const OpenSim::HuntCrossleyForce*);
 
-    // update gait phase (Double - Single support) based on leg phase
+    // update gait phase based on leg phase
     GaitPhaseState::GaitPhase updGaitPhase(const GaitPhaseState::LegPhase&,
                                            const GaitPhaseState::LegPhase&);
     DetectEventFunction detectHS; // function to determine heel-strike
     DetectEventFunction detectTO; // function to determine toe-off
 
-    // time constants. DS and SS period, and time of HS and TO events
+    // time constants. DS and SS time-period, and exact time of HS and TO events
     double Ths, Tto, Tds, Tss;
 
     OpenSim::Model model;
     SimTK::State state;
-    GRFMPrediction::Parameters parameters;
+    GRFMPrediction::Parameters parameters; // user defined parameters
     GaitPhaseState::GaitPhase gaitPhase; // current gait phase
 
     // contact force elements added to a copy of the original model

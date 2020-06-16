@@ -11,7 +11,7 @@ using namespace SimTK;
 #define NEWTON_EULER_METHOD
 // #define ID_METHOD
 
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 10 // sliding window size for mean gait direction
 
 // compute the projection of a point or vector on a arbitrary plane
 static Vec3 projectionOnPlane(const Vec3& point, const Vec3& planeOrigin,
@@ -56,7 +56,7 @@ GRFMPrediction::GRFMPrediction(const Model& otherModel,
         model.updMuscles()[i].setAppliesForce(state, false);
     }
 
-    // define transition functions for reaction components
+    // exponential STA by Ren et al.
     exponentialTransition = [&](const double& t) -> double {
         return exp(-pow((2.0 * t / Tds), 3));
     };
@@ -131,7 +131,7 @@ Vector GRFMPrediction::Output::asVector() {
 
 vector<GRFMPrediction::Output>
 GRFMPrediction::solve(const GRFMPrediction::Input& input) {
-    // update class state variables
+    // update state variables of this instance
     t = input.t;
     gaitPhaseDetector->updDetector(input);
 
@@ -296,7 +296,7 @@ void GRFMPrediction::seperateReactionComponents(
         // time since last HS
         double time = t - gaitPhaseDetector->getHeelStrikeTime();
 
-        // previous DS period
+        // previous DS time-period
         Tds = gaitPhaseDetector->getDoubleSupportDuration();
 
         // compute the trailing and leading leg reaction components
@@ -349,7 +349,7 @@ void GRFMPrediction::seperateReactionComponents(
 
 void GRFMPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
                                           SimTK::Vec3& leftPoint) {
-    // get previous SS period
+    // get previous SS time-period
     Tss = gaitPhaseDetector->getSingleSupportDuration();
 
     // determine gait phase
@@ -388,7 +388,7 @@ void GRFMPrediction::computeReactionPoint(SimTK::Vec3& rightPoint,
         const auto d = toeStationR->getLocationInGround(state) -
                        heelStationR->getLocationInGround(state);
 
-        // time since last toe-off
+        // time since last toe-off event
         auto time = t - gaitPhaseDetector->getToeOffTime();
 
         // result CoP
