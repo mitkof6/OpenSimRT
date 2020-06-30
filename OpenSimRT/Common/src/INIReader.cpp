@@ -115,12 +115,12 @@ static char* lskip(const char* s) {
     return (char*) s;
 }
 
-/* Return pointer to first char c or ';' comment in given string, or pointer to
-   null at end of string if neither found. ';' must be prefixed by a whitespace
+/* Return pointer to first char c or ';' or '#' comment in given string, or pointer to
+   null at end of string if neither found. ';' or '#' must be prefixed by a whitespace
    character to register as a comment. */
 static char* find_char_or_comment(const char* s, char c) {
     int was_whitespace = 0;
-    while (*s && *s != c && !(was_whitespace && *s == ';')) {
+    while (*s && *s != c && !(was_whitespace && (*s == ';' || *s == '#'))) {
         was_whitespace = isspace((unsigned char) (*s));
         s++;
     }
@@ -197,7 +197,7 @@ int INIReader::ini_parse_file(FILE* file,
                 /* No ']' found on section line */
                 error = lineno;
             }
-        } else if (*start && *start != ';') {
+        } else if (*start && (*start != ';'  || *start != '#')) {
             /* Not a comment, must be a name[=:]value pair */
             end = find_char_or_comment(start, '=');
             if (*end != '=') { end = find_char_or_comment(start, ':'); }
@@ -206,7 +206,7 @@ int INIReader::ini_parse_file(FILE* file,
                 name = rstrip(start);
                 value = lskip(end + 1);
                 end = find_char_or_comment(value, '\0');
-                if (*end == ';') *end = '\0';
+                if (*end == ';' || *end == '#') *end = '\0';
                 rstrip(value);
 
                 /* Valid name[=:]value pair found, call handler */
