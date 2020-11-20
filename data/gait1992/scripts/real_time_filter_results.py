@@ -1,12 +1,21 @@
 # Identification of optimal filter parameters for memory and delay.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
+import os
 import numpy as np
+import matplotlib
+matplotlib.rcParams.update({'font.size': 14})
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-##
+# %%
+
+subject_dir = os.path.abspath('../')
+output_dir = os.path.join(subject_dir, 'real_time/filtering/fig')
+
+
+# %%
 # memory
 
 memory = [20, 26, 30, 35, 40, 45, 50, 55, 60, 65, 70]
@@ -19,23 +28,29 @@ a_rmse_s = [142.034, 137.633, 135.613, 133.315, 132.548, 135.543, 140.462, 142.7
 
 plt.figure()
 ax1 = sns.regplot(x=memory, y=q_rmse_m, order=3)
-ax1.set_title('generalized coordinates')
-ax1.set_ylabel('RMSE $(deg)$')
+# ax1.set_title('generalized coordinates')
+ax1.set_ylabel('coordinates RMSE $(deg)$')
 ax1.set_xlabel('memory $(samples)$')
+plt.tight_layout()
+plt.savefig(output_dir + '/coordinates_memory.pdf')
 
 plt.figure()
 ax2 = sns.regplot(x=memory, y=u_rmse_m, order=2)
-ax2.set_title('generalized speeds')
-ax2.set_ylabel('RMSE $(deg / s)$')
+# ax2.set_title('generalized speeds')
+ax2.set_ylabel('speeds RMSE $(deg / s)$')
 ax2.set_xlabel('memory $(samples)$')
+plt.tight_layout()
+plt.savefig(output_dir + '/speeds_memory.pdf')
 
 plt.figure()
 ax3 = sns.regplot(x=memory, y=a_rmse_m, order=3)
-ax3.set_title('generalized accelerations')
-ax3.set_ylabel('RMSE $(deg / s^2)$')
+# ax3.set_title('generalized accelerations')
+ax3.set_ylabel('accelerations RMSE $(deg / s^2)$')
 ax3.set_xlabel('memory $(samples)$')
+plt.tight_layout()
+plt.savefig(output_dir + '/accelerations_memory.pdf')
 
-##
+# %%
 # delay
 
 delay = [10, 12, 14, 16, 18, 19, 25]
@@ -48,20 +63,28 @@ a_rmse_s = [133.315, 130.824, 129.286, 129.572, 129.86, 130.129, 130.692]
 
 plt.figure()
 ax1 = sns.regplot(x=delay, y=q_rmse_m)
-ax1.set_title('generalized coordinates')
-ax1.set_ylabel('RMSE $(deg)$')
+# ax1.set_title('generalized coordinates')
+ax1.set_ylabel('coordinates RMSE $(deg)$')
 ax1.set_xlabel('delay $(samples)$')
+plt.tight_layout()
+plt.savefig(output_dir + '/coordinates_delay.pdf')
 
 plt.figure()
 ax2 = sns.regplot(x=delay, y=u_rmse_m, order=2)
-ax2.set_title('generalized speeds')
-ax2.set_ylabel('RMSE $(deg / s)$')
+# ax2.set_title('generalized speeds')
+ax2.set_ylabel('speeds RMSE $(deg / s)$')
 ax2.set_xlabel('delay $(samples)$')
+plt.tight_layout()
+plt.savefig(output_dir + '/speeds_delay.pdf')
 
 plt.figure()
 ax3 = sns.regplot(x=delay, y=a_rmse_m, order=2)
-ax3.set_title('generalized accelerations')
-ax3.set_ylabel('RMSE $(deg / s^2)$')
+# ax3.set_title('generalized accelerations')
+ax3.set_ylabel('accelerations RMSE $(deg / s^2)$')
 ax3.set_xlabel('delay $(samples)$')
+plt.tight_layout()
+plt.savefig(output_dir + '/accelerations_delay.pdf')
 
-##
+plt.show()
+
+# %%

@@ -2,7 +2,7 @@
 # Evaluates the accuracy of the real-time inverse dynamics method.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
 import os
 import numpy as np
 from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-##
+# %%
 # data
 
 subject_dir = os.path.abspath('../')
@@ -23,7 +23,7 @@ tau_reference_file = os.path.join(subject_dir,
 tau_rt_file = os.path.join(output_dir, 'tau.sto')
 tau_rt_sp_file = os.path.join(output_dir, 'spatial_filter/tau.sto')
 
-##
+# %%
 # read data
 
 tau_reference = read_from_storage(tau_reference_file)
@@ -33,7 +33,7 @@ tau_rt_sp = tau_rt_sp[(tau_rt_sp.index >= .05)]
 
 plot_sto_file(tau_rt_file, tau_rt_file + '.pdf', 3)
 
-##
+# %%
 # compare
 
 d_tau_total = []
@@ -55,8 +55,8 @@ with PdfPages(output_dir + 'inverse_dynamics_comparison.pdf') as pdf:
         ax.plot(tau_reference.time, tau_reference.iloc[:, i], label='OpenSim')
         ax.plot(tau_rt.time, tau_rt.iloc[:, j], label='Proposed filter')
         ax.plot(tau_rt_sp.time, tau_rt_sp.iloc[:, j], label='Spatial filter')
-        ax.set_xlabel('time')
-        ax.set_ylabel('generalized forces (Nm | N)')
+        ax.set_xlabel('time (s)')
+        ax.set_ylabel('generalized force (Nm | N)')
         ax.set_title(tau_rt.columns[j])
         annotate_plot(ax, 'RMSE = ' + str(d_tau))
         annotate_plot(ax, 'RMSE = ' + str(d_tau_sp), 'upper right')
@@ -74,4 +74,4 @@ with open(output_dir + 'metrics.txt', 'w') as file_handle:
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_tau_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_tau_total, ddof=1), 3)))
 
-##
+# %%

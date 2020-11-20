@@ -52,8 +52,8 @@ with PdfPages(output_dir + 'muscle_optimization_comparison.pdf') as pdf:
 
         ax.plot(fm_reference.time, fm_reference.iloc[:, j], label='OpenSim SO')
         ax.plot(fm_rt.time, fm_rt.iloc[:, i], label='Real-time SO')
-        ax.set_xlabel('time')
-        ax.set_ylabel('actuator forces (Nm | N)')
+        ax.set_xlabel('time (s)')
+        ax.set_ylabel('actuator force (Nm | N)')
         ax.set_title(fm_reference.columns[j])
         annotate_plot(ax, 'RMSE = ' + str(d_tau))
         ax.legend(loc='lower left')

@@ -6,28 +6,30 @@
 import os
 import numpy as np
 from utils import read_from_storage, plot_sto_file, rmse_metric, annotate_plot
+import matplotlib
+# matplotlib.rcParams.update({'font.size': 11})
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-##
+# %%
 # data
 
 subject_dir = os.path.abspath('../')
 output_dir = os.path.join(subject_dir, 'real_time/filtering/')
 
 q_reference_file = os.path.join(subject_dir,
-                                'computed_muscle_controls/task_Kinematics_q.sto')
+                                'residual_reduction_algorithm/task_Kinematics_q.sto')
 q_dot_reference_file = os.path.join(subject_dir,
-                                    'computed_muscle_controls/task_Kinematics_u.sto')
+                                    'residual_reduction_algorithm/task_Kinematics_u.sto')
 q_ddot_reference_file = os.path.join(subject_dir,
-                                     'computed_muscle_controls/task_Kinematics_dudt.sto')
+                                     'residual_reduction_algorithm/task_Kinematics_dudt.sto')
 
 q_filtered_file = os.path.join(output_dir, 'q_filtered.sto')
 q_dot_filtered_file = os.path.join(output_dir, 'qDot_filtered.sto')
 q_ddot_filtered_file = os.path.join(output_dir, 'qDDot_filtered.sto')
 
-##
+# %%
 # read data
 
 q_reference = read_from_storage(q_reference_file, True)
@@ -41,7 +43,7 @@ q_ddot_filtered = read_from_storage(q_ddot_filtered_file)
 # plot_sto_file(q_reference_file, q_reference_file + '.pdf', 2)
 # plot_sto_file(q_filtered_file, q_filtered_file + '.pdf', 2)
 
-##
+# %%
 # compare
 
 d_q_total = []
@@ -63,30 +65,30 @@ with PdfPages(output_dir + 'filter_comparison.pdf') as pdf:
             d_u_total.append(d_u)
             d_a_total.append(d_a)
 
-        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(8, 3.5))
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(12, 4))
 
         ax[0].plot(q_reference.time, q_reference.iloc[:, i], label='OpenSim')
         ax[0].plot(q_filtered.time, q_filtered.iloc[:, i], label='filtered')
-        ax[0].set_xlabel('time')
-        ax[0].set_ylabel('generalized coordinates (deg | m)')
+        ax[0].set_xlabel('time (s)')
+        ax[0].set_ylabel('coordinate (deg | m)')
         ax[0].set_title(q_reference.columns[i])
         annotate_plot(ax[0], 'RMSE = ' + str(d_q))
         ax[0].legend(loc='lower left')
 
         ax[1].plot(q_dot_reference.time, q_dot_reference.iloc[:, i], label='OpenSim')
         ax[1].plot(q_dot_filtered.time, q_dot_filtered.iloc[:, i], label='filtered')
-        ax[1].set_xlabel('time')
-        ax[1].set_ylabel('generalized speeds (deg / s | m / s)')
+        ax[1].set_xlabel('time (s)')
+        ax[1].set_ylabel('speed (deg / s | m / s)')
         ax[1].set_title(q_dot_reference.columns[i])
-        annotate_plot(ax[0], 'RMSE = ' + str(d_u))
+        annotate_plot(ax[1], 'RMSE = ' + str(d_u))
         # ax[1].legend()
 
         ax[2].plot(q_ddot_reference.time, q_ddot_reference.iloc[:, i], label='OpenSim')
         ax[2].plot(q_ddot_filtered.time, q_ddot_filtered.iloc[:, i], label='filtered')
-        ax[2].set_xlabel('time')
-        ax[2].set_ylabel('generalized accelerations (deg / s^2 | m / s^2)')
+        ax[2].set_xlabel('time (s)')
+        ax[2].set_ylabel('acceleration (deg / s^2 | m / s^2)')
         ax[2].set_title(q_ddot_reference.columns[i])
-        annotate_plot(ax[0], 'RMSE = ' + str(d_a))
+        annotate_plot(ax[2], 'RMSE = ' + str(d_a))
         # ax[2].legend()
 
         fig.tight_layout()
@@ -111,4 +113,4 @@ with open(output_dir + 'metrics.txt', 'w') as file_handle:
     file_handle.write('\td_a: μ = ' + str(np.round(np.mean(d_a_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_a_total, ddof=1), 3)))
 
-##
+# %%

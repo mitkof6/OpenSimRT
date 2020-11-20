@@ -41,6 +41,7 @@ void run() {
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
     auto convergenceTolerance = ini.getReal(section, "CONVERGENCE_TOLERANCE", 0);
+    auto memoryHistory = ini.getReal(section, "MEMORY_HISTORY", 0);
     auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
     auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
 
@@ -68,6 +69,7 @@ void run() {
     // initialize so
     MuscleOptimization::OptimizationParameters optimizationParameters;
     optimizationParameters.convergenceTolerance = convergenceTolerance;
+    optimizationParameters.memoryHistory = memoryHistory;
     optimizationParameters.maximumIterations = maximumIterations;
     optimizationParameters.objectiveExponent = objectiveExponent;
     MuscleOptimization so(model, optimizationParameters, calcMomentArm);

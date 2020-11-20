@@ -43,10 +43,10 @@ MuscleOptimization::MuscleOptimization(
     optimizer->setConvergenceTolerance(
             optimizationParameters.convergenceTolerance);
     optimizer->setMaxIterations(optimizationParameters.maximumIterations);
-    optimizer->setDiagnosticsLevel(0); // for debugging
+    optimizer->setDiagnosticsLevel(0);
     optimizer->useNumericalGradient(false);
     optimizer->useNumericalJacobian(false);
-    optimizer->setLimitedMemoryHistory(500);
+    optimizer->setLimitedMemoryHistory(optimizationParameters.memoryHistory);
     optimizer->setAdvancedBoolOption("warm_start", true);
     optimizer->setAdvancedRealOption("expect_infeasible_problem", false);
     optimizer->setAdvancedRealOption("obj_scaling_factor", 1);
@@ -129,7 +129,7 @@ int TorqueBasedTarget::objectiveFunc(const Vector& x, bool newCoefficients,
                                      Real& rP) const {
     rP = 0.0;
     for (int i = 0; i < getNumParameters(); ++i) {
-        rP += pow(x[i] / fMax[i], p);
+        rP += 1 / p * pow(x[i] / fMax[i], p);
     }
     return 0;
 }
@@ -137,7 +137,7 @@ int TorqueBasedTarget::objectiveFunc(const Vector& x, bool newCoefficients,
 int TorqueBasedTarget::gradientFunc(const Vector& x, bool newCoefficients,
                                     Vector& gradient) const {
     for (int i = 0; i < getNumParameters(); ++i) {
-        gradient[i] = p * pow(x[i] / fMax[i], p - 1);
+        gradient[i] = pow(x[i] / fMax[i], p - 1);
     }
     return 0;
 }

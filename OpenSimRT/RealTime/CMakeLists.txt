@@ -6,7 +6,7 @@ file(GLOB applications applications/*.cpp)
 file(GLOB tests
   # tests/TestIKFromFile.cpp
   # tests/TestIKIMUFromFile.cpp
-  tests/TestIDFromFile.cpp
+  # tests/TestIDFromFile.cpp
   tests/TestSOFromFile.cpp
   )
 

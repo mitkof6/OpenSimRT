@@ -41,6 +41,7 @@ class RealTime_API MuscleOptimization {
     };
     struct OptimizationParameters {
         double convergenceTolerance; // 1e-0
+        int memoryHistory;           // 50
         int maximumIterations;       // 50
         int objectiveExponent;       // 2
     };
