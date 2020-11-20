@@ -146,13 +146,14 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
 
 /******************************************************************************/
 
-StateSpaceFilter::StateSpaceFilter(int nc, double fc)
-        : fc(fc),
-          state(FilterState{numeric_limits<double>::infinity(), Vector(nc, 0.0),
-                            Vector(nc, 0.0), Vector(nc, 0.0)}) {}
+StateSpaceFilter::StateSpaceFilter(const Parameters& parameters)
+    : fc(parameters.cutoffFrequency), nc(parameters.numSignals),
+      state(Output{numeric_limits<double>::infinity(), Vector(nc, 0.0),
+                   Vector(nc, 0.0), Vector(nc, 0.0), false}) {}
 
-StateSpaceFilter::FilterState StateSpaceFilter::filter(double t,
-                                                       const Vector& x) {
+StateSpaceFilter::Output StateSpaceFilter::filter(const Input& input) {
+    double t = input.t - 0.07;  // compensate for filter lag
+    Vector x(nc, &input.x[0]);  // we copy because vector is transposed
     if (t < state.t) {
         state.x = x;
         state.xDot = 0.0;
@@ -173,6 +174,7 @@ StateSpaceFilter::FilterState StateSpaceFilter::filter(double t,
         state.xDDot = (yd - state.xDot) / h;
         state.xDot = yd;
         state.x = y;
+        state.isValid = true;
     }
     state.t = t;
     return state;

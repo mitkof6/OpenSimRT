@@ -114,6 +114,10 @@ void run() {
     LowPassSmoothFilter grfRightFilter(grfFilterParam),
             grfLeftFilter(grfFilterParam);
 
+    // test with state space filter
+    // StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
+    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9, cutoffFreq});
+
     // initialize id and logger
     InverseDynamics id(model, wrenchParameters);
     auto tauLogger = id.initializeLogger();
@@ -161,7 +165,6 @@ void run() {
         // perform id
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
-
         auto idOutput = id.solve(
                 {t, q, qDot, qDDot,
                  vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});

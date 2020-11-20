@@ -11,10 +11,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.offsetbox import AnchoredText
 
 
-def annotate_plot(ax, text):
+def annotate_plot(ax, text, loc='upper left'):
     """Annotate a figure by adding a text.
     """
-    at = AnchoredText(text, frameon=True, loc='upper left')
+    at = AnchoredText(text, frameon=True, loc=loc)
     at.patch.set_boxstyle('round, pad=0, rounding_size=0.2')
     ax.add_artist(at)
 
