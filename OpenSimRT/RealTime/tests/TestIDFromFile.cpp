@@ -121,7 +121,10 @@ void run() {
     // initialize id and logger
     InverseDynamics id(model, wrenchParameters);
     auto tauLogger = id.initializeLogger();
-
+    auto qLogger = id.initializeLogger();
+    auto qDotLogger = id.initializeLogger();
+    auto qDDotLogger = id.initializeLogger();
+    
     // visualizer
     BasicModelVisualizer visualizer(model);
     auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
@@ -183,7 +186,10 @@ void run() {
         tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
         grfRightLogger.appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
         grfLeftLogger.appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
-
+        qLogger.appendRow(ikFiltered.t, ~q);
+        qDotLogger.appendRow(ikFiltered.t, ~qDot);
+        qDDotLogger.appendRow(ikFiltered.t, ~qDDot);
+        
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
@@ -198,7 +204,17 @@ void run() {
             subjectDir + "real_time/inverse_dynamics/wrench_right.sto");
     STOFileAdapter::write(grfLeftLogger,
                           subjectDir +
-                                  "real_time/inverse_dynamics/wrench_left.sto");
+                          "real_time/inverse_dynamics/wrench_left.sto");
+    STOFileAdapter::write(qLogger,
+                          subjectDir +
+                          "real_time/inverse_dynamics/q_filtered.sto");
+    STOFileAdapter::write(qDotLogger,
+                          subjectDir +
+                          "real_time/inverse_dynamics/qDot_filtered.sto");
+    STOFileAdapter::write(qDDotLogger,
+                          subjectDir +
+                          "real_time/inverse_dynamics/qDDot_filtered.sto");
+
 }
 
 int main(int argc, char* argv[]) {
