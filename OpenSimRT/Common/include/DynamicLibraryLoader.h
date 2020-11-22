@@ -34,7 +34,7 @@ T loadDynamicLibrary(std::string libraryPath, std::string functionName) {
 
 	// get function pointer
 #ifdef _WIN32
-    T function = (T) GetProcAddress(handle, functionName);
+    T function = (T) GetProcAddress(handle, functionName.c_str());
 #else
     T function = (T) dlsym(handle, functionName.c_str());
 #endif

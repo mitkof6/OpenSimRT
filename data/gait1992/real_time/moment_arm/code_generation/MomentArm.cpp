@@ -3,19 +3,20 @@
 using namespace SimTK;
 using namespace std;
 
-vector<string> getModelCoordinateSymbolicOrder(){
-    return vector<string>({
+#if __GNUG__
+vector<string> getModelCoordinateSymbolicOrder() {
+    return vector<string>{
         "pelvis_tilt", "pelvis_list", "pelvis_rotation",
         "pelvis_tx", "pelvis_ty", "pelvis_tz",
         "hip_flexion_r", "hip_adduction_r", "hip_rotation_r",
         "hip_flexion_l", "hip_adduction_l", "hip_rotation_l",
         "lumbar_extension", "lumbar_bending", "lumbar_rotation",
         "knee_angle_r", "knee_angle_l", "ankle_angle_r",
-        "ankle_angle_l"});
+        "ankle_angle_l"};
 }
 
-std::vector<std::string> getModelMuscleSymbolicOrder(){
-    return vector<string>({
+vector<string> getModelMuscleSymbolicOrder() {
+    return vector<string> {
         "glut_med1_r", "glut_med2_r", "glut_med3_r", "glut_min1_r",
         "glut_min2_r", "glut_min3_r", "semimem_r", "semiten_r",
         "bifemlh_r", "bifemsh_r", "sar_r", "add_long_r",
@@ -38,9 +39,10 @@ std::vector<std::string> getModelMuscleSymbolicOrder(){
         "soleus_l", "tib_post_l", "flex_dig_l", "flex_hal_l",
         "tib_ant_l", "per_brev_l", "per_long_l", "per_tert_l",
         "ext_dig_l", "ext_hal_l", "ercspn_r", "ercspn_l",
-        "intobl_r", "intobl_l", "extobl_r", "extobl_l"});
+        "intobl_r", "intobl_l", "extobl_r", "extobl_l"
+    };
 }
-
+#endif
 Matrix calcMomentArm(const Vector& q) {
     Matrix R(19, 92, 0.0);
     R[6][0] = 0.00043362369059479419*pow(q[6], 5) - 0.00028093731707021273*pow(q[6], 4)*q[7] + 0.00063895516578881591*pow(q[6], 4)*q[8] + 0.00046978005901000949*pow(q[6], 4) + 0.00075089830773073657*pow(q[6], 3)*pow(q[7], 2) - 0.00087819268073353017*pow(q[6], 3)*q[7]*q[8] - 0.0014977246984466059*pow(q[6], 3)*q[7] - 0.00074998698388361283*pow(q[6], 3)*pow(q[8], 2) + 0.00077248083755795342*pow(q[6], 3)*q[8] - 0.0045674279535788398*pow(q[6], 3) + 0.00024221057780768503*pow(q[6], 2)*pow(q[7], 3) - 0.00023215843746487216*pow(q[6], 2)*pow(q[7], 2)*q[8] + 0.00085653181990750539*pow(q[6], 2)*pow(q[7], 2) + 0.0018954139647132089*pow(q[6], 2)*q[7]*pow(q[8], 2) - 0.00054019367637358042*pow(q[6], 2)*q[7]*q[8] - 0.0034531399985026287*pow(q[6], 2)*q[7] + 0.0017762677515234335*pow(q[6], 2)*pow(q[8], 3) - 0.0033224262624103442*pow(q[6], 2)*pow(q[8], 2) - 0.018078030532081398*pow(q[6], 2)*q[8] + 0.0029850598248885351*pow(q[6], 2) + 0.00033213053448663196*q[6]*pow(q[7], 4) - 0.00092112530286364829*q[6]*pow(q[7], 3)*q[8] - 0.0018747211145137997*q[6]*pow(q[7], 3) + 0.00023242507623519272*q[6]*pow(q[7], 2)*pow(q[8], 2) - 5.0458396281115314e-5*q[6]*pow(q[7], 2)*q[8] - 0.0064406606127161313*q[6]*pow(q[7], 2) - 0.00087869700521217217*q[6]*q[7]*pow(q[8], 3) - 0.0061734053395193899*q[6]*q[7]*pow(q[8], 2) + 0.012332058044687708*q[6]*q[7]*q[8] + 0.026594931053076389*q[6]*q[7] + 4.8382482518696465e-6*q[6]*pow(q[8], 4) + 0.0013399234036556877*q[6]*pow(q[8], 3) + 0.00044244203504390997*q[6]*pow(q[8], 2) - 0.012047940081680192*q[6]*q[8] + 0.020228206779387806*q[6] + 5.7502637420412533e-5*pow(q[7], 5) + 3.6334702459821927e-6*pow(q[7], 4)*q[8] - 5.2695319698317037e-5*pow(q[7], 4) + 0.00024863279237988495*pow(q[7], 3)*pow(q[8], 2) - 0.00021277805567193261*pow(q[7], 3)*q[8] - 0.0015741890380278969*pow(q[7], 3) + 0.00025610472950874947*pow(q[7], 2)*pow(q[8], 3) - 0.00025087265505032948*pow(q[7], 2)*pow(q[8], 2) - 0.00057186462883242889*pow(q[7], 2)*q[8] - 0.0011601804712683393*pow(q[7], 2) - 0.00018391015548624261*q[7]*pow(q[8], 4) - 0.00054861614562753003*q[7]*pow(q[8], 3) - 0.0039161958918564298*q[7]*pow(q[8], 2) + 0.0036485506728212431*q[7]*q[8] + 0.012519240068169249*q[7] + 0.000353650710338764*pow(q[8], 5) - 5.1657989306404251e-5*pow(q[8], 4) - 0.008303899017561827*pow(q[8], 3) + 0.0084891105880180451*pow(q[8], 2) + 0.050393976225896503*q[8] - 0.014226975079908187;

@@ -7,9 +7,16 @@
 #include <OpenSim/Simulation/Model/MarkerSet.h>
 #include <OpenSim/Tools/IKCoordinateTask.h>
 
-using OpenSim::Model, OpenSim::MarkerData, OpenSim::Units, OpenSim::IKTaskSet,
-        OpenSim::IKCoordinateTask, OpenSim::TimeSeriesTable;
-using std::vector, std::string, std::cout, std::endl;
+using OpenSim::Model;
+using OpenSim::MarkerData;
+using OpenSim::Units;
+using OpenSim::IKTaskSet;
+using OpenSim::IKCoordinateTask;
+using OpenSim::TimeSeriesTable;
+using std::vector;
+using std::string;
+using std::cout;
+using std::endl;
 using namespace SimTK;
 using namespace OpenSimRT;
 

@@ -116,15 +116,14 @@ TimeSeriesTable OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
     return table;
 }
 
-MomentArmFunctionT OpenSimUtils::getMomentArmFromDynamicLibrary(const Model& model,
-																	  string libraryPath) {
-	typedef std::vector<std::string> (*ContainerT)();
-	auto calcMomentArm = loadDynamicLibrary<MomentArmFunctionT>(libraryPath,
-															"calcMomentArm");
+MomentArmFunctionT OpenSimUtils::getMomentArmFromDynamicLibrary(
+    const Model& model, string libraryPath) {
+#if __GNUG__ // issues on Windows MomentArm
+    typedef std::vector<std::string> (*ContainerT)();
 	auto getModelMuscleSymbolicOrder = loadDynamicLibrary<ContainerT>(
-		libraryPath, "getModelMuscleSymbolicOrder");
-	auto getModelCoordinateSymbolicOrder = loadDynamicLibrary<ContainerT>(
-		libraryPath, "getModelCoordinateSymbolicOrder");
+            libraryPath, "getModelMuscleSymbolicOrder");
+    auto getModelCoordinateSymbolicOrder = loadDynamicLibrary<ContainerT>(
+            libraryPath, "getModelCoordinateSymbolicOrder");
 
 	// check if runtime moment arm is consistent with the model
 	const auto& coordinateNamesinMBOrder =
@@ -135,6 +134,8 @@ MomentArmFunctionT OpenSimUtils::getMomentArmFromDynamicLibrary(const Model& mod
     const auto& muscleNamesinMBOrder = OpenSimUtils::getMuscleNames(model);
     auto muscleNamesinSymbolicOrder = getModelMuscleSymbolicOrder();
     ENSURE_ORDER_IN_VECTORS(muscleNamesinMBOrder, muscleNamesinSymbolicOrder);
-
+#endif
+    auto calcMomentArm = loadDynamicLibrary<MomentArmFunctionT>(
+            libraryPath, "calcMomentArm");
 	return calcMomentArm;
 }

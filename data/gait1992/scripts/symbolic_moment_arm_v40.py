@@ -456,12 +456,14 @@ def export_moment_arm_as_c_function(R, model_coordinates, model_muscles, file_na
         header_file.write('MomentArm_API ' +
                           'SimTK::Matrix calcMomentArm(const SimTK::Vector& q) ' +
                           'OPTIMIZATION;\n')
+		header_file.write('#if __GNUG__\n')
         header_file.write('MomentArm_API ' +
                           'std::vector<std::string> getModelMuscleSymbolicOrder() ' +
                           'OPTIMIZATION;\n')
         header_file.write('MomentArm_API ' +
                           'std::vector<std::string> getModelCoordinateSymbolicOrder() ' +
                           'OPTIMIZATION;\n')
+		header_file.write('#endif\n')
         header_file.write('}\n' +
                           '#endif\n\n')
         header_file.write('#endif')
@@ -472,6 +474,7 @@ def export_moment_arm_as_c_function(R, model_coordinates, model_muscles, file_na
         source_file.write('using namespace SimTK;\n')
         source_file.write('using namespace std;\n\n')
 
+		header_file.write('#if __GNUG__\n')
         source_file.write('vector<string> getModelCoordinateSymbolicOrder(){\n')
         source_file.write('    return vector<string>({\n')
         cc_model_coordinates = list(chunks(list(model_coordinates.keys()),3))
@@ -487,6 +490,7 @@ def export_moment_arm_as_c_function(R, model_coordinates, model_muscles, file_na
             source_file.write('        ' + str(muscle)[1:-1].replace('\'', '\"') + ',\n')
         source_file.write('        ' +
                 str(cc_model_muscles[-1])[1:-1].replace('\'', '\"') + '});\n}\n\n')
+		header_file.write('#endif\n')
 
         source_file.write('Matrix calcMomentArm(const Vector& q) {\n')
         source_file.write('    Matrix R(' + str(n) + ', ' + str(m) + ', 0.0);\n')
