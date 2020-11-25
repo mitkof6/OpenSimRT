@@ -118,7 +118,11 @@ TimeSeriesTable OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
 
 MomentArmFunctionT OpenSimUtils::getMomentArmFromDynamicLibrary(
     const Model& model, string libraryPath) {
-#if __GNUG__ // issues on Windows MomentArm
+    // On Windows, we cannot include C++ constructs (e.g., vector<string>) in an
+    // Extern C statement. For now we do not define the runtime checking on
+    // Windows. However, on Linux this operation is performed. In the future we
+    // will try to find a better solution that can work also on Windows.
+#if __GNUG__
     typedef std::vector<std::string> (*ContainerT)();
 	auto getModelMuscleSymbolicOrder = loadDynamicLibrary<ContainerT>(
             libraryPath, "getModelMuscleSymbolicOrder");

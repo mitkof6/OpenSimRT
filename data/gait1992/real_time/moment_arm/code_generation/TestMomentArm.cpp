@@ -4,7 +4,7 @@
  * \brief Run-time loading of a dynamic library of the code generated muscle
  * moment arm.
  *
- * TODO: Not tested on Windows and Mac yet.
+ * TODO: Not tested on Mac yet.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */

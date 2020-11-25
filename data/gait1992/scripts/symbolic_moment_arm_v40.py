@@ -430,7 +430,8 @@ def calculate_spanning_muscle_coordinates(model_file, results_dir):
             csv_file.write('\n')
 
 
-def export_moment_arm_as_c_function(R, model_coordinates, model_muscles, file_name,
+def export_moment_arm_as_c_function(R, model_coordinates,
+                                    model_muscles, file_name,
                                     results_dir):
     """Exports the moment arm matrix R [coordinates x muscles] as a
     callable functions of the coordinate positions.
@@ -456,14 +457,14 @@ def export_moment_arm_as_c_function(R, model_coordinates, model_muscles, file_na
         header_file.write('MomentArm_API ' +
                           'SimTK::Matrix calcMomentArm(const SimTK::Vector& q) ' +
                           'OPTIMIZATION;\n')
-		header_file.write('#if __GNUG__\n')
+        header_file.write('#if __GNUG__\n')
         header_file.write('MomentArm_API ' +
                           'std::vector<std::string> getModelMuscleSymbolicOrder() ' +
                           'OPTIMIZATION;\n')
         header_file.write('MomentArm_API ' +
                           'std::vector<std::string> getModelCoordinateSymbolicOrder() ' +
                           'OPTIMIZATION;\n')
-		header_file.write('#endif\n')
+        header_file.write('#endif\n')
         header_file.write('}\n' +
                           '#endif\n\n')
         header_file.write('#endif')
@@ -474,23 +475,23 @@ def export_moment_arm_as_c_function(R, model_coordinates, model_muscles, file_na
         source_file.write('using namespace SimTK;\n')
         source_file.write('using namespace std;\n\n')
 
-		header_file.write('#if __GNUG__\n')
+        source_file.write('#if __GNUG__\n\n')
         source_file.write('vector<string> getModelCoordinateSymbolicOrder(){\n')
-        source_file.write('    return vector<string>({\n')
+        source_file.write('    return vector<string>{\n')
         cc_model_coordinates = list(chunks(list(model_coordinates.keys()),3))
         for coord in cc_model_coordinates[:-1]:
             source_file.write('        ' + str(coord)[1:-1].replace('\'', '\"') + ',\n')
         source_file.write('        ' +
-                str(cc_model_coordinates[-1])[1:-1].replace('\'', '\"') + '});\n}\n\n')
+                str(cc_model_coordinates[-1])[1:-1].replace('\'', '\"') + '};\n}\n\n')
 
-        source_file.write('std::vector<std::string> getModelMuscleSymbolicOrder(){\n')
-        source_file.write('    return vector<string>({\n')
+        source_file.write('vector<string> getModelMuscleSymbolicOrder(){\n')
+        source_file.write('    return vector<string>{\n')
         cc_model_muscles = list(chunks(list(model_muscles.keys()),4))
         for muscle in cc_model_muscles[:-1]:
             source_file.write('        ' + str(muscle)[1:-1].replace('\'', '\"') + ',\n')
         source_file.write('        ' +
-                str(cc_model_muscles[-1])[1:-1].replace('\'', '\"') + '});\n}\n\n')
-		header_file.write('#endif\n')
+                          str(cc_model_muscles[-1])[1:-1].replace('\'', '\"') + '};\n}\n\n')
+        source_file.write('#endif\n\n')
 
         source_file.write('Matrix calcMomentArm(const Vector& q) {\n')
         source_file.write('    Matrix R(' + str(n) + ', ' + str(m) + ', 0.0);\n')
@@ -528,14 +529,15 @@ if not os.path.isdir(results_dir):
 
 # when computed once results are stored into files and loaded with
 # (pickle)
-compute = True
-visualize = True
+compute = False
+visualize = False
 
 if compute:
     calculate_spanning_muscle_coordinates(model_file, results_dir)
     calculate_moment_arm_symbolically(model_file, results_dir)
 
-if visualize:
+
+if True:
     with open(results_dir + 'R.dat', 'rb') as f_r,\
          open(results_dir + 'sampling_dict.dat', 'rb') as f_sd,\
          open(results_dir + 'model_coordinates.dat', 'rb') as f_mc,\
@@ -545,12 +547,11 @@ if visualize:
         model_coordinates = pickle.load(f_mc)
         model_muscles = pickle.load(f_mm)
 
-    # export moment arm
     export_moment_arm_as_c_function(R, model_coordinates, model_muscles,
                                     'MomentArm',
                                     results_dir + '/code_generation/')
 
-    # visualize data
+if visualize:
     with PdfPages(results_dir + 'compare_moment_arm.pdf') as pdf:
         for muscle in sampling_dict.keys():
             coordinates = sampling_dict[muscle]['coordinates']
