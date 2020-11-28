@@ -124,7 +124,7 @@ void run() {
     auto qLogger = id.initializeLogger();
     auto qDotLogger = id.initializeLogger();
     auto qDDotLogger = id.initializeLogger();
-    
+
     // visualizer
     BasicModelVisualizer visualizer(model);
     auto rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
@@ -189,7 +189,7 @@ void run() {
         qLogger.appendRow(ikFiltered.t, ~q);
         qDotLogger.appendRow(ikFiltered.t, ~qDot);
         qDDotLogger.appendRow(ikFiltered.t, ~qDDot);
-        
+
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
 

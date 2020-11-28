@@ -225,7 +225,7 @@ InverseDynamics::solve(const InverseDynamics::Input& input) {
 TimeSeriesTable InverseDynamics::initializeLogger() {
     auto columnNames =
             OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
-    
+
     TimeSeriesTable q;
     q.setColumnLabels(columnNames);
     return q;
