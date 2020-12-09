@@ -16,14 +16,14 @@
 # also adjusts the model properties to better represent the subject.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
 import re
 import os
 from subprocess import PIPE, run, call
 from utils import adjust_model_mass, subject_specific_isometric_force
 from utils import plot_sto_file
 
-##
+# %%
 # subject data
 
 # 1.8m, 72 kg
@@ -31,21 +31,21 @@ subject_height = 1.803
 subject_dir = os.path.abspath('../')
 os.chdir(subject_dir)
 
-##
+# %%
 # experimental data
 
 plot_sto_file('experimental_data/task.trc', 'experimental_data/task.pdf', 3)
 plot_sto_file('experimental_data/task_grf.mot',
               'experimental_data/task_grf.pdf', 3)
 
-##
+# %%
 # scale
 
 os.chdir('scale/')
 call(['opensim-cmd', 'run-tool', 'setup_scale.xml'])
 os.chdir(subject_dir)
 
-##
+# %%
 # inverse kinematics
 
 os.chdir('inverse_kinematics/')
@@ -56,7 +56,7 @@ plot_sto_file('task_ik_model_marker_locations.sto',
               'task_ik_model_marker_locations.pdf', 3)
 os.chdir(subject_dir)
 
-##
+# %%
 # residual reduction algorithm and model adjustment
 
 os.chdir('residual_reduction_algorithm/')
@@ -82,7 +82,7 @@ mass_change = float(re.findall('[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d
 #                                  subject_height)
 os.chdir(subject_dir)
 
-##
+# %%
 # inverse dynamics
 
 os.chdir('inverse_dynamics/')
@@ -90,7 +90,7 @@ call(['opensim-cmd', 'run-tool', 'setup_id.xml'])
 plot_sto_file('task_InverseDynamics.sto', 'task_InverseDynamics.pdf', 3)
 os.chdir(subject_dir)
 
-##
+# %%
 # static optimization
 
 os.chdir('static_optimization/')
@@ -101,7 +101,16 @@ plot_sto_file('task_StaticOptimization_force.sto',
               'task_StaticOptimization_force.pdf', 3)
 os.chdir(subject_dir)
 
-##
+# %%
+# joint reaction analysis
+
+os.chdir('joint_reaction_analysis/')
+call(['opensim-cmd', 'run-tool', 'setup_jra.xml'])
+plot_sto_file('task_JointReaction_ReactionLoads.sto',
+              'task_JointReaction_ReactionLoads.pdf', 3)
+os.chdir(subject_dir)
+
+# %%
 # computed muscle controls (takes more time)
 
 # os.chdir('computed_muscle_controls/')
@@ -114,4 +123,4 @@ os.chdir(subject_dir)
 #               'task_MuscleAnalysis_NormFiberVelocity.pdf', 3)
 # os.chdir(subject_dir)
 
-##
+# %%
