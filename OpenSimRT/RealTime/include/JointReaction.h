@@ -40,17 +40,13 @@ class RealTime_API JointReaction {
             const OpenSim::Model& model,
             const std::vector<ExternalWrench::Parameters>& wrenchParameters);
     Output solve(const Input& input);
+    SimTK::Vector asForceMomentPoint(const Output& jrOutput);
     /**
      * Initialize inverse dynamics log storage. Use this to create a
      * TimeSeriesTable that can be appended with the computed generalized
      * forces.
      */
     OpenSim::TimeSeriesTable initializeLogger();
-    /**
-     * Converts Output to a SimTK::Vector ([f[1], m[1], f[2], m[2],
-     * ...]), ignoring the ground body.
-     */
-    SimTK::Vector convertOutput(const Output& output);
 
  private: /* private data members */
     OpenSim::Model model;

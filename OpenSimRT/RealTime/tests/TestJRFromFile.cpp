@@ -10,6 +10,7 @@
 #include <iostream>
 #include <thread>
 #include <OpenSim/Simulation/Model/Muscle.h>
+#include <OpenSim/Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Simulation/Model/BodySet.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include "Simulation.h"
@@ -55,6 +56,7 @@ void run() {
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
     // setup model
+    Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);
     auto state = model.initSystem();
 
@@ -197,7 +199,7 @@ void run() {
         rightKneeForceDecorator->update(kneeJoint, kneeForce);
 
         // log data
-        jrLogger.appendRow(t, ~jr.convertOutput(jrOutput));
+        jrLogger.appendRow(t, ~jr.asForceMomentPoint(jrOutput));
 
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
