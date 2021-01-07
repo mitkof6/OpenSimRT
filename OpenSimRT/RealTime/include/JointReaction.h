@@ -40,6 +40,11 @@ class RealTime_API JointReaction {
             const OpenSim::Model& model,
             const std::vector<ExternalWrench::Parameters>& wrenchParameters);
     Output solve(const Input& input);
+    /**
+     * Transform the joint reactions into a Vector arranged as
+     * [force[0], moment[0], point[0], ..., force[n - 1], moment[n -
+     * 1], point[n - 1]].
+     */
     SimTK::Vector asForceMomentPoint(const Output& jrOutput);
     /**
      * Initialize inverse dynamics log storage. Use this to create a

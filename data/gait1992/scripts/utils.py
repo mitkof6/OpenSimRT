@@ -30,7 +30,7 @@ def rmse_metric(s1, s2):
 
     # if s2.index[0] < 0:
     #     s2.index = s2.index - s2.index[0]
-        
+
     t1_0 = s1.index[0]
     t1_f = s1.index[-1]
     t2_0 = s2.index[0]

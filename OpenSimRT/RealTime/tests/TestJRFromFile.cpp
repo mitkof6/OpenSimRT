@@ -56,7 +56,7 @@ void run() {
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
     // setup model
-    Object::RegisterType(Thelen2003Muscle());
+    Object::RegisterType(Thelen2003Muscle()); // avoid unregistered issues
     Model model(modelFile);
     auto state = model.initSystem();
 
@@ -87,6 +87,13 @@ void run() {
     Storage soFm(soFile);
     soFm.resampleLinear(0.01);
 
+    // check if provided muscle forces are in the same order
+    auto fmColumnLabels = soFm.getColumnLabels(); // time is first
+    for (int i = 0; i < model.getMuscles().getSize(); i++)
+        if (fmColumnLabels[i + 1] != model.getMuscles()[i].getName())
+            THROW_EXCEPTION("muscle forces are in different order");
+
+    // check time alignment
     if (soFm.getSize() != qTable.getNumRows()) {
         THROW_EXCEPTION("ik and so storages of different size " +
                         toString(qTable.getNumRows()) + " != " +
@@ -145,11 +152,6 @@ void run() {
         auto grfLeftWrench = ExternalWrench::getWrenchFromStorage(
                 t, grfLeftLabels, grfMotion);
 
-        // get muscle force
-        auto soStateVector = soFm.getStateVector(i);
-        auto temp = Vector(soStateVector->getSize(), &soStateVector->getData()[0]);
-        auto fm = temp(0, model.getMuscles().getSize()); // extract only muscle forces
-
         // filter
         auto ikFiltered = ikFilter.filter({t, qRaw});
         auto q = ikFiltered.x;
@@ -168,12 +170,22 @@ void run() {
             continue;
         }
 
+        // Get muscle force but delayed by the sample delay used in
+        // the filter to align results for comparison. Naturally, the
+        // whole pipeline introduces a lag due to the real-time
+        // filtering. For the spatial filter of fc = 6Hz there is an
+        // approximately 0.07s delay. Since we use 0.01 sampling rate
+        // delay is 7.
+        auto soStateVector = soFm.getStateVector(i - delay);
+        auto temp = Vector(soStateVector->getSize(), &soStateVector->getData()[0]);
+        auto fm = temp(0, model.getMuscles().getSize()); // extract only muscle forces
+
         // perform jr
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
 
         auto jrOutput = jr.solve(
-            {t, q, qDot, fm,
+            {ikFiltered.t, q, qDot, fm,
              vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 
         chrono::high_resolution_clock::time_point t2;
@@ -198,8 +210,8 @@ void run() {
                                kneeJoint);
         rightKneeForceDecorator->update(kneeJoint, kneeForce);
 
-        // log data
-        jrLogger.appendRow(t, ~jr.asForceMomentPoint(jrOutput));
+        // log data (use filter time to align with delay)
+        jrLogger.appendRow(ikFiltered.t, ~jr.asForceMomentPoint(jrOutput));
 
         // this_thread::sleep_for(chrono::milliseconds(10));
     }

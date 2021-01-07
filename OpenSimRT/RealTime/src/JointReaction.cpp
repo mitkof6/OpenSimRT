@@ -46,10 +46,12 @@ JointReaction::Output JointReaction::solve(const JointReaction::Input& input) {
         externalWrenches[i]->getInput() = input.externalWrenches[i];
     }
 
-    // update muscle forces
-    for (int i = 0; i < model.getActuators().getSize(); ++i) {
+    // update muscle forces; here we iterate over the muscles and not
+    // actuators because we want to be in line with OpenSim's
+    // implementation, which considers only muscle forces
+    for (int i = 0; i < model.getMuscles().getSize(); ++i) {
         const ScalarActuator* act =
-                dynamic_cast<const ScalarActuator*>(&model.getActuators()[i]);
+                dynamic_cast<const ScalarActuator*>(&model.getMuscles()[i]);
         if (act) {
             act->overrideActuation(state, true);
             act->setOverrideActuation(state, input.fm[i]);
