@@ -6,14 +6,17 @@
 import os
 import numpy as np
 from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
+from utils import to_gait_cycle
 import matplotlib
-matplotlib.rcParams.update({'font.size': 14})
+matplotlib.rcParams.update({'font.size': 12})
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 
 ##
 # data
+
+gait_cycle = True
 
 subject_dir = os.path.abspath('../')
 output_dir = os.path.join(subject_dir, 'real_time/muscle_optimization/')
@@ -33,6 +36,12 @@ plot_sto_file(tauRes_rt_file, tauRes_rt_file + '.pdf', 3)
 fm_reference = read_from_storage(fm_reference_file)
 fm_rt = read_from_storage(fm_rt_file)
 
+if gait_cycle:
+    t0 = 0.6                        # right heel strike
+    tf = 1.83                       # next right heel strike
+    fm_reference = to_gait_cycle(fm_reference, t0, tf)
+    fm_rt = to_gait_cycle(fm_rt, t0, tf)
+
 plot_sto_file(fm_rt_file, fm_rt_file + '.pdf', 3)
 
 ##
@@ -50,12 +59,17 @@ with PdfPages(output_dir + 'muscle_optimization_comparison.pdf') as pdf:
         if not np.isnan(d_tau):     # NaN when signal is zero
             d_fm_total.append(d_tau)
 
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4))
 
         ax.plot(fm_reference.time, fm_reference.iloc[:, j], label='OpenSim SO')
-        ax.plot(fm_rt.time, fm_rt.iloc[:, i], label='Real-time SO')
-        ax.set_xlabel('time (s)')
-        ax.set_ylabel('actuator force (Nm | N)')
+        ax.plot(fm_rt.time, fm_rt.iloc[:, i], label='Real-time SO',
+                linestyle='--')
+        if gait_cycle:
+            ax.set_xlabel('gait cycle (%)')
+        else:
+            ax.set_xlabel('time (s)')
+
+        ax.set_ylabel('muscle force (N)')
         ax.set_title(fm_reference.columns[j])
         annotate_plot(ax, 'RMSE = ' + str(d_tau))
         ax.legend(loc='lower left')

@@ -16,6 +16,7 @@ def annotate_plot(ax, text, loc='upper left'):
     """
     at = AnchoredText(text, frameon=True, loc=loc)
     at.patch.set_boxstyle('round, pad=0, rounding_size=0.2')
+    at.patch.set_alpha(0.5)
     ax.add_artist(at)
 
 
@@ -39,7 +40,7 @@ def rmse_metric(s1, s2):
     t_f = np.round(np.min([t1_f, t2_f]), 3)
     x = s1[(s1.index >= t_0) & (s1.index <= t_f)].to_numpy()
     y = s2[(s2.index >= t_0) & (s2.index <= t_f)].to_numpy()
-    return np.round(np.sqrt(np.mean((x - y) ** 2)), 3)
+    return np.round(np.sqrt(np.mean((x - y) ** 2)), 2)
 
 
 def osim_array_to_list(array):
@@ -49,6 +50,12 @@ def osim_array_to_list(array):
     for i in range(array.getSize()):
         temp.append(array.get(i))
 
+    return temp
+
+
+def to_gait_cycle(data_frame, t0, tf):
+    temp = data_frame[(data_frame.time >= t0) & (data_frame.time <= tf)].copy()
+    temp.time = data_frame['time'].transform(lambda x: 100.0 / (tf - t0) * (x - t0))
     return temp
 
 

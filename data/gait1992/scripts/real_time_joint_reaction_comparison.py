@@ -6,6 +6,7 @@
 import os
 import numpy as np
 from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
+from utils import to_gait_cycle
 import matplotlib
 matplotlib.rcParams.update({'font.size': 12})
 import matplotlib.pyplot as plt
@@ -15,6 +16,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 # %%
 # data
 
+gait_cycle = True
+
 subject_dir = os.path.abspath('../')
 output_dir = os.path.join(subject_dir, 'real_time/joint_reaction_analysis/')
 
@@ -22,19 +25,26 @@ jr_reference_file = os.path.join(subject_dir,
                                  'joint_reaction_analysis/task_JointReaction_ReactionLoads.sto')
 jr_rt_file = os.path.join(output_dir, 'jr.sto')
 
+
 # %%
 # read data
 
 jr_reference = read_from_storage(jr_reference_file)
 jr_rt = read_from_storage(jr_rt_file)
 
-plot_sto_file(jr_rt_file, jr_rt_file + '.pdf', 3)
+if gait_cycle:
+    t0 = 0.6                        # right heel strike
+    tf = 1.83                       # next right heel strike
+    jr_reference = to_gait_cycle(jr_reference, t0, tf)
+    jr_rt = to_gait_cycle(jr_rt, t0, tf)
+
+# plot_sto_file(jr_rt_file, jr_rt_file + '.pdf', 3)
 
 # %%
 # compare
 
 d_jr_total = []
-with PdfPages(output_dir + 'joint_reaction_comparison.pdf') as pdf:
+with PdfPages(output_dir + 'joint_reaction_comparison_fm.pdf') as pdf:
     for i in range(1, jr_rt.shape[1]):
 
         # find index
@@ -46,13 +56,25 @@ with PdfPages(output_dir + 'joint_reaction_comparison.pdf') as pdf:
         if not np.isnan(d_jr):     # NaN when siganl is zero
             d_jr_total.append(d_jr)
 
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4))
 
-        ax.plot(jr_reference.time, jr_reference.iloc[:, j], label='OpenSim')
-        ax.plot(jr_rt.time, jr_rt.iloc[:, i], label='Real-time')
-        ax.set_xlabel('time (s)')
-        ax.set_ylabel('joint reaction (Nm | N)')
+        ax.plot(jr_reference.time, jr_reference.iloc[:, j],
+                label='OpenSim')
+        ax.plot(jr_rt.time, jr_rt.iloc[:, i], label='Real-time',
+                linestyle='--')
         ax.set_title(jr_rt.columns[i])
+        if gait_cycle:
+            ax.set_xlabel('gait cycle (%)')
+        else:
+            ax.set_xlabel('time (s)')
+
+        if jr_rt.columns[i][-3::] in ['_mx', '_my', '_mz']:
+            ax.set_ylabel('joint reaction moment (Nm)')
+        elif jr_rt.columns[i][-3::] in ['_fx', '_fy', '_fz']:
+            ax.set_ylabel('joint reaction force (N)')
+        else:
+            ax.set_ylabel('joint reaction position (m)')
+
         annotate_plot(ax, 'RMSE = ' + str(d_jr))
         ax.legend(loc='lower left')
 
