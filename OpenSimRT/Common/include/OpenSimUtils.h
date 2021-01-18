@@ -14,6 +14,9 @@
 #include <OpenSim/Simulation/Model/Model.h>
 
 namespace OpenSimRT {
+// Type definitions from a moment arm function that accepts a vector and returns
+// a matrix.
+typedef SimTK::Matrix (*MomentArmFunctionT)(const SimTK::Vector& q);
 
 struct Common_API OpenSimUtils {
     // Generates a unique identifier
@@ -38,6 +41,10 @@ struct Common_API OpenSimUtils {
     getMultibodyTreeOrderedCoordinatesFromStorage(const OpenSim::Model& model,
                                                   const std::string stoFilePath,
                                                   double samplingInterval);
+    // Load moment arm from a dynamic library
+    static MomentArmFunctionT
+    getMomentArmFromDynamicLibrary(const OpenSim::Model& model,
+                                   std::string libraryPath);
 };
 
 } // namespace OpenSimRT

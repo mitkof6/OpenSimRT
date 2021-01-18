@@ -11,7 +11,6 @@
 #include "INIReader.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
-#include "SignalProcessing.h"
 #include "Simulation.h"
 #include "Utils.h"
 #include "Visualization.h"
@@ -25,32 +24,7 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-#include <OpenSim/Common/LoadOpenSimLibrary.h>
-// necessary for loading dynamic libraries
-#ifdef _WIN32
-#    include <winbase.h>
-#    include <windows.h>
-#else
-#    include <dlfcn.h>
-#endif
-
-// function prototype: SimTK::Matrix calcMomentArm(const SimTK::Vector& q)
-typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
-
 void run() {
-    // load library
-    auto momentArmLibHandle =
-            OpenSim::LoadOpenSimLibrary("Gait1992MomentArm_rd", true);
-
-    // get function pointer
-#ifdef _WIN32
-    CalcMomentArm calcMomentArm =
-            (CalcMomentArm) GetProcAddress(momentArmLibHandle, "calcMomentArm");
-#else
-    CalcMomentArm calcMomentArm =
-            (CalcMomentArm) dlsym(momentArmLibHandle, "calcMomentArm");
-#endif
-
     // subject data
     INIReader ini(INI_FILE);
     auto section = "TEST_SO_FROM_FILE";
@@ -59,13 +33,24 @@ void run() {
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
 
+	auto momentArmLibraryPath = ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
     auto delay = ini.getInteger(section, "DELAY", 0);
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
+    auto convergenceTolerance = ini.getReal(section, "CONVERGENCE_TOLERANCE", 0);
+    auto memoryHistory = ini.getReal(section, "MEMORY_HISTORY", 0);
+    auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
+    auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
+
     Model model(modelFile);
     model.initSystem();
+
+	// load and verify moment arm function
+	auto calcMomentArm =
+		OpenSimUtils::getMomentArmFromDynamicLibrary(model, momentArmLibraryPath);
 
     // get kinematics as a table with ordered coordinates
     auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
@@ -81,24 +66,16 @@ void run() {
                         " != " + toString(tauTable.getNumRows()));
     }
 
-    // setup filters
-    LowPassSmoothFilter::Parameters ikFilterParam;
-    ikFilterParam.numSignals = model.getNumCoordinates();
-    ikFilterParam.memory = memory;
-    ikFilterParam.delay = delay;
-    ikFilterParam.cutoffFrequency = cutoffFreq;
-    ikFilterParam.splineOrder = splineOrder;
-    ikFilterParam.calculateDerivatives = true;
-    LowPassSmoothFilter ikFilter(ikFilterParam);
-
     // initialize so
     MuscleOptimization::OptimizationParameters optimizationParameters;
-    optimizationParameters.convergenceTolerance = 1e-0;
-    optimizationParameters.maximumIterations = 300;
-    optimizationParameters.objectiveExponent = 2;
+    optimizationParameters.convergenceTolerance = convergenceTolerance;
+    optimizationParameters.memoryHistory = memoryHistory;
+    optimizationParameters.maximumIterations = maximumIterations;
+    optimizationParameters.objectiveExponent = objectiveExponent;
     MuscleOptimization so(model, optimizationParameters, calcMomentArm);
-    auto fmLogger = so.initializeLogger();
-    auto amLogger = so.initializeLogger();
+    auto fmLogger = so.initializeMuscleLogger();
+    auto amLogger = so.initializeMuscleLogger();
+    // auto tauResLogger = so.initializeResidualLogger();
 
     // visualizer
     BasicModelVisualizer visualizer(model);
@@ -110,21 +87,14 @@ void run() {
     for (int i = 0; i < qTable.getNumRows(); i++) {
         // get raw pose from table
         double t = qTable.getIndependentColumn()[i];
-        auto qRaw = qTable.getRowAtIndex(i).getAsVector();
-        auto tauRaw = tauTable.getRowAtIndex(i).getAsRowVector();
-
-        // filter
-        auto ikFiltered = ikFilter.filter({t, qRaw});
-        auto q = ikFiltered.x;
-        auto qDot = ikFiltered.xDot;
-
-        if (!ikFiltered.isValid) { continue; }
+        auto q = qTable.getRowAtIndex(i).getAsVector();
+        auto tau = tauTable.getRowAtIndex(i).getAsRowVector();
 
         // perform id
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
 
-        auto soOutput = so.solve({t, q, ~tauRaw});
+        auto soOutput = so.solve({t, q, ~tau});
 
         chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();
@@ -135,8 +105,8 @@ void run() {
         visualizer.update(q, soOutput.am);
 
         // log data (use filter time to align with delay)
-        fmLogger.appendRow(ikFiltered.t, ~soOutput.fm);
-        amLogger.appendRow(ikFiltered.t, ~soOutput.am);
+        fmLogger.appendRow(t, ~soOutput.fm);
+        amLogger.appendRow(t, ~soOutput.am);
 
         // this_thread::sleep_for(chrono::milliseconds(10));
     }

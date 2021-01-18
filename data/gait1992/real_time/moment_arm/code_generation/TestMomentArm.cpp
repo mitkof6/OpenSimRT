@@ -4,7 +4,7 @@
  * \brief Run-time loading of a dynamic library of the code generated muscle
  * moment arm.
  *
- * TODO: Not tested on Windows and Mac yet.
+ * TODO: Not tested on Mac yet.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
@@ -30,7 +30,7 @@ typedef SimTK::Matrix (*CalcMomentArm)(const SimTK::Vector& q);
 void run() {
     // load library
     auto momentArmLibHandle =
-            OpenSim::LoadOpenSimLibrary("Gait1992MomentArm_rd", true);
+            OpenSim::LoadOpenSimLibrary("Gait1992MomentArm", true);
 
     // get function pointer
 #ifdef _WIN32

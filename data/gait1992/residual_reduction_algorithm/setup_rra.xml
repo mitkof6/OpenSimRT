@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<OpenSimDocument Version="40000">
+<OpenSimDocument Version="30000">
   <RRATool name="task">
     <!--Name of the .osim file used to construct a model.-->
     <model_file>../scale/model_scaled.osim</model_file>
     <!--Replace the model's force set with sets specified in <force_set_files>? If false, the force set is appended to.-->
     <replace_force_set>true</replace_force_set>
     <!--List of xml files used to construct a force set for the model.-->
-    <force_set_files>rra_actuators.xml</force_set_files>
+    <force_set_files>../model/reserve_actuators.xml</force_set_files>
     <!--Directory used for writing results.-->
     <results_directory>.</results_directory>
     <!--Output precision.  It is 8 by default.-->
     <output_precision>8</output_precision>
     <!--Initial time for the simulation.-->
-    <initial_time>0.5</initial_time>
+    <initial_time>0.0</initial_time>
     <!--Final time for the simulation.-->
-    <final_time>2.0</final_time>
+    <final_time>2.5</final_time>
     <!--Flag indicating whether or not to compute equilibrium values for states other than the coordinates or speeds.  For example, equilibrium muscle fiber lengths or muscle forces.-->
     <solve_for_equilibrium_for_auxiliary_states>false</solve_for_equilibrium_for_auxiliary_states>
     <!--Maximum number of integrator steps.-->
@@ -42,9 +42,9 @@
     <!--Motion (.mot) or storage (.sto) file containing the desired kinematic trajectories.-->
     <desired_kinematics_file>../inverse_kinematics/task_InverseKinematics.mot</desired_kinematics_file>
     <!--File containing the tracking tasks. Which coordinates are tracked and with what weights are specified here.-->
-    <task_set_file>rra_tasks.xml</task_set_file>
+    <task_set_file>../model/tracking_tasks.xml</task_set_file>
     <!--DEPRECATED File containing the constraints on the controls.-->
-    <constraints_file>rra_control_constraints.xml </constraints_file>
+    <constraints_file> </constraints_file> <!-- rra_control_constraints.xml -->
     <!--Low-pass cut-off frequency for filtering the desired kinematics. A negative value results in no filtering. The default value is -1.0, so no filtering.-->
     <lowpass_cutoff_frequency>6</lowpass_cutoff_frequency>
     <!--Preferred optimizer algorithm (currently support "ipopt" or "cfsqp", the latter requiring the osimCFSQP library.-->

@@ -11,7 +11,7 @@
 #include "InverseDynamics.h"
 #include "InverseKinematics.h"
 #include "MuscleOptimization.h"
-/* #include "JointReaction.h" */
+#include "JointReaction.h"
 /* #include "RealTimeAnalysis.h" */
 
 #endif

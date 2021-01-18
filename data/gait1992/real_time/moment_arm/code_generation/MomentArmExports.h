@@ -9,7 +9,7 @@
 #   ifdef MomentArm_EXPORTS
 #       define MomentArm_API __declspec(dllexport)
 #   else
-#       define MomentArm_API  __declspec(dllimport)
+#       define MomentArm_API __declspec(dllimport)
 #   endif
 #else
 #   define MomentArm_API

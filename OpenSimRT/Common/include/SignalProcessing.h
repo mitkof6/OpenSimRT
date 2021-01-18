@@ -88,18 +88,28 @@ class Common_API LowPassSmoothFilter {
  */
 class Common_API StateSpaceFilter {
  public:
-    struct FilterState {
+     struct Parameters {
+        int numSignals;   // number of signals that are filtered
+        double cutoffFrequency; // low pass cutoff frequency
+    };
+    struct Input {
+        double t;
+        SimTK::Vector x;
+    };
+    struct Output {
         double t;
         SimTK::Vector x;
         SimTK::Vector xDot;
         SimTK::Vector xDDot;
+        bool isValid;
     };
+    int nc;
     double fc;
-    FilterState state;
+    Output state;
 
  public:
-    StateSpaceFilter(int nc, double fc);
-    FilterState filter(double t, const SimTK::Vector& x);
+    StateSpaceFilter(const Parameters& parameters);
+    Output filter(const Input& input);
 };
 
 /**

@@ -114,9 +114,16 @@ void run() {
     LowPassSmoothFilter grfRightFilter(grfFilterParam),
             grfLeftFilter(grfFilterParam);
 
+    // test with state space filter
+    // StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
+    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9, cutoffFreq});
+
     // initialize id and logger
     InverseDynamics id(model, wrenchParameters);
     auto tauLogger = id.initializeLogger();
+    auto qLogger = id.initializeLogger();
+    auto qDotLogger = id.initializeLogger();
+    auto qDDotLogger = id.initializeLogger();
 
     // visualizer
     BasicModelVisualizer visualizer(model);
@@ -161,7 +168,6 @@ void run() {
         // perform id
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
-
         auto idOutput = id.solve(
                 {t, q, qDot, qDDot,
                  vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
@@ -180,6 +186,9 @@ void run() {
         tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
         grfRightLogger.appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
         grfLeftLogger.appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
+        qLogger.appendRow(ikFiltered.t, ~q);
+        qDotLogger.appendRow(ikFiltered.t, ~qDot);
+        qDDotLogger.appendRow(ikFiltered.t, ~qDDot);
 
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
@@ -195,7 +204,17 @@ void run() {
             subjectDir + "real_time/inverse_dynamics/wrench_right.sto");
     STOFileAdapter::write(grfLeftLogger,
                           subjectDir +
-                                  "real_time/inverse_dynamics/wrench_left.sto");
+                          "real_time/inverse_dynamics/wrench_left.sto");
+    STOFileAdapter::write(qLogger,
+                          subjectDir +
+                          "real_time/inverse_dynamics/q_filtered.sto");
+    STOFileAdapter::write(qDotLogger,
+                          subjectDir +
+                          "real_time/inverse_dynamics/qDot_filtered.sto");
+    STOFileAdapter::write(qDDotLogger,
+                          subjectDir +
+                          "real_time/inverse_dynamics/qDDot_filtered.sto");
+
 }
 
 int main(int argc, char* argv[]) {

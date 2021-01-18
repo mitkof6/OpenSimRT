@@ -3,13 +3,13 @@
  *
  * \brief Definitions for dll exports on Windows.
  *
- * @author Dimitar Stanev <dimitar.stanev@epfl.ch>
+ * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifdef WIN32
 #   ifdef RealTime_EXPORTS
 #       define RealTime_API __declspec(dllexport)
 #   else
-#       define RealTime_API  __declspec(dllimport)
+#       define RealTime_API __declspec(dllimport)
 #   endif
 #else
 #   define RealTime_API

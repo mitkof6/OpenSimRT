@@ -8,6 +8,7 @@
 #ifndef MUSCLE_OPTIMIZATION_H
 #define MUSCLE_OPTIMIZATION_H
 
+#include "OpenSimUtils.h"
 #include "internal/RealTimeExports.h"
 
 #include <OpenSim/Simulation/Model/Model.h>
@@ -17,10 +18,6 @@ namespace OpenSimRT {
 
 // forward declaration
 class TorqueBasedTarget;
-
-typedef SimTK::Matrix (*MomentArmFunction)(const SimTK::Vector& q);
-// typedef std::function<SimTK::Matrix(const SimTK::Vector& q)>
-// MomentArmFunction;
 
 /**
  * \brief Solves the muscle optimization problem.
@@ -43,9 +40,8 @@ class RealTime_API MuscleOptimization {
         SimTK::Vector residuals;
     };
     struct OptimizationParameters {
-        SimTK::OptimizerAlgorithm algorithm =
-                SimTK::OptimizerAlgorithm::InteriorPoint;
         double convergenceTolerance; // 1e-0
+        int memoryHistory;           // 50
         int maximumIterations;       // 50
         int objectiveExponent;       // 2
     };
@@ -53,13 +49,13 @@ class RealTime_API MuscleOptimization {
  public:
     MuscleOptimization(const OpenSim::Model& model,
                        const OptimizationParameters& optimizationParameters,
-                       const MomentArmFunction& momentArmFunction);
+                       const MomentArmFunctionT& momentArmFunction);
     Output solve(const Input& input);
     /**
-     * Initialize inverse kinematics log storage. Use this to create a
+     * Initialize muscle optimization log storage. Use this to create a
      * TimeSeriesTable that can be appended with the computed kinematics.
      */
-    OpenSim::TimeSeriesTable initializeLogger();
+    OpenSim::TimeSeriesTable initializeMuscleLogger();
 };
 
 /**
@@ -74,19 +70,17 @@ class RealTime_API MuscleOptimization {
 class RealTime_API TorqueBasedTarget : public SimTK::OptimizerSystem {
  public:
     int p;
-    int npa;
     SimTK::ReferencePtr<OpenSim::Model> model;
+    SimTK::State state;
     SimTK::Matrix R;
     SimTK::Vector fMax, tau;
-    MomentArmFunction calcMomentArm;
-    std::vector<int> multibodyOrderIndex;
+    MomentArmFunctionT calcMomentArm;
 
  public:
     TorqueBasedTarget(OpenSim::Model* model, int objectiveExponent,
-                      const MomentArmFunction& momentArmFunction);
+                      const MomentArmFunctionT& momentArmFunction);
     void prepareForOptimization(const MuscleOptimization::Input& input);
     SimTK::Vector extractMuscleForces(const SimTK::Vector& x) const;
-    SimTK::Vector extractResidualForces(const SimTK::Vector& x) const;
 
  protected:
     int objectiveFunc(const SimTK::Vector& x, bool newCoefficients,

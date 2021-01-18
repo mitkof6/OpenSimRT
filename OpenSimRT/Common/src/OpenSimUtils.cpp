@@ -1,10 +1,16 @@
 #include "OpenSimUtils.h"
-
+#include "DynamicLibraryLoader.h"
 #include <Common/TimeSeriesTable.h>
 
-using OpenSim::Model, OpenSim::Actuator, OpenSim::Storage,
-        OpenSim::TimeSeriesTable;
-using std::vector, std::string;
+using OpenSim::Actuator;
+using OpenSim::Model;
+using OpenSim::Storage;
+using OpenSim::TimeSeriesTable;
+using SimTK::Matrix;
+using SimTK::Vector;
+using std::string;
+using std::vector;
+
 using namespace OpenSimRT;
 
 int OpenSimUtils::generateUID() {
@@ -92,14 +98,48 @@ TimeSeriesTable OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
     delete[] timeData;
 
     // build table columns
-    auto coordinateNmaes =
+    const auto& coordinateNames =
             OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
-    for (auto coordinate : coordinateNmaes) {
-        double* columnData = new double[q.getSize()];
-        q.getDataColumn(coordinate, columnData);
-        table.appendColumn(coordinate, SimTK::Vector(q.getSize(), columnData));
-        delete[] columnData;
+    const auto& columnLabels = q.getColumnLabels();
+    for (const auto& coordinate : coordinateNames) {
+        for (int i = 0; i < columnLabels.size(); ++i) {
+            if (columnLabels[i].find(coordinate) != std::string::npos) {
+                double* columnData = new double[q.getSize()];
+                q.getDataColumn(columnLabels[i], columnData);
+                table.appendColumn(columnLabels[i],
+                                   SimTK::Vector(q.getSize(), columnData));
+                delete[] columnData;
+            }
+        }
     }
 
     return table;
+}
+
+MomentArmFunctionT OpenSimUtils::getMomentArmFromDynamicLibrary(
+    const Model& model, string libraryPath) {
+    // On Windows, we cannot include C++ constructs (e.g., vector<string>) in an
+    // Extern C statement. For now we do not define the runtime checking on
+    // Windows. However, on Linux this operation is performed. In the future we
+    // will try to find a better solution that can work also on Windows.
+#if __GNUG__
+    typedef std::vector<std::string> (*ContainerT)();
+	auto getModelMuscleSymbolicOrder = loadDynamicLibrary<ContainerT>(
+            libraryPath, "getModelMuscleSymbolicOrder");
+    auto getModelCoordinateSymbolicOrder = loadDynamicLibrary<ContainerT>(
+            libraryPath, "getModelCoordinateSymbolicOrder");
+
+	// check if runtime moment arm is consistent with the model
+	const auto& coordinateNamesinMBOrder =
+            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
+    auto coordinateNamesinSymbolicOrder = getModelCoordinateSymbolicOrder();
+    ENSURE_ORDER_IN_VECTORS(coordinateNamesinMBOrder, coordinateNamesinSymbolicOrder);
+
+    const auto& muscleNamesinMBOrder = OpenSimUtils::getMuscleNames(model);
+    auto muscleNamesinSymbolicOrder = getModelMuscleSymbolicOrder();
+    ENSURE_ORDER_IN_VECTORS(muscleNamesinMBOrder, muscleNamesinSymbolicOrder);
+#endif
+    auto calcMomentArm = loadDynamicLibrary<MomentArmFunctionT>(
+            libraryPath, "calcMomentArm");
+	return calcMomentArm;
 }
