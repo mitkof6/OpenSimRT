@@ -87,7 +87,7 @@ with PdfPages(output_dir + 'inverse_dynamics_comparison_sp.pdf') as pdf:
         ax.set_title(tau_rt.columns[j])
         annotate_plot(ax, 'RMSE = ' + str(d_tau))
         annotate_plot(ax, 'RMSE = ' + str(d_tau_sp), 'upper right')
-        ax.legend(loc='lower left')
+        ax.legend(loc='lower right')
 
         fig.tight_layout()
         pdf.savefig(fig)

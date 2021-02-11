@@ -5,7 +5,7 @@
 import os
 import numpy as np
 import matplotlib
-matplotlib.rcParams.update({'font.size': 14})
+matplotlib.rcParams.update({'font.size': 16})
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -45,7 +45,7 @@ plt.savefig(output_dir + '/speeds_memory.pdf')
 plt.figure()
 ax3 = sns.regplot(x=memory, y=a_rmse_m, order=3)
 # ax3.set_title('generalized accelerations')
-ax3.set_ylabel('accelerations RMSE (deg / s^2)')
+ax3.set_ylabel('accelerations RMSE (deg / $s^2$)')
 ax3.set_xlabel('memory (samples)')
 plt.tight_layout()
 plt.savefig(output_dir + '/accelerations_memory.pdf')
@@ -80,7 +80,7 @@ plt.savefig(output_dir + '/speeds_delay.pdf')
 plt.figure()
 ax3 = sns.regplot(x=delay, y=a_rmse_m, order=2)
 # ax3.set_title('generalized accelerations')
-ax3.set_ylabel('accelerations RMSE (deg / s^2)')
+ax3.set_ylabel('accelerations RMSE (deg / $s^2$)')
 ax3.set_xlabel('delay (samples)')
 plt.tight_layout()
 plt.savefig(output_dir + '/accelerations_delay.pdf')

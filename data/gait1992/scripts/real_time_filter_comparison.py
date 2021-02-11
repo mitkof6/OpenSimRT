@@ -105,11 +105,11 @@ with PdfPages(output_dir + 'filter_comparison.pdf') as pdf:
         if is_deg:
             position_unit = ' (deg)'
             velocity_unit = ' (deg / s)'
-            acceleration_unit = ' (deg / s^2)'
+            acceleration_unit = ' (deg / $s^2$)'
         else:
             position_unit = ' (m)'
             velocity_unit = ' (m / s)'
-            acceleration_unit = ' (m / s^2)'
+            acceleration_unit = ' (m / $s^2$)'
 
         d_q = rmse_metric(q_reference.iloc[:, i], scale * q_filtered.iloc[:, j])
         d_u = rmse_metric(q_dot_reference.iloc[:, i], scale * q_dot_filtered.iloc[:, j])
