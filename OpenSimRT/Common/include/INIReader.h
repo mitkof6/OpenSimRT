@@ -5,11 +5,17 @@
 //
 // http://code.google.com/p/inih/
 
+#include <SimTKcommon.h>
+#include <regex>
+#include <stdexcept>
+
 #pragma warning(disable : 4251)
 
 #ifndef INI_READER_H
 #define INI_READER_H
 
+#include <type_traits>
+#include <vector>
 #include <map>
 #include <string>
 #include "internal/CommonExports.h"
@@ -40,7 +46,110 @@ public:
     // "on", "1", and valid false values are "false", "no", "off", "0" (not case
     // sensitive).
     bool getBoolean(std::string section, std::string name, bool default_value);
-private:
+    /**
+     * Get a SimTK::Vec<M> from sequential values (of double type) in INI file.
+     * Returns default if values are not found.
+     */
+    template <int M>
+    SimTK::Vec<M> getSimtkVec(std::string section, std::string name,
+                              SimTK::Vec<M> default_value,
+                              const char* delimiter = "\\s+") {
+        auto separate = [](std::string str, const char* delimiter) {
+            // split input string into vector of strings delimited by regex
+            std::regex ws_re(delimiter);
+            std::vector<std::string> sv{std::sregex_token_iterator(str.begin(),
+                                                                   str.end(),
+                                                                   ws_re, -1),
+                                        {}};
+            if (sv.size() != M)
+                throw std::invalid_argument(
+                        "INIReader: Received invalid argument.");
+
+            SimTK::Vec<M> vec;
+            int i = 0;
+            for (auto& token : sv) {
+                const char* value = token.c_str();
+                char* end;
+                vec[i] = (strtod(value, &end));
+                ++i;
+            }
+            return vec;
+        };
+
+        std::string key = makeKey(section, name);
+        return _values.count(key) ? separate(_values[key], delimiter)
+                                  : default_value;
+    }
+    /**
+     * Get a container of values from INI file separated by delimiter specified
+     * as regex. Default delimiters are white-space characters. The container
+     * type and the contained type are determined by the default value returned
+     * if field is not found or does not have a valid value. NOTE: only
+     * containers with push_back member function are supported, eg, std::vector,
+     * std::deque (for booleans).
+     */
+    template <typename T, template <typename, typename> class Container>
+    Container<T, std::allocator<T>>
+    getVector(std::string section, std::string name,
+              Container<T, std::allocator<T>> default_value,
+              const char* delimiter = "\\s+") {
+        // help function to split input string to vector<T>
+        auto separate = [](std::string str, const char* delimiter) {
+            // split input string into vector of strings delimited by regex
+            std::regex ws_re(delimiter);
+            std::vector<std::string> sv{std::sregex_token_iterator(str.begin(),
+                                                                   str.end(),
+                                                                   ws_re, -1),
+                                        {}};
+            // return vector of type T specified in the following cases
+            Container<T, std::allocator<T>> result;
+            for (auto& token : sv) {
+                // string type
+                if constexpr (std::is_same<T, std::string>::value) {
+                    result.push_back(token);
+
+                    // integer type
+                } else if constexpr (std::is_same<T, int>::value) {
+                    const char* value = token.c_str();
+                    char* end;
+                    result.push_back(strtol(value, &end, 0));
+
+                    // double type
+                } else if constexpr (std::is_same<T, double>::value) {
+                    const char* value = token.c_str();
+                    char* end;
+                    result.push_back(strtod(value, &end));
+
+                    // booleans
+                } else if constexpr (std::is_same<T, bool>::value) {
+                    std::transform(token.begin(), token.end(), token.begin(),
+                                   ::tolower);
+                    if (token == "true" || token == "yes" || token == "on" ||
+                        token == "1")
+                        result.push_back(true);
+                    else if (token == "false" || token == "no" ||
+                             token == "off" || token == "0")
+                        result.push_back(false);
+                    else
+                        throw std::invalid_argument(
+                                "INIReader: Received invalid argument.");
+
+                    // invalid
+                } else {
+                    throw std::invalid_argument(
+                            "INIReader: Received invalid argument type.");
+                }
+            }
+            return result;
+        };
+
+        //
+        std::string key = makeKey(section, name);
+        return _values.count(key) ? separate(_values[key], delimiter)
+                                  : default_value;
+    }
+
+ private:
     std::map<std::string, std::string> _values;
     int _error;
     static std::string makeKey(std::string section, std::string name);

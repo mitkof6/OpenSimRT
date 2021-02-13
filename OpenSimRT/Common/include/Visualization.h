@@ -4,6 +4,7 @@
  * \brief OpenSim basic visualization primitives.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
+ * contribution: Filip Konstantinos <filip.k@ece.upatras.gr>
  */
 #ifndef VISUALIZATION_H
 #define VISUALIZATION_H
@@ -81,17 +82,31 @@ class Common_API BasicModelVisualizer {
     // Update visualizer state.
     void update(const SimTK::Vector& q,
                 const SimTK::Vector& muscleActivations = SimTK::Vector());
+    void updateReactionForceDecorator(
+            const SimTK::Vector_<SimTK::SpatialVec>& reactionWrench,
+            const std::string& reactionOnBody,
+            ForceDecorator* reactionForceDecorator);
     // Add decoration generator to the visualizer (take ownership of the
     // memory).
     void addDecorationGenerator(SimTK::DecorationGenerator* generator);
+    void expressPositionInGround(const std::string& fromBodyName,
+                                 const SimTK::Vec3& fromBodyPoint,
+                                 SimTK::Vec3& toBodyPoint);
+    void expressPositionInAnotherFrame(const std::string& fromBodyName,
+                                       const SimTK::Vec3& fromBodyPoint,
+                                       const std::string& toBodyName,
+                                       SimTK::Vec3& toBodyPoint);
 
  private:
     OpenSim::Model model;
     SimTK::State state;
-    FPSDecorator* fps;
-    SimTK::Visualizer* visualizer;
-    SimTK::Visualizer::InputSilo* silo;
+    SimTK::ReferencePtr<FPSDecorator> fps;
+    SimTK::ReferencePtr<SimTK::Visualizer> visualizer;
+    SimTK::ReferencePtr<SimTK::Visualizer::InputSilo> silo;
     bool shouldTerminate;
+
+    enum class MenuID { SIMULATION }; //// TODO: Add more Menus
+    enum class SimMenuItem { QUIT };  //// TODO: Add more functionalities
 };
 
 } // namespace OpenSimRT

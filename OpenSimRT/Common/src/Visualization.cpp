@@ -1,8 +1,11 @@
 #include "Visualization.h"
 
+#include "Exception.h"
 #include "Utils.h"
 
 #include <OpenSim/Simulation/Model/Muscle.h>
+#include <Simulation/Model/PhysicalOffsetFrame.h>
+#include <Simulation/SimbodyEngine/Body.h>
 
 using namespace std;
 using namespace chrono;
@@ -73,8 +76,15 @@ BasicModelVisualizer::BasicModelVisualizer(const OpenSim::Model& otherModel)
     visualizer->setMode(Visualizer::Mode::Sampling);
     visualizer->setDesiredBufferLengthInSec(5);
     visualizer->setDesiredFrameRate(60);
+
+    // add menu to visualizer //// TODO: add more if required
+    Array_<std::pair<String, int> > runMenuItems;
+    runMenuItems.push_back(std::make_pair("Quit", int(SimMenuItem::QUIT)));
+    visualizer->addMenu("Simulation", int(MenuID::SIMULATION), runMenuItems);
+
+    // add fps decorator
     fps = new FPSDecorator();
-    visualizer->addDecorationGenerator(fps);
+    visualizer->addDecorationGenerator(fps.get());
 #endif
 }
 
@@ -89,9 +99,9 @@ void BasicModelVisualizer::update(const Vector& q,
     // TODO handle path actuators
     if (muscleActivations.size() == model.getMuscles().getSize()) {
         for (int i = 0; i < model.getMuscles().getSize(); ++i) {
-            // model.updMuscles().get(i).setActivation(state, muscleActivations[i]);
-            model.updMuscles().get(i).getGeometryPath()
-                .setColor(state, Vec3(muscleActivations[i], 0, 1 - muscleActivations[i]));
+            model.updMuscles().get(i).getGeometryPath().setColor(
+                    state,
+                    Vec3(muscleActivations[i], 0, 1 - muscleActivations[i]));
         }
     }
 #ifndef CONTINUOUS_INTEGRATION
@@ -103,13 +113,75 @@ void BasicModelVisualizer::update(const Vector& q,
             shouldTerminate = true;
         }
     }
+
+    // terminate simulation when menu option is selected
+    int menuId, item;
+    silo->takeMenuPick(menuId, item);
+    if (menuId == int(MenuID::SIMULATION) && item == int(SimMenuItem::QUIT)) {
+        visualizer->shutdown();
+        THROW_EXCEPTION("End Simulation. Bye!");
+    }
 #endif
 }
 
-void BasicModelVisualizer::addDecorationGenerator(DecorationGenerator* generator) {
+void BasicModelVisualizer::updateReactionForceDecorator(
+        const Vector_<SpatialVec>& reactionWrench, const string& reactionOnBody,
+        ForceDecorator* reactionForceDecorator) {
+    auto bodyIndex = model.getBodySet().getIndex(reactionOnBody, 0);
+    const auto& body = model.getBodySet()[bodyIndex];
+    auto force = -reactionWrench[bodyIndex](1); // mirror force (1)
+    auto joint = body.findStationLocationInGround(state, Vec3(0));
+    reactionForceDecorator->update(joint, force);
+}
+
+void BasicModelVisualizer::addDecorationGenerator(
+        DecorationGenerator* generator) {
 #ifndef CONTINUOUS_INTEGRATION
     visualizer->addDecorationGenerator(generator);
 #endif
+}
+
+void BasicModelVisualizer::expressPositionInGround(
+        const std::string& fromBodyName, const SimTK::Vec3& fromBodyPoint,
+        SimTK::Vec3& toBodyPoint) {
+#ifndef CONTINUOUS_INTEGRATION
+    model.realizePosition(state);
+    const OpenSim::PhysicalOffsetFrame* physicalFrame = nullptr;
+    const OpenSim::Body* body = nullptr;
+    if ((body = model.findComponent<OpenSim::Body>(fromBodyName))) {
+        toBodyPoint = body->findStationLocationInGround(state, fromBodyPoint);
+    } else if ((physicalFrame =
+                        model.findComponent<OpenSim::PhysicalOffsetFrame>(
+                                fromBodyName))) {
+        toBodyPoint = physicalFrame->findStationLocationInGround(state,
+                                                                 fromBodyPoint);
+    } else {
+        THROW_EXCEPTION("Named body or frame does not exist.");
+    }
+#endif // CONTINUOUS_INTEGRATION
+}
+void BasicModelVisualizer::expressPositionInAnotherFrame(
+        const std::string& fromBodyName, const SimTK::Vec3& fromBodyPoint,
+        const std::string& toBodyName, SimTK::Vec3& toBodyPoint) {
+#ifndef CONTINUOUS_INTEGRATION
+    model.realizePosition(state);
+    const OpenSim::PhysicalOffsetFrame* physicalFrame = nullptr;
+    const OpenSim::Body* body = nullptr;
+    if ((body = model.findComponent<OpenSim::Body>(fromBodyName))) {
+        const auto& toBody = model.findComponent<OpenSim::Body>(toBodyName);
+        toBodyPoint = body->findStationLocationInAnotherFrame(
+                state, fromBodyPoint, *toBody);
+    } else if ((physicalFrame =
+                        model.findComponent<OpenSim::PhysicalOffsetFrame>(
+                                fromBodyName))) {
+        const auto& toPhysicalFrame =
+                model.findComponent<OpenSim::PhysicalOffsetFrame>(toBodyName);
+        toBodyPoint = physicalFrame->findStationLocationInAnotherFrame(
+                state, fromBodyPoint, *toPhysicalFrame);
+    } else {
+        THROW_EXCEPTION("Named body or frame does not exist.");
+    }
+#endif // CONTINUOUS_INTEGRATION
 }
 
 /******************************************************************************/

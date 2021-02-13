@@ -10,6 +10,8 @@
 
 #include "internal/CommonExports.h"
 
+#include <SimTKcommon.h>
+#include <fstream>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -36,7 +38,7 @@ void simtkToStd(const T& srcArray, U& dstVector) {
     dstVector.clear();
     int size = srcArray.size();
     dstVector.resize(size);
-    for (int i = 0; i < size; ++i) { dstVector.at(i) = srcArray.get(i); }
+    for (int i = 0; i < size; ++i) { dstVector.at(i) = srcArray[i]; }
 }
 
 /**
@@ -68,6 +70,39 @@ std::string dump(const T& vec, std::string delimiter,
     return row;
 }
 
-} // namespace OpenSimRT
+/**
+ * Vec<T> to double*
+ */
+template <int T>
+void vecToDouble(const SimTK::Vec<T>& source, double* destination) {
+    for (int i = 0; i < source.size(); ++i) destination[i] = source[i];
+}
+/**
+ * Vector_<T> to double*
+ */
+template <typename T>
+void vectorToDouble(const SimTK::Vector_<T>& source, double* destination) {
+    for (int i = 0; i < source.size(); ++i) destination[i] = source[i];
+}
 
+/**
+ * Determine if a SimTK::Vector_<T> has finite elements.
+ */
+template <typename T> bool isVectorFinite(const SimTK::Vector_<T>& v) {
+    for (size_t i = 0; i < v.size(); ++i) {
+        if (!SimTK::isFinite(v[i])) return false;
+    }
+    return true;
+}
+
+/**
+ * Compute the projection of a point or vector on a arbitrary plane.
+ */
+static SimTK::Vec3 projectionOnPlane(const SimTK::Vec3& point,
+                                     const SimTK::Vec3& planeOrigin,
+                                     const SimTK::Vec3& planeNormal) {
+    return point - SimTK::dot(point - planeOrigin, planeNormal) * planeNormal;
+}
+
+} // namespace OpenSimRT
 #endif
