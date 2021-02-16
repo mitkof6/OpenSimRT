@@ -1,8 +1,13 @@
 # global files
 file(GLOB includes include/*.h)
 file(GLOB sources src/*.cpp)
-file(GLOB tests tests/*.cpp)
-
+# file(GLOB tests tests/*.cpp)
+file(GLOB tests
+  # tests/TestCircularBuffer.cpp
+  # tests/TestLowPassSmoothFilter.cpp
+  # tests/TestLowPassSmoothFilterTS.cpp
+  # tests/TestSyncManager.cpp
+  )
 # dependencies
 include_directories(include/)
 set(DEPENDENCY_LIBRARIES ${OpenSim_LIBRARIES})

@@ -71,21 +71,6 @@ std::string dump(const T& vec, std::string delimiter,
 }
 
 /**
- * Vec<T> to double*
- */
-template <int T>
-void vecToDouble(const SimTK::Vec<T>& source, double* destination) {
-    for (int i = 0; i < source.size(); ++i) destination[i] = source[i];
-}
-/**
- * Vector_<T> to double*
- */
-template <typename T>
-void vectorToDouble(const SimTK::Vector_<T>& source, double* destination) {
-    for (int i = 0; i < source.size(); ++i) destination[i] = source[i];
-}
-
-/**
  * Determine if a SimTK::Vector_<T> has finite elements.
  */
 template <typename T> bool isVectorFinite(const SimTK::Vector_<T>& v) {

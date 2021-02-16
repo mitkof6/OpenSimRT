@@ -80,7 +80,11 @@ class Common_API LowPassSmoothFilter {
 
 /**
  * An thread safe implementation using mutexes and conditional variables of the
- * lowPassFilter
+ * LowPassSmoothFilter. The filtering process is split between the producer and
+ * consumer threads. The producer thread pushes new vector data as columns in
+ * the 'data' and 'time' matrices with the 'updState(input)' function, whereas
+ * the consumer executes the actual filtering and produces the output with the
+ * 'filter()' function.
  */
 class Common_API LowPassSmoothFilterTS {
  public: /* public data structures */

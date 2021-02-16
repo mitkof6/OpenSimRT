@@ -25,7 +25,6 @@ class FileLineException : public std::exception {
         o << file << ":" << line << ": " << arg;
         msg = o.str();
     }
-    ~FileLineException() throw() {};
     const char* what() const throw() { return msg.c_str(); }
  private:
     std::string msg;
