@@ -42,22 +42,26 @@ endif()
 # group targets into folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# c++11, -g option is used to export debug symbols for gdb
+# c++17, -g option is used to export debug symbols for gdb
 if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU OR
    ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
-  # Using C++11 on OSX requires using libc++ instead of libstd++.
+  # Using C++17 on OSX requires using libc++ instead of libstd++.
   # libc++ is an implementation of the C++ standard library for OSX.
   if(APPLE)
     if(XCODE)
-      set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+      set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
       set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
     else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -stdlib=libc++")
     endif()
   else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -g -Wno-deprecated -w")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -g")
     # -fno-var-tracking-assignments
   endif()
+endif()
+
+if(MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
 endif()
 
 # define library postfix

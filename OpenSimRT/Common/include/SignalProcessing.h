@@ -4,6 +4,7 @@
  * \brief Utilities for filtering signals.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
+ * contribution: Filip Konstantinos <filip.k@ece.upatras.gr>
  */
 #ifndef SIGNAL_PROCESSING_H
 #define SIGNAL_PROCESSING_H
@@ -11,7 +12,8 @@
 #include "internal/CommonExports.h"
 
 #include <SimTKcommon.h>
-
+#include <condition_variable>
+#include <mutex>
 namespace OpenSimRT {
 
 /**
@@ -74,6 +76,60 @@ class Common_API LowPassSmoothFilter {
     SimTK::Matrix time;
     SimTK::Matrix data;
     int initializationCounter;
+};
+
+/**
+ * An thread safe implementation using mutexes and conditional variables of the
+ * LowPassSmoothFilter. The filtering process is split between the producer and
+ * consumer threads. The producer thread pushes new vector data as columns in
+ * the 'data' and 'time' matrices with the 'updState(input)' function, whereas
+ * the consumer executes the actual filtering and produces the output with the
+ * 'filter()' function.
+ */
+class Common_API LowPassSmoothFilterTS {
+ public: /* public data structures */
+    struct Parameters {
+        int numSignals;            // number of signals that are filtered
+        int memory;                // memory buffer of the filter
+        double cutoffFrequency;    // low pass cutoff frequency
+        int delay;                 // sample delay to evaluate the result
+        int splineOrder;           // spline order use 3
+        bool calculateDerivatives; // whether to calculate derivatives
+    };
+    struct Input {
+        double t;
+        SimTK::Vector x;
+    };
+    struct Output {
+        double t;
+        SimTK::Vector x;
+        SimTK::Vector xDot;
+        SimTK::Vector xDDot;
+    };
+
+ public: /* public interface */
+    LowPassSmoothFilterTS(const Parameters& parameters);
+    ~LowPassSmoothFilterTS();
+    void updState(const Input& input);
+    Output filter();
+
+ private: /* private data members */
+    Parameters parameters;
+    SimTK::Matrix time;
+    SimTK::Matrix data;
+    int initializationCounter;
+
+    int M, D, N;
+    double dt, dtPrev;
+    double* xRaw;
+    double* xFiltered;
+
+
+    // thread synchronization parameters
+    bool newDataReady = false;
+    bool dataMatrixReady = false;
+    std::mutex monitor;
+    std::condition_variable cond;
 };
 
 /**

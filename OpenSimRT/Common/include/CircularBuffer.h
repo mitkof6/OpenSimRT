@@ -4,28 +4,30 @@
  * \brief Implementation of a thread safe circular buffer.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
+ * @contribution Filip Konstantinos <filip.k@ece.upatras.gr>
  */
 #ifndef CIRCULAR_BUFFER_H
 #define CIRCULAR_BUFFER_H
 
-#include <vector>
+#include "Exception.h"
+
 #include <algorithm>
-#include <mutex>
 #include <condition_variable>
 #include <functional>
-#include "Exception.h"
+#include <mutex>
+#include <vector>
 
 namespace OpenSimRT {
 
 /**
  * \brief A thread safe circular buffer.
  */
-template<int history, typename T>
-class CircularBuffer {
+template <int history, typename T> class CircularBuffer {
  public:
     CircularBuffer() {
         current = 0;
         startOver = false;
+        newValue = false;
         buffer.resize(history);
     }
 
@@ -46,6 +48,7 @@ class CircularBuffer {
             // update buffer
             buffer[current] = value;
             current++;
+            newValue = true;
             if (current == history) {
                 current = 0;
                 startOver = true;
@@ -62,8 +65,13 @@ class CircularBuffer {
         // lock
         std::unique_lock<std::mutex> lock(monitor);
         // check if data are available to proceed
-        auto predicate = std::bind(&CircularBuffer::notEmpty, this, M);
-        bufferNotEmpty.wait(lock, predicate);
+        bufferNotEmpty.wait(lock,
+                            [&]() { return notEmpty(M) && newValue == true; });
+        newValue = false; // when buffer is no longer empty, condition variable
+                          // is no longer in "wait" state, and the cosumer
+                          // thread draws data from the buffer until the buffer
+                          // is empty again.
+
         // if not empty get data
         std::vector<T> result;
         result.resize(M);
@@ -83,6 +91,7 @@ class CircularBuffer {
  private:
     int current;
     bool startOver;
+    bool newValue;
     std::vector<T> buffer;
     std::mutex monitor;
     std::condition_variable bufferNotEmpty;
