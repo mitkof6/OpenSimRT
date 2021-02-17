@@ -63,7 +63,7 @@ void compareTables(const TimeSeriesTable& report,
                  << endl;
             SimTK_ASSERT2_ALWAYS(
                     (rmse < threshold),
-                    "Column '%s' FAILED to meet accuracy of %d RMS.",
+                    "Column '%s' FAILED to meet accuracy of %f RMS.",
                     reportLabels[i].c_str(), threshold);
         }
     }
