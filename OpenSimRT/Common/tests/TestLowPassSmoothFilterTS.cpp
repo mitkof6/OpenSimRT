@@ -17,57 +17,15 @@
 #include <OpenSim/Common/TimeSeriesTable.h>
 #include <SimTKcommon/Scalar.h>
 #include <chrono>
-#include <exception>
 #include <iostream>
 #include <numeric>
-#include <stdexcept>
 #include <thread>
 #include <vector>
-
-#define ASSERT(cond)                                                           \
-    {                                                                          \
-        if (!(cond)) throw exception();                                        \
-    }
 
 using namespace std;
 using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
-
-/**
- * Compare two TimeSeriesTables.
- */
-void compareTables(const TimeSeriesTable& report,
-                   const TimeSeriesTable& standard,
-                   const double& threshold = 1e-5) {
-    ASSERT(report.getNumRows() == standard.getNumRows());
-    ASSERT(report.getNumColumns() == standard.getNumColumns());
-
-    auto reportLabels = report.getColumnLabels();
-    auto stdLabels = standard.getColumnLabels();
-
-    // find and store the indexes of the column labels in tables
-    std::vector<int> mapStdToReport;
-    for (const auto& label : reportLabels) {
-        auto found = std::find(stdLabels.begin(), stdLabels.end(), label);
-        mapStdToReport.push_back(std::distance(stdLabels.begin(), found));
-    }
-
-    // compute the rmse of the matched columns
-    for (size_t i = 0; i < mapStdToReport.size(); ++i) {
-        if (mapStdToReport[i] >= 0) {
-            auto repVec = report.getDependentColumnAtIndex(i);
-            auto stdVec = standard.getDependentColumnAtIndex(mapStdToReport[i]);
-            auto rmse = sqrt((repVec - stdVec).normSqr() / report.getNumRows());
-            cout << "Column '" << reportLabels[i] << "' has RMSE = " << rmse
-                 << endl;
-            SimTK_ASSERT2_ALWAYS(
-                    (rmse < threshold),
-                    "Column '%s' FAILED to meet accuracy of %f RMS.",
-                    reportLabels[i].c_str(), threshold);
-        }
-    }
-}
 
 void run() {
     // subject data
@@ -82,11 +40,11 @@ void run() {
     auto calcDer = ini.getBoolean(section, "CALC_DER", true);
 
     // results from the non-thread safe implementation of LP filter
-    auto qRefFile = subjectDir + ini.getString(section, "Q_OUTPUT_FILE", "");
+    auto qRefFile = subjectDir + ini.getString(section, "Q_FILTERED_FILE", "");
     auto qDotRefFile =
-            subjectDir + ini.getString(section, "QD_OUTPUT_FILE", "");
+            subjectDir + ini.getString(section, "QDOT_FILTERED_FILE", "");
     auto qDDotRefFile =
-            subjectDir + ini.getString(section, "QDD_OUTPUT_FILE", "");
+            subjectDir + ini.getString(section, "QDDOT_FILTERED_FILE", "");
 
     // read the motion file and use uniform sampling of 100Hz
     Storage ikQ(ikFile);
