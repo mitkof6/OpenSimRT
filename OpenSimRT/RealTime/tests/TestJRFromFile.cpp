@@ -202,12 +202,8 @@ void run() {
         Vec3 kneeJoint;
         state.updQ() = q;
         model.realizePosition(state);
-        model.getSimbodyEngine()
-            .transformPosition(state,
-                               model.getBodySet().get("tibia_r"),
-                               Vec3(0),
-                               model.getGround(),
-                               kneeJoint);
+        kneeJoint = model.getBodySet().get("tibia_r")
+            .findStationLocationInAnotherFrame(state, Vec3(0), model.getGround());
         rightKneeForceDecorator->update(kneeJoint, kneeForce);
 
         // log data (use filter time to align with delay)
@@ -219,9 +215,13 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
          << endl;
 
+    
+    // Compare results with reference tables.
+    compareTables(jrLogger, TimeSeriesTable(subjectDir + "real_time/joint_reaction_analysis/jr.sto"));
+
     // store results
-    STOFileAdapter::write(jrLogger,
-                          subjectDir + "real_time/joint_reaction_analysis/jr.sto");
+    // STOFileAdapter::write(jrLogger,
+    //                       subjectDir + "real_time/joint_reaction_analysis/jr.sto");
 }
 
 int main(int argc, char *argv[]) {

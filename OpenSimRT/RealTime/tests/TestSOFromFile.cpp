@@ -114,11 +114,15 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
          << endl;
 
+    // Compare results with reference tables.
+    compareTables(fmLogger, TimeSeriesTable(subjectDir + "real_time/muscle_optimization/fm.sto"), 1e-3);
+    compareTables(amLogger, TimeSeriesTable(subjectDir + "real_time/muscle_optimization/am.sto"), 1e-3);
+
     // store results
-    STOFileAdapter::write(fmLogger,
-                          subjectDir + "real_time/muscle_optimization/fm.sto");
-    STOFileAdapter::write(amLogger,
-                          subjectDir + "real_time/muscle_optimization/am.sto");
+    // STOFileAdapter::write(fmLogger,
+    //                       subjectDir + "real_time/muscle_optimization/fm.sto");
+    // STOFileAdapter::write(amLogger,
+    //                       subjectDir + "real_time/muscle_optimization/am.sto");
 }
 
 int main(int argc, char* argv[]) {

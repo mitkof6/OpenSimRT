@@ -9,6 +9,7 @@ from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
 from utils import to_gait_cycle
 import matplotlib
 matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'legend.framealpha': 0.2})
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -72,7 +73,7 @@ with PdfPages(output_dir + 'muscle_optimization_comparison.pdf') as pdf:
         ax.set_ylabel('muscle force (N)')
         ax.set_title(fm_reference.columns[j])
         annotate_plot(ax, 'RMSE = ' + str(d_tau))
-        ax.legend(loc='lower left')
+        ax.legend(loc='upper right')
 
         fig.tight_layout()
         pdf.savefig(fig)

@@ -16,7 +16,7 @@ def annotate_plot(ax, text, loc='upper left'):
     """
     at = AnchoredText(text, frameon=True, loc=loc)
     at.patch.set_boxstyle('round, pad=0, rounding_size=0.2')
-    at.patch.set_alpha(0.5)
+    at.patch.set_alpha(0.2)
     ax.add_artist(at)
 
 
@@ -152,6 +152,8 @@ def plot_sto_file(file_name, plot_file, plots_per_row=4, pattern=None,
             ax = ax.flatten()
             for pl, col in enumerate(indices[page * ncols ** 2:page *
                                              ncols ** 2 + ncols ** 2]):
+                # make very small number zero before plotting
+                data[np.abs(data[:, col]) < 1e-9, col] = 0
                 ax[pl].plot(data[:, 0], data[:, col])
                 ax[pl].set_title(title_function(labels[col]))
 

@@ -11,7 +11,7 @@
 #include "Settings.h"
 #include "Simulation.h"
 #include "Visualization.h"
-
+#include "Utils.h"
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
 #include <SimTKcommon/Scalar.h>
@@ -87,9 +87,11 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / markerData.getNumFrames()
          << " ms" << endl;
 
+    compareTables(qLogger, TimeSeriesTable(subjectDir + "real_time/inverse_kinematics/q.sto"));
+    
     // store results
-    STOFileAdapter::write(qLogger,
-                          subjectDir + "real_time/inverse_kinematics/q.sto");
+    // STOFileAdapter::write(qLogger,
+    //                       subjectDir + "real_time/inverse_kinematics/q.sto");
 }
 
 int main(int argc, char* argv[]) {

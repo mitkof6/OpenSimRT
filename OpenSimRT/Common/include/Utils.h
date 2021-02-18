@@ -116,8 +116,8 @@ void compareTables(const OpenSim::TimeSeriesTable_<T>& queryTable,
             auto refVec = refFlat.getDependentColumnAtIndex(mapRefToQuery[i]);
             auto rmse = sqrt((queryVec - refVec).normSqr() /
                              queryFlat.getNumRows());
-            std::cout << "Column '" << queryLabels[i] << "' has RMSE = " << rmse
-                      << std::endl;
+            // std::cout << "Column '" << queryLabels[i] << "' has RMSE = " << rmse
+            //           << std::endl;
             SimTK_ASSERT2_ALWAYS(
                     (rmse < threshold),
                     "Column '%s' FAILED to meet accuracy of %f RMS.",
@@ -125,6 +125,7 @@ void compareTables(const OpenSim::TimeSeriesTable_<T>& queryTable,
         }
     }
 }
+
 /**
  * Determine if a SimTK::Vector_<T> has finite elements.
  */

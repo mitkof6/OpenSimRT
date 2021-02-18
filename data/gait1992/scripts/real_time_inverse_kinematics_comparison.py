@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib
 matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'legend.framealpha': 0.2})
 
 ##
 # data

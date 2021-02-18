@@ -120,7 +120,9 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
         double* xFiltered = new double[M];
         for (int j = 0; j < M; j++) { xRaw[j] = data[i][j]; }
 
-        // apply a low pass filter
+        // apply a low pass filter; O = M / 2 is used for the order of the FIR
+        // filter, because internally the filter performs a convolution over
+        // [-O, O] = 2 M / 2 = M.
         OpenSim::Signal::LowpassFIR(parameters.memory / 2, dt,
                                     parameters.cutoffFrequency, M, xRaw,
                                     xFiltered);
@@ -231,7 +233,9 @@ LowPassSmoothFilterTS::Output LowPassSmoothFilterTS::filter() {
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; ++j) { xRaw[j] = data[i][j]; }
 
-        // apply a low pass filter
+        // apply a low pass filter; O = M / 2 is used for the order of the FIR
+        // filter, because internally the filter performs a convolution over
+        // [-O, O] = 2 M / 2 = M.
         OpenSim::Signal::LowpassFIR(parameters.memory / 2, dt,
                                     parameters.cutoffFrequency, M, xRaw,
                                     xFiltered);
