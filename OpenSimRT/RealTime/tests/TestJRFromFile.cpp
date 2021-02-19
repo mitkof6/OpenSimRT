@@ -215,7 +215,6 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
          << endl;
 
-    
     // Compare results with reference tables.
     compareTables(jrLogger, TimeSeriesTable(subjectDir + "real_time/joint_reaction_analysis/jr.sto"));
 

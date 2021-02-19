@@ -27,9 +27,10 @@ q_dot_reference_file = os.path.join(subject_dir,
 q_ddot_reference_file = os.path.join(subject_dir,
                                      'residual_reduction_algorithm/task_Kinematics_dudt.sto')
 
-q_filtered_file = os.path.join(output_dir, 'proposed_filter/q_filtered.sto')
-q_dot_filtered_file = os.path.join(output_dir, 'proposed_filter/qDot_filtered.sto')
-q_ddot_filtered_file = os.path.join(output_dir, 'proposed_filter/qDDot_filtered.sto')
+folder = 'proposed_filter/'
+q_filtered_file = os.path.join(output_dir, folder, 'q_filtered.sto')
+q_dot_filtered_file = os.path.join(output_dir, folder, 'qDot_filtered.sto')
+q_ddot_filtered_file = os.path.join(output_dir, folder, 'qDDot_filtered.sto')
 
 q_filtered_sp_file = os.path.join(output_dir, 'spatial_filter/q_filtered.sto')
 q_dot_filtered_sp_file = os.path.join(output_dir, 'spatial_filter/qDot_filtered.sto')

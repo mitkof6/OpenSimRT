@@ -54,6 +54,10 @@ void run() {
     parameters.calculateDerivatives = calcDer;
     LowPassSmoothFilter filter(parameters);
 
+    // test with state space filter
+    // StateSpaceFilter filter({model.getNumCoordinates(), cutoffFreq});
+    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9, cutoffFreq});
+
     // logger
     auto columnNames =
         OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
@@ -75,7 +79,7 @@ void run() {
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
 
-        auto output = filter.filter(LowPassSmoothFilter::Input{t, qRaw});
+        auto output = filter.filter({t, qRaw});
 
         chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();

@@ -49,14 +49,14 @@ void run() {
             model, ikFile, 0.01);
 
     // initialize filter
-    LowPassSmoothFilterTS::Parameters parametersTS;
-    parametersTS.numSignals = model.getNumCoordinates();
-    parametersTS.memory = memory;
-    parametersTS.delay = delay;
-    parametersTS.cutoffFrequency = cutoffFreq;
-    parametersTS.splineOrder = splineOrder;
-    parametersTS.calculateDerivatives = calcDer;
-    LowPassSmoothFilterTS filterTS(parametersTS);
+    LowPassSmoothFilterTS::Parameters parameters;
+    parameters.numSignals = model.getNumCoordinates();
+    parameters.memory = memory;
+    parameters.delay = delay;
+    parameters.cutoffFrequency = cutoffFreq;
+    parameters.splineOrder = splineOrder;
+    parameters.calculateDerivatives = calcDer;
+    LowPassSmoothFilterTS filter(parameters);
 
     // logger
     auto columnNames =
@@ -74,7 +74,7 @@ void run() {
         double t = qTable.getIndependentColumn()[i];
         auto qRaw = qTable.getRowAtIndex(i).getAsVector();
             // update filter state
-            filterTS.updState(LowPassSmoothFilterTS::Input{t, qRaw});
+            filter.updState({t, qRaw});
 
             // sleep
             std::this_thread::sleep_for(chrono::milliseconds(5));
@@ -83,15 +83,14 @@ void run() {
         // WARNING: pass bad input to terminate filtering (exception can be
         // thrown only from the consumer thread, otherwise it's stuck in the
         // 'wait' state)
-        filterTS.updState(LowPassSmoothFilterTS::Input{
-                -SimTK::Infinity, Vector(model.getNumCoordinates())});
+        filter.updState({-SimTK::Infinity, Vector(model.getNumCoordinates())});
     });
 
     // filter in main thread
     try {
         while (true) {
             // filter
-            auto output = filterTS.filter();
+            auto output = filter.filter();
 
             // record
             q.appendRow(output.t, ~output.x);
