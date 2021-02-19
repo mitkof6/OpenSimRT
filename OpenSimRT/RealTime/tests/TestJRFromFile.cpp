@@ -199,15 +199,12 @@ void run() {
         leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
         // tibia_r -> 3 (pelvis, femur_r, tibia_r) // should check order
         auto kneeForce = -jrOutput.reactionWrench[2](1);
-        Vec3 kneeJoint;
         state.updQ() = q;
         model.realizePosition(state);
-        model.getSimbodyEngine()
-            .transformPosition(state,
-                               model.getBodySet().get("tibia_r"),
-                               Vec3(0),
-                               model.getGround(),
-                               kneeJoint);
+
+        auto kneeJoint =
+                model.getBodySet().get("tibia_r").findStationLocationInGround(
+                        state, Vec3(0));
         rightKneeForceDecorator->update(kneeJoint, kneeForce);
 
         // log data (use filter time to align with delay)
