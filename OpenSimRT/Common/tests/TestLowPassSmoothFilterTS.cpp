@@ -15,6 +15,7 @@
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/Storage.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
+#include <Actuators/Thelen2003Muscle.h>
 #include <SimTKcommon/Scalar.h>
 #include <chrono>
 #include <iostream>
@@ -41,6 +42,7 @@ void run() {
     auto calcDer = ini.getBoolean(section, "CALC_DER", true);
 
     // setup model
+    Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);
     model.initSystem();
 

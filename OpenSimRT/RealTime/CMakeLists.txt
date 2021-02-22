@@ -1,6 +1,6 @@
 # global files
 file(GLOB includes include/*.h)
-file(GLOB sources src/*.cpp src/internal/*.cpp)
+file(GLOB sources src/*.cpp)
 # file(GLOB tests tests/*.cpp)
 file(GLOB applications applications/*.cpp)
 file(GLOB tests
