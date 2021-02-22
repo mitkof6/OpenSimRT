@@ -4,11 +4,11 @@ file(GLOB sources src/*.cpp)
 # file(GLOB tests tests/*.cpp)
 file(GLOB applications applications/*.cpp)
 file(GLOB tests
-  # tests/TestIKFromFile.cpp
-  # tests/TestIKIMUFromFile.cpp
-  # tests/TestIDFromFile.cpp
-  # tests/TestSOFromFile.cpp
-  # tests/TestJRFromFile.cpp
+  tests/TestIKFromFile.cpp
+  tests/TestIKIMUFromFile.cpp
+  tests/TestIDFromFile.cpp
+  tests/TestSOFromFile.cpp
+  tests/TestJRFromFile.cpp
   tests/TestMarkerReconstruction.cpp
   )
 

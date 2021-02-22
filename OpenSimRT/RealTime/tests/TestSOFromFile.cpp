@@ -25,6 +25,12 @@ using namespace SimTK;
 using namespace OpenSimRT;
 
 void run() {
+    cout << "Warning" << endl
+         << "This test might fail on different machines. " 
+         << "The performance of the optimization depends on the underlying OS. "
+         << "We think it has to do with how threads are scheduled by the OS. "
+         << "We did not observed this behavior with OpenSim v3.3." << endl << endl;
+
     // subject data
     INIReader ini(INI_FILE);
     auto section = "TEST_SO_FROM_FILE";
@@ -114,11 +120,15 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
          << endl;
 
+    // Compare results with reference tables.
+    compareTables(fmLogger, TimeSeriesTable(subjectDir + "real_time/muscle_optimization/fm.sto"), 1e-3);
+    compareTables(amLogger, TimeSeriesTable(subjectDir + "real_time/muscle_optimization/am.sto"), 1e-3);
+
     // store results
-    STOFileAdapter::write(fmLogger,
-                          subjectDir + "real_time/muscle_optimization/fm.sto");
-    STOFileAdapter::write(amLogger,
-                          subjectDir + "real_time/muscle_optimization/am.sto");
+    // STOFileAdapter::write(fmLogger,
+    //                       subjectDir + "real_time/muscle_optimization/fm.sto");
+    // STOFileAdapter::write(amLogger,
+    //                       subjectDir + "real_time/muscle_optimization/am.sto");
 }
 
 int main(int argc, char* argv[]) {
