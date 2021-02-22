@@ -198,10 +198,10 @@ void run() {
 
     // Compare results with reference tables. Make sure that M, D,
     // spline order, fc are the same as the test.
-    SimTK_ASSERT_ALWAYS(memory == 35, "ensure that MEMORY = 35 in setpu.ini for testing");
-    SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setpu.ini for testing");
-    SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setpu.ini for testing");
-    SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setpu.ini for testing");
+    SimTK_ASSERT_ALWAYS(memory == 35, "ensure that MEMORY = 35 in setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setup.ini for testing");
     compareTables(tauLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));
     compareTables(grfLeftLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/wrench_left.sto"));
     compareTables(grfRightLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/wrench_right.sto"));
