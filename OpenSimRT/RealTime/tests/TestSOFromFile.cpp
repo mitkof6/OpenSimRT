@@ -25,6 +25,12 @@ using namespace SimTK;
 using namespace OpenSimRT;
 
 void run() {
+    cout << "Warning" << endl
+         << "This test might fail on different machines. " 
+         << "The performance of the optimization depends on the underlying OS. "
+         << "We think it has to do with how threads are scheduled by the OS. "
+         << "We did not observed this behavior with OpenSim v3.3." << endl << endl;
+
     // subject data
     INIReader ini(INI_FILE);
     auto section = "TEST_SO_FROM_FILE";

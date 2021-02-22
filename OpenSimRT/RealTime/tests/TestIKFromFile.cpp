@@ -87,7 +87,7 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / markerData.getNumFrames()
          << " ms" << endl;
 
-    compareTables(qLogger, TimeSeriesTable(subjectDir + "real_time/inverse_kinematics/q.sto"), 1e-6);
+    compareTables(qLogger, TimeSeriesTable(subjectDir + "real_time/inverse_kinematics/q.sto"), 1e-3);
 
     // store results
     // STOFileAdapter::write(qLogger,

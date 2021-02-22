@@ -116,12 +116,12 @@ void compareTables(const OpenSim::TimeSeriesTable_<T>& queryTable,
             auto refVec = refFlat.getDependentColumnAtIndex(mapRefToQuery[i]);
             auto rmse = sqrt((queryVec - refVec).normSqr() /
                              queryFlat.getNumRows());
-            // std::cout << "Column '" << queryLabels[i] << "' has RMSE = " << rmse
+            //std::cout << "Column '" << queryLabels[i] << "' has RMSE = " << rmse
             //           << std::endl;
-            SimTK_ASSERT2_ALWAYS(
+            SimTK_ASSERT3_ALWAYS(
                     (rmse < threshold),
-                    "Column '%s' FAILED to meet accuracy of %f RMS.",
-                    queryLabels[i].c_str(), threshold);
+                    "Column '%s' FAILED to meet accuracy of %f RMS with RMSE %f.",
+                    queryLabels[i].c_str(), threshold, rmse);
         }
     }
 }
