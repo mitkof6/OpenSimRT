@@ -9,6 +9,7 @@ from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
 from utils import to_gait_cycle
 import matplotlib
 matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'legend.framealpha': 0.2})
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -31,6 +32,9 @@ jr_rt_file = os.path.join(output_dir, 'jr.sto')
 
 jr_reference = read_from_storage(jr_reference_file)
 jr_rt = read_from_storage(jr_rt_file)
+# make very small number zero before plotting
+jr_reference[jr_reference.abs() < 1e-9] = 0
+jr_rt[jr_reference.abs() < 1e-9] = 0
 
 if gait_cycle:
     t0 = 0.6                        # right heel strike
@@ -38,7 +42,7 @@ if gait_cycle:
     jr_reference = to_gait_cycle(jr_reference, t0, tf)
     jr_rt = to_gait_cycle(jr_rt, t0, tf)
 
-# plot_sto_file(jr_rt_file, jr_rt_file + '.pdf', 3)
+plot_sto_file(jr_rt_file, jr_rt_file + '.pdf', 3)
 
 # %%
 # compare
@@ -69,7 +73,7 @@ with PdfPages(output_dir + 'joint_reaction_comparison_fm.pdf') as pdf:
             ax.set_xlabel('time (s)')
 
         if jr_rt.columns[i][-3::] in ['_mx', '_my', '_mz']:
-            ax.set_ylabel('joint reaction moment (Nm)')
+            ax.set_ylabel('joint reaction moment (N m)')
         elif jr_rt.columns[i][-3::] in ['_fx', '_fy', '_fz']:
             ax.set_ylabel('joint reaction force (N)')
         else:

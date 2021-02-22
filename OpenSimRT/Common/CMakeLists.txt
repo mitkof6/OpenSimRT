@@ -3,11 +3,14 @@ file(GLOB includes include/*.h)
 file(GLOB sources src/*.cpp)
 # file(GLOB tests tests/*.cpp)
 file(GLOB tests
+  # Does not terminate because CircularBuffer waits when empty (new implementaiton).
   # tests/TestCircularBuffer.cpp
-  # tests/TestLowPassSmoothFilter.cpp
-  # tests/TestLowPassSmoothFilterTS.cpp
-  # tests/TestSyncManager.cpp
+
+  tests/TestLowPassSmoothFilter.cpp
+  tests/TestLowPassSmoothFilterTS.cpp
+  tests/TestSyncManager.cpp
   )
+
 # dependencies
 include_directories(include/)
 set(DEPENDENCY_LIBRARIES ${OpenSim_LIBRARIES})
