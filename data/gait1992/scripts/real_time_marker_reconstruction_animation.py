@@ -14,6 +14,11 @@ import opensim as osim
 
 # data
 
+missing_marker_labels = [
+    "R.ASIS", "R.Thigh.Rear", "R.Toe.Tip", "R.Shank.Upper", "L.Shank.Upper",
+    "L.Thigh.Rear", "L.Toe.Tip"
+]
+
 subject_dir = os.path.abspath('../')
 results_dir = os.path.join(subject_dir, 'real_time/marker_reconstruction')
 original_markers_file = os.path.join(subject_dir, 'experimental_data/task.trc')
@@ -27,13 +32,6 @@ if not (os.path.isfile(original_markers_file)
 original_markers = osim.TimeSeriesTableVec3(original_markers_file)
 reconstructed_markers = osim.TimeSeriesTable(
     reconstructed_markers_file).packVec3()
-
-# %%
-
-missing_marker_labels = [
-    "R.ASIS", "R.Thigh.Rear", "R.Toe.Tip", "R.Shank.Upper", "L.Shank.Upper",
-    "L.Thigh.Rear", "L.Toe.Tip"
-]
 
 # %%
 

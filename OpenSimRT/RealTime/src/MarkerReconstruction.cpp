@@ -9,7 +9,7 @@ using namespace SimTK;
 
 // MarkerReconstruction constructor
 MarkerReconstruction::MarkerReconstruction(
-        const OpenSim::Model& otherModel,
+        const Model& otherModel,
         const vector<InverseKinematics::MarkerTask>& markerTasks)
         : model(*otherModel.clone()), isInitialized(false) {
     // map markers to corresponding body segments
@@ -42,7 +42,7 @@ MarkerReconstruction::MarkerReconstruction(
 }
 
 bool MarkerReconstruction::isValidFrame(
-        const SimTK::Array_<SimTK::Vec3>& markerObservations) {
+        const Array_<Vec3>& markerObservations) {
     // check for missing markers
     for (const auto& m : markerObservations) {
         if (m == Vec3(0) || !m.isFinite()) { return false; }
@@ -50,130 +50,133 @@ bool MarkerReconstruction::isValidFrame(
     return true;
 }
 
-bool MarkerReconstruction::initState(
-        const SimTK::Array_<SimTK::Vec3>& markerObservations) {
+bool MarkerReconstruction::initState(const Array_<Vec3>& markerObservations) {
     if (!isInitialized) {
         if (isValidFrame(markerObservations)) {
             // assign the valid frame to the initial state of the previous known
             // observations.
             previousObservations = markerObservations;
             isInitialized = true;
-        }
+        } else
+            isInitialized = false;
     }
     return isInitialized;
 }
 
+void MarkerReconstruction::reconstructionMethod(
+        Array_<Vec3>& currentObservations, const int& i) {
+    currentObservations[i] = previousObservations[i];
+}
+
+void MarkerReconstruction::reconstructionMethod(
+        Array_<Vec3>& currentObservations, const int& i, const int& id1) {
+    auto d1x = previousObservations[id1] - previousObservations[i];
+    currentObservations[i] = currentObservations[id1] - d1x;
+}
+
+void MarkerReconstruction::reconstructionMethod(
+        Array_<Vec3>& currentObservations, const int& i, const int& id1,
+        const int& id2) {
+    // distance vectors between the missing and closest markers
+    auto d1x = previousObservations[id1] - previousObservations[i];
+    auto d2x = previousObservations[id2] - previousObservations[i];
+
+    // estimate of missing marker based on distance.
+    auto x_tilde = ((currentObservations[id1] - d1x) +
+                    (currentObservations[id2] - d2x)) /
+                   2.0;
+
+    // sphere objects
+    Sphere c1{d1x.norm(), currentObservations[id1]};
+    Sphere c2{d2x.norm(), currentObservations[id2]};
+
+    // find intersection of the two spheres.
+    auto* circle = sphereSphereIntersection(c1, c2);
+
+    // reconstructed point is the point on the circle closest to
+    // x_tilde.
+    if (circle) {
+        // projection on the plane of the circle
+        currentObservations[i] = closestPointToCircle(x_tilde, circle);
+
+    } else { // spheres do not intersect.
+        currentObservations[i] = x_tilde;
+    }
+    delete circle;
+}
+
+void MarkerReconstruction::reconstructionMethod(
+        Array_<Vec3>& currentObservations, const int& i,
+        const vector<int>& indices) {
+    Matrix A(3, 3);
+    Matrix B(3, 3);
+
+    // marker coordinates as columns in matrices
+    for (int j = 0; j < 3; ++j) {
+        A.updCol(j) = Vector(3, &previousObservations[indices[j]][0]);
+    }
+    for (int j = 0; j < 3; ++j) {
+        B.updCol(j) = Vector(3, &currentObservations[indices[j]][0]);
+    }
+
+    // find centroid and substract from columns in A and B
+    const auto centroid_A = A.rowSum() / A.ncol();
+    const auto centroid_B = B.rowSum() / B.ncol();
+
+    for (int j = 0; j < A.ncol(); ++j) { A.updCol(j) -= centroid_A; }
+    for (int j = 0; j < B.ncol(); ++j) { B.updCol(j) -= centroid_B; }
+
+    // solve SVD for H = A * B**T --> [U, S, V**T] = SVD(H)
+    Matrix rightVectors;
+    Matrix leftVectors;
+    Vector singularValues;
+
+    FactorSVD svd(A * (~B));
+    svd.getSingularValuesAndVectors(singularValues, leftVectors, rightVectors);
+
+    // rotation matrix R = V * U**T
+    auto r = (~rightVectors) * (~leftVectors);
+    auto R = Mat33(r[0][0], r[0][1], r[0][2], r[1][0], r[1][1], r[1][2],
+                   r[2][0], r[2][1], r[2][2]);
+
+    // address reflexion case
+    if (det(R) < 0) {
+        rightVectors[2] *= -1;
+        r = (~rightVectors) * (~leftVectors);
+        R = Mat33(r[0][0], r[0][1], r[0][2], r[1][0], r[1][1], r[1][2], r[2][0],
+                  r[2][1], r[2][2]);
+    }
+
+    // translation vector
+    auto t = centroid_B - Matrix(R) * centroid_A;
+
+    // transform missing marker to compute a current estimate
+    auto estimate = Matrix(R) * Vector(previousObservations[i]) + t;
+    currentObservations[i] = Vec3(estimate[0], estimate[1], estimate[2]);
+}
+
 void MarkerReconstruction::solve(Array_<Vec3>& currentObservations) {
-    for (unsigned int i = 0; i < currentObservations.size(); i++) {
+    for (int i = 0; i < currentObservations.size(); ++i) {
         if (!currentObservations[i].isFinite()) {
-            // find the closest two markers of the missing marker.
+            // find the closest markers (max = 3) of the missing marker.
             const auto& mMarkerName = observationOrder[i];
             auto indices =
                     findClosestMarkers(mMarkerName, currentObservations, 3);
 
-            if (indices.empty()) { // no marker found
-                currentObservations[i] = previousObservations[i];
-
+            // dispatch reconstruction method based on the number of closest
+            // markers in the same body
+            if (indices.empty()) { // no marker found. return previous positions
+                reconstructionMethod(currentObservations, i);
             } else if (indices.size() == 1) { // one marker found
-                int id1 = indices[0];
-                auto d1x = previousObservations[id1] - previousObservations[i];
-                currentObservations[i] = currentObservations[id1] - d1x;
-
+                const auto& id1 = indices[0];
+                reconstructionMethod(currentObservations, i, id1);
             } else if (indices.size() == 2) { // two markers found
-                int id1 = indices[0];
-                int id2 = indices[1];
-
-                // distance vectors between the missing and closest markers
-                auto d1x = previousObservations[id1] - previousObservations[i];
-                auto d2x = previousObservations[id2] - previousObservations[i];
-                // const auto& d1x =
-                // markerDistanceTable[observationOrder[i]][observationOrder[id1]];
-                // const auto& d2x =
-                // markerDistanceTable[observationOrder[i]][observationOrder[id2]];
-
-                // estimate of missing marker based on distance.
-                auto x_tilde = ((currentObservations[id1] - d1x) +
-                                (currentObservations[id2] - d2x)) /
-                               2.0;
-
-                // sphere objects
-                Sphere c1{currentObservations[id1], d1x.norm()};
-                Sphere c2{currentObservations[id2], d2x.norm()};
-
-                // find intersection of the two spheres.
-                auto* circle = sphereSphereIntersection(c1, c2);
-
-                // reconstructed point is the point on the circle closest to
-                // x_tilde.
-                if (circle) {
-                    // projection on the plane of the circle
-                    currentObservations[i] =
-                            closestPointToCircle(x_tilde, circle);
-
-                } else { // spheres do not intersect.
-                    currentObservations[i] = x_tilde;
-                }
-                delete circle;
-
-            } else { // find best tranformation that fits the data
-
-                const int& id1 = indices[0];
-                const int& id2 = indices[1];
-                const int& id3 = indices[2];
-
-                Matrix A(3, 3);
-                Matrix B(3, 3);
-
-                // marker coordinates as columns in matrices
-                for (int j = 0; j < 3; ++j) {
-                    A.updCol(j) =
-                            Vector(3, &previousObservations[indices[j]][0]);
-                }
-                for (int j = 0; j < 3; ++j) {
-                    B.updCol(j) =
-                            Vector(3, &currentObservations[indices[j]][0]);
-                }
-
-                // find centroid and substract from columns in A and B
-                const auto centroid_A = A.rowSum() / A.ncol();
-                const auto centroid_B = B.rowSum() / B.ncol();
-
-                for (int j = 0; j < A.ncol(); ++j) {
-                    A.updCol(j) -= centroid_A;
-                }
-                for (int j = 0; j < B.ncol(); ++j) {
-                    B.updCol(j) -= centroid_B;
-                }
-
-                // solve SVD for H = A * B**T --> [U, S, V**T] = SVD(H)
-                Matrix rightVectors;
-                Matrix leftVectors;
-                Vector singularValues;
-
-                FactorSVD svd(A * (~B));
-                svd.getSingularValuesAndVectors(singularValues, leftVectors,
-                                                rightVectors);
-
-                // rotation matrix R = V * U**T
-                auto r = (~rightVectors) * (~leftVectors);
-                auto R = Mat33(r[0][0], r[0][1], r[0][2], r[1][0], r[1][1],
-                               r[1][2], r[2][0], r[2][1], r[2][2]);
-
-                // address reflexion case
-                if (det(R) < 0) {
-                    rightVectors[2] *= -1;
-                    r = (~rightVectors) * (~leftVectors);
-                    R = Mat33(r[0][0], r[0][1], r[0][2], r[1][0], r[1][1],
-                              r[1][2], r[2][0], r[2][1], r[2][2]);
-                }
-
-                // translation vector
-                auto t = centroid_B - Matrix(R) * centroid_A;
-
-                // transform missing marker to compute a current estimate
-                auto estimate = Matrix(R) * Vector(previousObservations[i]) + t;
-                currentObservations[i] =
-                        Vec3(estimate[0], estimate[1], estimate[2]);
+                const auto& id1 = indices[0];
+                const auto& id2 = indices[1];
+                reconstructionMethod(currentObservations, i, id1, id2);
+            } else { // more than two are present. find best tranformation that
+                     // fits the data
+                reconstructionMethod(currentObservations, i, indices);
             }
         }
     }
@@ -181,8 +184,8 @@ void MarkerReconstruction::solve(Array_<Vec3>& currentObservations) {
     previousObservations = currentObservations;
 }
 
-SimTK::Array_<SimTK::Vec3> MarkerReconstruction::solve(
-        const SimTK::Array_<SimTK::Vec3>& currentObservations) {
+Array_<Vec3>
+MarkerReconstruction::solve(const Array_<Vec3>& currentObservations) {
     auto reconstructedObservations(currentObservations);
     solve(reconstructedObservations);
     return reconstructedObservations;
@@ -208,7 +211,7 @@ MarkerReconstruction::sphereSphereIntersection(const Sphere& c1,
     // determine the distance from point p to either of the intersection points.
     double h = sqrt((c1.radius * c1.radius) - (a * a));
     // determine the intersection points.
-    return new Circle{p, d_hat, h};
+    return new Circle{h, p, d_hat};
 }
 
 Vec3 MarkerReconstruction::closestPointToCircle(const Vec3& vec,
@@ -266,8 +269,8 @@ vector<int> MarkerReconstruction::findClosestMarkers(
     return output;
 }
 
-TimeSeriesTable_<SimTK::Vec3> MarkerReconstruction::initializeLogger() {
-    TimeSeriesTable_<SimTK::Vec3> table;
+TimeSeriesTable_<Vec3> MarkerReconstruction::initializeLogger() {
+    TimeSeriesTable_<Vec3> table;
     table.setColumnLabels(observationOrder);
     return table;
 }

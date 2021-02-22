@@ -15,10 +15,10 @@
 namespace OpenSimRT {
 
 /**
- * Reconstruct missing markers based on previous valid frame
- * and the closest markers in current frame. The basic notion behind this
- * method is that the distance between close markers does not change between
- * frames.
+ * Reconstruct missing markers based on their previously known positions and the
+ * positions of their closest markers in the same body in the current frame. The
+ * basic notion behind this method is that the distance between markers in the
+ * same body does not change between frames.
  *
  * Modified implementation of Aristidou et.al.
  * "Real-time estimation of missing markers in human motion capture".
@@ -64,15 +64,15 @@ class RealTime_API MarkerReconstruction {
 
     // circle representation
     struct Circle {
+        double radius;
         SimTK::Vec3 origin;
         SimTK::Vec3 normal;
-        double radius;
     };
 
     // sphere representtion
     struct Sphere {
-        SimTK::Vec3 origin;
         double radius;
+        SimTK::Vec3 origin;
     };
 
     /**
@@ -106,7 +106,40 @@ class RealTime_API MarkerReconstruction {
     findClosestMarkers(const std::string& mMarkerName,
                        const SimTK::Array_<SimTK::Vec3>& currentObservations,
                        int numMarkers);
-
+    /**
+     * Overloaded function of the marker reconstruction method. Case where no
+     * valid markers exist in the same body. Returns the previously known
+     * positions.
+     */
+    void reconstructionMethod(SimTK::Array_<SimTK::Vec3>& currentObservations,
+                              const int& i);
+    /**
+     * Overloaded function of the marker reconstruction method. Case where one
+     * valid markers exist in the same body. Missing marker is estimated
+     * based on the distance vector between of the two markers in the previous
+     * valid frame and the current position of the known marker.
+     */
+    void reconstructionMethod(SimTK::Array_<SimTK::Vec3>& currentObservations,
+                              const int& i, const int& id1);
+    /**
+     * Overloaded function of the marker reconstruction method. Case where two
+     * valid markers exist in the same body. Missing marker is estimated
+     * based on the distance vectors of the two known markers and the missing
+     * one in the previous valid frame and the current position of the known
+     * markers. The position of the missing marker lies in a circle found by the
+     * intersection of two spheres with origin the known marker positions and
+     * radious the distance vectors.
+     */
+    void reconstructionMethod(SimTK::Array_<SimTK::Vec3>& currentObservations,
+                              const int& i, const int& id1, const int& id2);
+    /**
+     * Overloaded function of the marker reconstruction method. Case where more
+     * than two valid markers exist in the same body. Missing marker is
+     * estimated after a applying a rigid transformation that best transforms
+     * the known markers from the previous frame to the current frame.
+     */
+    void reconstructionMethod(SimTK::Array_<SimTK::Vec3>& currentObservations,
+                              const int& i, const std::vector<int>& indices);
     OpenSim::Model model;
     DistanceTable markerDistanceTable;
     std::multimap<std::string, std::string> markersPerBodyMap;

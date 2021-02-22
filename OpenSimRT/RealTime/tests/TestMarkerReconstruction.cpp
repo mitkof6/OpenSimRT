@@ -1,7 +1,9 @@
 /**
  * @file TestMarkerReconstruction.cpp
  *
- * @brief Test the missing marker reconstruction module.
+ * @brief Test the missing marker reconstruction method. Simulate missing
+ * markers from a recorded motion by replacing their positions with NaN values
+ * for a given duration, and try to reconstruct them offline.
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
@@ -10,10 +12,10 @@
 #include "InverseKinematics.h"
 #include "MarkerReconstruction.h"
 #include "Settings.h"
+#include "Utils.h"
 
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
-#include <OpenSim/Common/TRCFileAdapter.h>
 #include <iostream>
 
 using namespace std;
@@ -110,10 +112,16 @@ void run() {
         logger.appendRow(t, reconstructedMarkers);
     }
 
-    // store results
-    STOFileAdapter::write(logger.flatten(),
-                          subjectDir + "real_time/marker_reconstruction/"
-                                       "reconstructed_markers.sto");
+    // compare results with reference table.
+    compareTables(logger, TimeSeriesTable(subjectDir +
+                                          "real_time/marker_reconstruction/"
+                                          "reconstructed_markers.sto")
+                                  .pack<SimTK::Vec3>());
+
+    // // store results
+    // STOFileAdapter::write(logger.flatten(),
+    //                       subjectDir + "real_time/marker_reconstruction/"
+    //                                    "reconstructed_markers.sto");
 }
 
 int main(int argc, char* argv[]) {

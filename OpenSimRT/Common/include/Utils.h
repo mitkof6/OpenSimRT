@@ -73,11 +73,12 @@ std::string dump(const T& vec, std::string delimiter,
 }
 
 /**
- * Compare two TimeSeriesTables. Number of columns and rows must match,
- * otherwise throws an exception. Comparison is performed by computing the RMSE
- * of the columns with common labels acquired from the 'query' table. If the
- * computed RMSE of any of the match columns is larger than the given threshold
- * it throws an exception.
+ * Compare two OpenSim::Datatables or any of the derived types (as long as they
+ * share the same data types). Number of columns and rows must match, otherwise
+ * throws an exception. Comparison is performed by computing the RMSE of the
+ * columns with common labels acquired from the 'query' table. If the computed
+ * RMSE of any of the match columns is larger than the given threshold it throws
+ * an exception.
  *
  * @param queryTable - Query table to compare.
  *
@@ -85,9 +86,8 @@ std::string dump(const T& vec, std::string delimiter,
  *
  * @param threshold - Threshold value (default is 1e-5).
  */
-template <typename T>
-void compareTables(const OpenSim::TimeSeriesTable_<T>& queryTable,
-                   const OpenSim::TimeSeriesTable_<T>& refTable,
+template <template <typename, typename> class Table, typename T, typename E>
+void compareTables(const Table<T, E>& queryTable, const Table<T, E>& refTable,
                    const double& threshold = 1e-5) {
     if (!(queryTable.getNumRows() == refTable.getNumRows()))
         THROW_EXCEPTION("Number of rows in given tables do not match.");
