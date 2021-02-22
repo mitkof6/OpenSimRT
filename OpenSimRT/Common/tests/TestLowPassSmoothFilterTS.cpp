@@ -10,11 +10,12 @@
 #include "Settings.h"
 #include "SignalProcessing.h"
 #include "Utils.h"
-
+#include "OpenSimUtils.h"
 #include <Common/Exception.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/Storage.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
+#include <Actuators/Thelen2003Muscle.h>
 #include <SimTKcommon/Scalar.h>
 #include <chrono>
 #include <iostream>
@@ -32,6 +33,7 @@ void run() {
     INIReader ini(INI_FILE);
     auto section = "TEST_LOW_PASS_SMOOTH_FILTER";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+    auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
@@ -39,47 +41,42 @@ void run() {
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
     auto calcDer = ini.getBoolean(section, "CALC_DER", true);
 
-    // results from the non-thread safe implementation of LP filter
-    auto qRefFile = subjectDir + ini.getString(section, "Q_FILTERED_FILE", "");
-    auto qDotRefFile =
-            subjectDir + ini.getString(section, "QDOT_FILTERED_FILE", "");
-    auto qDDotRefFile =
-            subjectDir + ini.getString(section, "QDDOT_FILTERED_FILE", "");
+    // setup model
+    Object::RegisterType(Thelen2003Muscle());
+    Model model(modelFile);
+    model.initSystem();
 
-    // read the motion file and use uniform sampling of 100Hz
-    Storage ikQ(ikFile);
-    ikQ.resampleLinear(0.01);
+    // get kinematics as a table with ordered coordinates
+    auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
+            model, ikFile, 0.01);
 
-    LowPassSmoothFilterTS::Parameters parametersTS;
-    parametersTS.numSignals = ikQ.getStateVector(0)->getSize();
-    parametersTS.memory = memory;
-    parametersTS.delay = delay;
-    parametersTS.cutoffFrequency = cutoffFreq;
-    parametersTS.splineOrder = splineOrder;
-    parametersTS.calculateDerivatives = calcDer;
-    LowPassSmoothFilterTS filterTS(parametersTS);
+    // initialize filter
+    LowPassSmoothFilterTS::Parameters parameters;
+    parameters.numSignals = model.getNumCoordinates();
+    parameters.memory = memory;
+    parameters.delay = delay;
+    parameters.cutoffFrequency = cutoffFreq;
+    parameters.splineOrder = splineOrder;
+    parameters.calculateDerivatives = calcDer;
+    LowPassSmoothFilterTS filter(parameters);
 
     // logger
-    auto arrayStr = ikQ.getColumnLabels();
-    vector<string> columns;
-    osimToStd(arrayStr, columns);
-    columns.erase(columns.begin());
+    auto columnNames =
+        OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
     TimeSeriesTable q, qDot, qDDot;
-    q.setColumnLabels(columns);
-    qDot.setColumnLabels(columns);
-    qDDot.setColumnLabels(columns);
+    q.setColumnLabels(columnNames);
+    qDot.setColumnLabels(columnNames);
+    qDDot.setColumnLabels(columnNames);
 
     // filter update function in separate thread
     thread updateFilt([&]() {
         // loop through ik storage
-        for (int i = 0; i < ikQ.getSize(); ++i) {
-            // read storage entry
-            auto stateVector = ikQ.getStateVector(i);
-            double t = stateVector->getTime();
-            auto x = Vector(stateVector->getSize(), &stateVector->getData()[0]);
-
+        for (int i = 0; i < qTable.getNumRows(); i++) {
+        // get raw pose from table
+        double t = qTable.getIndependentColumn()[i];
+        auto qRaw = qTable.getRowAtIndex(i).getAsVector();
             // update filter state
-            filterTS.updState(LowPassSmoothFilterTS::Input{t, x});
+            filter.updState({t, qRaw});
 
             // sleep
             std::this_thread::sleep_for(chrono::milliseconds(5));
@@ -88,15 +85,14 @@ void run() {
         // WARNING: pass bad input to terminate filtering (exception can be
         // thrown only from the consumer thread, otherwise it's stuck in the
         // 'wait' state)
-        filterTS.updState(LowPassSmoothFilterTS::Input{
-                -SimTK::Infinity, Vector(ikQ.getStateVector(0)->getSize())});
+        filter.updState({-SimTK::Infinity, Vector(model.getNumCoordinates())});
     });
 
     // filter in main thread
     try {
         while (true) {
             // filter
-            auto output = filterTS.filter();
+            auto output = filter.filter();
 
             // record
             q.appendRow(output.t, ~output.x);
@@ -106,18 +102,23 @@ void run() {
     } catch (const std::exception& e) { cout << e.what() << "\n"; }
     updateFilt.join();
 
-    // Compare results with reference tables
-    compareTables(q, TimeSeriesTable(qRefFile));
-    compareTables(qDot, TimeSeriesTable(qDotRefFile));
-    compareTables(qDDot, TimeSeriesTable(qDDotRefFile));
+    // Compare results with reference tables. Make sure that M, D,
+    // spline order, fc are the same as the test.
+    SimTK_ASSERT_ALWAYS(memory == 35, "ensure that MEMORY = 35 in setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setup.ini for testing");
+    compareTables(q, TimeSeriesTable(subjectDir + "real_time/filtering/proposed_filter/q_filtered.sto"));
+    compareTables(qDot, TimeSeriesTable(subjectDir + "real_time/filtering/proposed_filter/qDot_filtered.sto"));
+    compareTables(qDDot, TimeSeriesTable(subjectDir + "real_time/filtering/proposed_filter/qDDot_filtered.sto"));
 
-    // store results
-    STOFileAdapter::write(q,
-                          subjectDir + "real_time/filtering/q_filtered_ts.sto");
-    STOFileAdapter::write(
-            qDot, subjectDir + "real_time/filtering/qDot_filtered_ts.sto");
-    STOFileAdapter::write(
-            qDDot, subjectDir + "real_time/filtering/qDDot_filtered_ts.sto");
+    // // store results
+    // STOFileAdapter::write(q,
+    //                       subjectDir + "real_time/filtering/q_filtered_ts.sto");
+    // STOFileAdapter::write(
+    //         qDot, subjectDir + "real_time/filtering/qDot_filtered_ts.sto");
+    // STOFileAdapter::write(
+    //         qDDot, subjectDir + "real_time/filtering/qDDot_filtered_ts.sto");
 }
 
 int main(int argc, char* argv[]) {

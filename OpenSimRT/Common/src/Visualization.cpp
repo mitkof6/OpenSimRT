@@ -115,7 +115,7 @@ void BasicModelVisualizer::update(const Vector& q,
     }
 
     // terminate simulation when menu option is selected
-    int menuId, item;
+    int menuId = -1, item = -1;
     silo->takeMenuPick(menuId, item);
     if (menuId == int(MenuID::SIMULATION) && item == int(SimMenuItem::QUIT)) {
         visualizer->shutdown();

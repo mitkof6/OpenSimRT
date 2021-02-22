@@ -196,25 +196,37 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
          << endl;
 
-    // store results
-    STOFileAdapter::write(tauLogger,
-                          subjectDir + "real_time/inverse_dynamics/tau.sto");
-    STOFileAdapter::write(
-            grfRightLogger,
-            subjectDir + "real_time/inverse_dynamics/wrench_right.sto");
-    STOFileAdapter::write(grfLeftLogger,
-                          subjectDir +
-                          "real_time/inverse_dynamics/wrench_left.sto");
-    STOFileAdapter::write(qLogger,
-                          subjectDir +
-                          "real_time/inverse_dynamics/q_filtered.sto");
-    STOFileAdapter::write(qDotLogger,
-                          subjectDir +
-                          "real_time/inverse_dynamics/qDot_filtered.sto");
-    STOFileAdapter::write(qDDotLogger,
-                          subjectDir +
-                          "real_time/inverse_dynamics/qDDot_filtered.sto");
+    // Compare results with reference tables. Make sure that M, D,
+    // spline order, fc are the same as the test.
+    SimTK_ASSERT_ALWAYS(memory == 35, "ensure that MEMORY = 35 in setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setup.ini for testing");
+    compareTables(tauLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));
+    compareTables(grfLeftLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/wrench_left.sto"));
+    compareTables(grfRightLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/wrench_right.sto"));
+    compareTables(qLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/q_filtered.sto"));
+    compareTables(qDotLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/qDot_filtered.sto"));
+    compareTables(qDDotLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/qDDot_filtered.sto"));
 
+    // store results
+    // STOFileAdapter::write(tauLogger,
+    //                       subjectDir + "real_time/inverse_dynamics/tau.sto");
+    // STOFileAdapter::write(
+    //         grfRightLogger,
+    //         subjectDir + "real_time/inverse_dynamics/wrench_right.sto");
+    // STOFileAdapter::write(grfLeftLogger,
+    //                       subjectDir +
+    //                       "real_time/inverse_dynamics/wrench_left.sto");
+    // STOFileAdapter::write(qLogger,
+    //                       subjectDir +
+    //                       "real_time/inverse_dynamics/q_filtered.sto");
+    // STOFileAdapter::write(qDotLogger,
+    //                       subjectDir +
+    //                       "real_time/inverse_dynamics/qDot_filtered.sto");
+    // STOFileAdapter::write(qDDotLogger,
+    //                       subjectDir +
+    //                       "real_time/inverse_dynamics/qDDot_filtered.sto");
 }
 
 int main(int argc, char* argv[]) {

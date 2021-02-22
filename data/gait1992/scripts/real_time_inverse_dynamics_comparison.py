@@ -11,6 +11,7 @@ from utils import to_gait_cycle
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib
 matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'legend.framealpha': 0.2})
 
 
 ##
@@ -60,7 +61,7 @@ with PdfPages(output_dir + 'inverse_dynamics_comparison.pdf') as pdf:
 
         units = ''
         if is_deg:
-            units = ' (Nm)'
+            units = ' (N m)'
         else:
             units = ' (N)'
 

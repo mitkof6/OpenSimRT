@@ -9,6 +9,7 @@ from utils import read_from_storage, plot_sto_file, rmse_metric, annotate_plot
 import matplotlib
 from utils import to_gait_cycle
 matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'legend.framealpha': 0.2})
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -26,9 +27,10 @@ q_dot_reference_file = os.path.join(subject_dir,
 q_ddot_reference_file = os.path.join(subject_dir,
                                      'residual_reduction_algorithm/task_Kinematics_dudt.sto')
 
-q_filtered_file = os.path.join(output_dir, 'q_filtered.sto')
-q_dot_filtered_file = os.path.join(output_dir, 'qDot_filtered.sto')
-q_ddot_filtered_file = os.path.join(output_dir, 'qDDot_filtered.sto')
+folder = 'proposed_filter/'
+q_filtered_file = os.path.join(output_dir, folder, 'q_filtered.sto')
+q_dot_filtered_file = os.path.join(output_dir, folder, 'qDot_filtered.sto')
+q_ddot_filtered_file = os.path.join(output_dir, folder, 'qDDot_filtered.sto')
 
 q_filtered_sp_file = os.path.join(output_dir, 'spatial_filter/q_filtered.sto')
 q_dot_filtered_sp_file = os.path.join(output_dir, 'spatial_filter/qDot_filtered.sto')
@@ -65,8 +67,8 @@ if gait_cycle:
     q_ddot_filtered_sp = to_gait_cycle(q_ddot_filtered_sp, t0, tf)
 
 
-# plot_sto_file(q_reference_file, q_reference_file + '.pdf', 2)
-# plot_sto_file(q_filtered_file, q_filtered_file + '.pdf', 2)
+plot_sto_file(q_reference_file, q_reference_file + '.pdf', 2)
+plot_sto_file(q_filtered_file, q_filtered_file + '.pdf', 2)
 
 # %%
 # compare
