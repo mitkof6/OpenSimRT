@@ -14,7 +14,6 @@
 #include "internal/IMUExports.h"
 
 #include <Simulation/Model/Model.h>
-#include <algorithm>
 #include <string>
 #include <type_traits>
 

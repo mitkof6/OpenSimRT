@@ -1,8 +1,8 @@
 /**
- * @file NGIMUInputDriver.h
+ * @file NGIMUInputDriverFromFile.h
  *
- * @brief Concrete implementation of the IMUInputDriver to receive NGIMU data
- * from file.
+ * @brief Concrete implementation of the IMUInputDriver to stream NGIMU data
+ * from file in a separate thread.
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */

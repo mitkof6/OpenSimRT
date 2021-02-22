@@ -12,7 +12,6 @@
 #include "ip/UdpSocket.h"
 
 #include <Common/TimeSeriesTable.h>
-#include <algorithm>
 #include <vector>
 
 namespace OpenSimRT {

@@ -43,6 +43,16 @@ def rmse_metric(s1, s2):
     return np.round(np.sqrt(np.mean((x - y) ** 2)), 2)
 
 
+def simtk_vec_to_list(vec):
+    """Convert SimTK::Vec_<T> to Python list.
+    """
+    temp = []
+    for i in range(vec.size()):
+        temp.append(vec[i])
+
+    return temp
+
+
 def osim_array_to_list(array):
     """Convert OpenSim::Array<T> to Python list.
     """
