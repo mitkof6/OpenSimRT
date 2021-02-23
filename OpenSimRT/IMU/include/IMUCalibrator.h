@@ -134,7 +134,10 @@ class IMU_API IMUCalibrator {
         }
 
         /**
-         * Compute average of 3D rotations.
+         * Compute average of 3D rotations. Given a list of IMUData containing
+         * the quaternion measurements, computes the average quaternion error
+         * from the first sample and adds it back to the first sample to return
+         * the average quaternions.
          *
          * Source:
          * https://math.stackexchange.com/questions/1984608/average-of-3d-rotations
@@ -143,21 +146,31 @@ class IMU_API IMUCalibrator {
             int n = initIMUDataTable.size();    // num of recorded frames
             int m = initIMUDataTable[0].size(); // num of imu devices
 
-            auto avgQuaternions =
+            auto avgQuaternionErrors =
                     std::vector<SimTK::Quaternion>(m, SimTK::Quaternion());
 
             // Quaternion product for each imu
             for (int j = 0; j < m; ++j)
-                for (int i = 0; i < n; ++i)
-                    avgQuaternions[j] = avgQuaternions[j] *
-                                        initIMUDataTable[i][j].getQuaternion();
+                for (int i = 0; i < n; ++i) {
+                    const auto& q = initIMUDataTable[i][j].getQuaternion();
+                    avgQuaternionErrors[j] = avgQuaternionErrors[j] * (~q * q);
+                }
 
             // convet to axis angle, devide with n, and convert back to
             // quaternions
-            for (auto& q : avgQuaternions)
+            for (auto& q : avgQuaternionErrors) {
                 q.setQuaternionFromAngleAxis(
                         q.convertQuaternionToAngleAxis().scalarDivide(
                                 double(n)));
+            }
+
+            // add the error back to the first sample
+            auto avgQuaternions(avgQuaternionErrors);
+            for (int i = 0; i < m; ++i) {
+                const auto& q0 = initIMUDataTable[0][i].getQuaternion();
+                const auto& qe = avgQuaternionErrors[i];
+                avgQuaternions[i] = qe * q0;
+            }
 
             return avgQuaternions;
         }
