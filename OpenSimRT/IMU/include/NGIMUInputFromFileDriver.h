@@ -44,7 +44,7 @@ class IMU_API NGIMUInputFromFileDriver : public InputDriver<NGIMUData> {
      * Get data from file as a list of NGIMUData. Implements the stopListening
      * of the base class.
      */
-    virtual IMUDataList getData() override;
+    virtual IMUDataList getData() const override;
 
     /**
      * Get data from file as a std::pair containing the time and all the sensor
@@ -57,13 +57,13 @@ class IMU_API NGIMUInputFromFileDriver : public InputDriver<NGIMUData> {
      * Get data from file as a std::pair containing the time and all the sensor
      * values from the table as a SimTK::Vector. (i.e., time and row from table)
      */
-    std::pair<double, SimTK::Vector> getFrameAsVector();
+    std::pair<double, SimTK::Vector> getFrameAsVector() const;
 
  protected:
     /**
      * Reconstruct a list of NGIMU from a SimTK::Vector.
      */
-    IMUDataList fromVector(const SimTK::Vector&);
+    IMUDataList fromVector(const SimTK::Vector&) const;
 
     // hide it from public since it does nothing
     void stopListening() override {}
@@ -78,9 +78,9 @@ class IMU_API NGIMUInputFromFileDriver : public InputDriver<NGIMUData> {
 
     // thread related variables
     std::thread t;
-    std::mutex mu;
-    std::condition_variable cond;
-    std::exception_ptr exc_ptr;
-    bool newRow = false;
+    mutable std::mutex mu;
+    mutable std::condition_variable cond;
+    mutable std::exception_ptr exc_ptr;
+    mutable bool newRow = false;
 };
 } // namespace OpenSimRT

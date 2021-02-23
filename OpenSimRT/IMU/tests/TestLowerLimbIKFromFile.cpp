@@ -5,9 +5,9 @@
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
+#include "IMUCalibrator.h"
 #include "INIReader.h"
 #include "InverseKinematics.h"
-#include "NGIMUCalibrator.h"
 #include "NGIMUInputFromFileDriver.h"
 #include "Settings.h"
 #include "Visualization.h"
@@ -56,7 +56,7 @@ void run() {
     driver.startListening();
 
     // calibrator
-    NGNGIMUCalibrator clb(model, &driver, imuObservationOrder);
+    IMUCalibrator clb(model, &driver, imuObservationOrder);
     clb.recordNumOfSamples(1);
     clb.setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
     clb.computeHeadingRotation(imuBaseBody, imuDirectionAxis);
@@ -75,7 +75,8 @@ void run() {
             auto imuData = driver.getFrame();
 
             // solve ik
-            auto pose = ik.solve(clb.transform(imuData, {}));
+            auto pose = ik.solve(
+                    {imuData.first, {}, clb.transform(imuData.second)});
 
             // visualize
             visualizer.update(pose.q);

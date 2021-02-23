@@ -7,7 +7,7 @@
  */
 #include "INIReader.h"
 #include "InverseKinematics.h"
-#include "NGIMUCalibrator.h"
+#include "IMUCalibrator.h"
 #include "NGIMUInputDriver.h"
 #include "Settings.h"
 #include "SignalProcessing.h"
@@ -76,8 +76,8 @@ void run() {
     auto imuLogger = driver.initializeLogger();
 
     // calibrator
-    NGNGIMUCalibrator clb =
-            NGNGIMUCalibrator(model, &driver, imuObservationOrder);
+    IMUCalibrator clb =
+            IMUCalibrator(model, &driver, imuObservationOrder);
     clb.recordTime(3.0); // record for 3 seconds
     clb.setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
     clb.computeHeadingRotation(imuBaseBody, imuDirectionAxis);
@@ -119,7 +119,8 @@ void run() {
             imuData.second = driver.fromVector(pack.second[0]);
 
             // solve ik
-            auto pose = ik.solve(clb.transform(imuData, {}));
+            auto pose = ik.solve(
+                    {imuData.first, {}, clb.transform(imuData.second)});
 
             // filter
             auto ikFiltered = ikFilter.filter({pose.t, pose.q});

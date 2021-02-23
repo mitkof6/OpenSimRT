@@ -3,6 +3,10 @@
 using namespace OpenSimRT;
 using namespace SimTK;
 
+SimTK::Quaternion NGIMUData::getQuaternion() const {
+    return this->quaternion.q;
+}
+
 Vector NGIMUData::asVector() const {
     Vector v(this->size());
     int i = 0;

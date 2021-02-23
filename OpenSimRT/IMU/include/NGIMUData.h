@@ -81,5 +81,10 @@ struct IMU_API NGIMUData {
      * in a IMU).
      */
     void setFromPack(const NGIMUPack& pack);
+
+    /**
+     * Return the quaternion data.
+     */
+    SimTK::Quaternion getQuaternion() const;
 };
 } // namespace OpenSimRT

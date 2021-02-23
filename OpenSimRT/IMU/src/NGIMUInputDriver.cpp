@@ -131,7 +131,7 @@ void NGIMUInputDriver::startListening() {
 
 void NGIMUInputDriver::stopListening() { mux.Break(); }
 
-NGIMUInputDriver::IMUDataList NGIMUInputDriver::getData() {
+NGIMUInputDriver::IMUDataList NGIMUInputDriver::getData() const {
     IMUDataList list;
     for (const auto& listener : listeners) {
         list.push_back(buffer[listener->port]->get(CIRCULAR_BUFFER_SIZE)[0]);

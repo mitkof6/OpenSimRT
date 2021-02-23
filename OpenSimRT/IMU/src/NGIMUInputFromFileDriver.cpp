@@ -48,7 +48,7 @@ bool NGIMUInputFromFileDriver::shouldTerminate() {
 }
 
 NGIMUInputFromFileDriver::IMUDataList
-NGIMUInputFromFileDriver::fromVector(const Vector& v) {
+NGIMUInputFromFileDriver::fromVector(const Vector& v) const {
     IMUDataList list;
     NGIMUData data;
     int n = NGIMUData::size();
@@ -59,7 +59,7 @@ NGIMUInputFromFileDriver::fromVector(const Vector& v) {
     return list;
 }
 
-NGIMUInputFromFileDriver::IMUDataList NGIMUInputFromFileDriver::getData() {
+NGIMUInputFromFileDriver::IMUDataList NGIMUInputFromFileDriver::getData() const {
     std::unique_lock<std::mutex> lock(mu);
     cond.wait(lock, [&]() { return (newRow == true) || (exc_ptr != nullptr); });
     newRow = false;
@@ -71,7 +71,7 @@ std::pair<double, std::vector<NGIMUData>> NGIMUInputFromFileDriver::getFrame() {
     return std::make_pair(temp.first, fromVector(temp.second));
 }
 
-std::pair<double, Vector> NGIMUInputFromFileDriver::getFrameAsVector() {
+std::pair<double, Vector> NGIMUInputFromFileDriver::getFrameAsVector() const {
     std::unique_lock<std::mutex> lock(mu);
     cond.wait(lock, [&]() { return (newRow == true) || (exc_ptr != nullptr); });
     newRow = false;

@@ -53,7 +53,7 @@ template <typename T> class IMU_API InputDriver {
     /**
      * Obtain IMU data from listeners.
      */
-    virtual IMUDataList getData() = 0;
+    virtual IMUDataList getData() const = 0;
 
  protected:
     InputDriver() noexcept {};                           // ctor
@@ -69,7 +69,7 @@ template <typename T> class IMU_API InputDriver {
     /**
      * A map with thread-safe buffers to store IMU data from each port.
      */
-    std::map<int, CircularBuffer<CIRCULAR_BUFFER_SIZE, T>*> buffer;
+    mutable std::map<int, CircularBuffer<CIRCULAR_BUFFER_SIZE, T>*> buffer;
 };
 
 } // namespace OpenSimRT

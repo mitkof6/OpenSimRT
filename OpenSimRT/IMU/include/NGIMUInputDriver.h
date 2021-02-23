@@ -66,7 +66,7 @@ class IMU_API NGIMUInputDriver : public InputDriver<NGIMUData> {
      * Receive the NGIMU data stored in the driver's buffer. (Implements the
      * startListening function of the base class.)
      */
-    virtual IMUDataList getData() override;
+    virtual IMUDataList getData() const override;
 
     /**
      * Represent the list of NGIMUData as a SimTK::Vector.

@@ -1,17 +1,18 @@
-#include "NGIMUCalibrator.h"
+#include "IMUCalibrator.h"
 
 #include "Exception.h"
+
+#include <SimTKcommon/internal/Quaternion.h>
 
 using namespace OpenSimRT;
 using namespace OpenSim;
 using namespace SimTK;
 using namespace std;
 
-NGNGIMUCalibrator::NGNGIMUCalibrator(const Model& otherModel,
-                                     InputDriver<NGIMUData>* const driver,
-                                     const vector<string>& observationOrder)
-        : m_driver(driver), model(*otherModel.clone()), R_heading(Rotation()),
-          R_GoGi(Rotation()) {
+void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
+    R_heading = SimTK::Rotation();
+    R_GoGi = SimTK::Rotation();
+
     // copy observation order list
     imuBodiesObservationOrder = std::vector<std::string>(
             observationOrder.begin(), observationOrder.end());
@@ -22,18 +23,17 @@ NGNGIMUCalibrator::NGNGIMUCalibrator(const Model& otherModel,
 
     // get default model pose body orientation in ground
     for (const auto& label : imuBodiesObservationOrder) {
-        const PhysicalFrame* frame = nullptr;
-        if ((frame = model.findComponent<PhysicalFrame>(label))) {
+        const OpenSim::PhysicalFrame* frame = nullptr;
+        if ((frame = model.findComponent<OpenSim::PhysicalFrame>(label))) {
             imuBodiesInGround[label] =
                     frame->getTransformInGround(state).R(); // R_GB
         }
     }
 }
 
-SimTK::Rotation
-NGNGIMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
-                                           const double& yDegrees,
-                                           const double& zDegrees) {
+SimTK::Rotation IMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
+                                                       const double& yDegrees,
+                                                       const double& zDegrees) {
     auto xRad = SimTK::convertDegreesToRadians(xDegrees);
     auto yRad = SimTK::convertDegreesToRadians(yDegrees);
     auto zRad = SimTK::convertDegreesToRadians(zDegrees);
@@ -44,8 +44,8 @@ NGNGIMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
 }
 
 SimTK::Rotation
-NGNGIMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
-                                          const std::string& imuDirectionAxis) {
+IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
+                                      const std::string& imuDirectionAxis) {
     if (!imuDirectionAxis.empty() && !baseImuName.empty()) {
         // set coordinate direction based on given imu direction axis given as
         // string
@@ -75,7 +75,7 @@ NGNGIMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
                           imuBodiesObservationOrder.end(), baseImuName));
 
         // get initial measurement of base imu
-        const auto& q0 = initIMUData[baseBodyIndex].quaternion.q;
+        const auto q0 = staticPoseQuaternions[baseBodyIndex];
         const auto base_R = R_GoGi * ~Rotation(q0);
 
         // get initial direction from the imu measurement (the axis looking
@@ -118,10 +118,10 @@ NGNGIMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
     return R_heading;
 }
 
-void NGNGIMUCalibrator::calibrateIMUTasks(
+void IMUCalibrator::calibrateIMUTasks(
         vector<InverseKinematics::IMUTask>& imuTasks) {
-    for (int i = 0; i < initIMUData.size(); ++i) {
-        const auto& q0 = initIMUData[i].quaternion.q;
+    for (int i = 0; i < staticPoseQuaternions.size(); ++i) {
+        const auto& q0 = staticPoseQuaternions[i];
         const auto R0 = R_heading * R_GoGi * ~Rotation(q0);
 
         const auto& bodyName = imuTasks[i].body;
@@ -131,50 +131,12 @@ void NGNGIMUCalibrator::calibrateIMUTasks(
     }
 }
 
-InverseKinematics::Input NGNGIMUCalibrator::transform(
-        const std::pair<double, std::vector<NGIMUData>>& imuData,
-        const SimTK::Array_<Vec3>& markerData) {
-    InverseKinematics::Input input;
-
-    // time
-    input.t = imuData.first;
-
-    // imu data
-    for (int i = 0; i < imuData.second.size(); ++i) {
-        const auto& q = imuData.second[i].quaternion.q; // current input
-        const auto R = R_heading * R_GoGi * ~Rotation(q);
-        input.imuObservations.push_back(R);
-    }
-
-    // marker data
-    for (int i = 0; i < markerData.size(); ++i) {
-        input.markerObservations.push_back(markerData[i]);
-    }
-    return input;
+void IMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
+    impl->recordNumOfSamples(numSamples);
+    staticPoseQuaternions = impl->computeAvgStaticPose();
 }
 
-void NGNGIMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
-    cout << "Recording Static Pose..." << endl;
-    size_t i = 0;
-    while (i < numSamples) {
-        // get frame measurements
-        quatTable.push_back(m_driver->getData());
-        ++i;
-    }
-    computeAvgStaticPose();
-}
-void NGNGIMUCalibrator::recordTime(const double& timeout) {
-    cout << "Recording Static Pose..." << endl;
-    const auto start = chrono::steady_clock::now();
-    while (std::chrono::duration_cast<chrono::seconds>(
-                   chrono::steady_clock::now() - start)
-                   .count() < timeout) {
-        // get frame measurements
-        quatTable.push_back(m_driver->getData());
-    }
-    computeAvgStaticPose();
-}
-
-void NGNGIMUCalibrator::computeAvgStaticPose() {
-    initIMUData = *(quatTable.end() - 1); // TODO: compute actual average
+void IMUCalibrator::recordTime(const double& timeout) {
+    impl->recordTime(timeout);
+    staticPoseQuaternions = impl->computeAvgStaticPose();
 }
