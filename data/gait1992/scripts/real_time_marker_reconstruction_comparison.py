@@ -104,7 +104,7 @@ with PdfPages(os.path.join(results_dir,
 print('d_q: μ = ', np.round(np.mean(d_q_total), 3), ' σ = ',
       np.round(np.std(d_q_total, ddof=1), 3))
 
-with open(results_dir + 'metrics.txt', 'w') as file_handle:
+with open(results_dir + '_metrics.txt', 'w') as file_handle:
     file_handle.write('RMSE\n')
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_q_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_q_total, ddof=1), 3)))
