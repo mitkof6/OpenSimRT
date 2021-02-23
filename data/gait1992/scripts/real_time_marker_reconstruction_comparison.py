@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from utils import to_gait_cycle, read_from_storage, rmse_metric, annotate_plot
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib
-matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'font.size': 10})
 matplotlib.rcParams.update({'legend.framealpha': 0.2})
 
 # %%
@@ -18,6 +18,9 @@ matplotlib.rcParams.update({'legend.framealpha': 0.2})
 
 gait_cycle = True
 skip_valid_markers = True
+
+occlusion_start_time = 1.1
+occlusion_duration = 0.7
 
 missing_marker_labels = [
     "R.ASIS", "R.Thigh.Rear", "R.Toe.Tip", "R.Shank.Upper", "L.Shank.Upper",
@@ -44,6 +47,10 @@ if gait_cycle:
     tf = 1.83  # next right heel strike
     original_markers = to_gait_cycle(original_markers, t0, tf)
     reconstructed_markers = to_gait_cycle(reconstructed_markers, t0, tf)
+
+    occlusion_start_perc = 100.0 / (tf - t0) * (occlusion_start_time - t0)
+    occlusion_stop_perc = 100.0 / (tf - t0) * (occlusion_start_time +
+                                               occlusion_duration - t0)
 
 # %%
 
@@ -87,6 +94,11 @@ with PdfPages(os.path.join(results_dir,
                 scale * reconstructed_markers.iloc[:, i],
                 label='Reconstructed',
                 linestyle='--')
+        ax.axvspan(occlusion_start_perc,
+                   occlusion_stop_perc,
+                   label="Occlusion Period",
+                   color="tab:blue",
+                   alpha=0.3)
         if gait_cycle:
             ax.set_xlabel('gait cycle (%)')
         else:

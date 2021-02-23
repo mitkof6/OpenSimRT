@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.animation
 import opensim as osim
+from utils import simtk_vec_to_list
 
 # %%
 
@@ -45,9 +46,9 @@ time = np.array(original_markers.getIndependentColumn())
 num_frames = original_markers.getNumRows()
 
 # init data for animation
-t = [] # time
-data = [] # marker data
-color = [] # marker color
+t = []  # time
+data = []  # marker data
+color = []  # marker color
 
 # %%
 # reconstructed markers
@@ -55,8 +56,10 @@ for label in missing_marker_labels:
     idx = reconstructed_markers.getColumnIndex(label)
 
     # marker postion
-    marker_coord = np.array(
-        [reconstructed_markers.getRow(t)[idx].to_numpy() for t in time])
+    marker_coord = np.array([
+        np.array(simtk_vec_to_list(reconstructed_markers.getRow(t)[idx]))
+        for t in time
+    ])
 
     # append to lists
     data += list(marker_coord)
@@ -67,9 +70,13 @@ for label in missing_marker_labels:
 for label in marker_labels:
     idx = original_markers.getColumnIndex(label)
 
+    scale = 0.001 # mm to m
+
     # marker postion
-    marker_coord = np.array(
-        [original_markers.getRow(t)[idx].to_numpy() / 1000 for t in time])
+    marker_coord = np.array([
+        np.array(simtk_vec_to_list(original_markers.getRow(t)[idx])) * scale
+        for t in time
+    ])
 
     # append to lists
     data += list(marker_coord)
@@ -88,7 +95,7 @@ df = {"time": t, "x": data[:, 0], "y": -data[:, 2], "z": data[:, 1]}
 # create marker scatter plot
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-title = ax.set_title('') # get title handle
+title = ax.set_title('')  # get title handle
 index = df['time'] == 0
 graph = ax.scatter(df['x'][index],
                    df['y'][index],
