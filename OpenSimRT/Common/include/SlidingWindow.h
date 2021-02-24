@@ -15,7 +15,6 @@
 
 #include <SimTKcommon.h>
 #include <numeric>
-#include <vector>
 
 /** @brief Basic sliding window implementation. New data are pushed in-front of
  * a fixed sized buffer, and old data are discarded. The size of the window is
@@ -23,12 +22,12 @@
  * by explicitely setting the size with 'setSize()' member function. The mean
  * value can be computed using the 'mean()' member function. */
 template <typename T> struct SlidingWindow {
-    std::vector<T> data;  // sliding window data
+    SimTK::Array_<T> data;  // sliding window data
     std::size_t capacity; // sliding window size
 
     // set initial values
-    void init(std::vector<T>&& aData) {
-        data = std::forward<std::vector<T>>(aData);
+    void init(SimTK::Array_<T>&& aData) {
+        data = std::forward<SimTK::Array_<T>>(aData);
         capacity = data.size();
     }
 
@@ -48,6 +47,31 @@ template <typename T> struct SlidingWindow {
     T mean() {
         return 1.0 * std::accumulate(data.begin(), data.end(), T()) /
                int(data.size());
+    }
+    // Determine if all elements in the window are equal to input value
+    bool equal(const T& x) {
+        for (const auto& e : data) {
+            if (e != x) return false;
+        }
+        return true;
+    }
+
+    // Determine if the n first elements are equal to input value.
+    bool nFirstEqual(const T& x, const size_t& n) const {
+        if (n > data.size()) throw std::runtime_error("Wrong input size");
+        for (size_t i = 0; i < n; ++i) {
+            if (data[i] != x) return false;
+        }
+        return true;
+    }
+
+    // Determine if the last n elements are equal to input value.
+    bool nLastEqual(const T& x, const size_t& n) const {
+        if (n > data.size()) throw std::runtime_error("Wrong input size");
+        for (size_t i = 0; i < n; ++i) {
+            if (data[data.size() - i - 1] != x) return false;
+        }
+        return true;
     }
 };
 #endif /* SLIDING_WINDOW_H */

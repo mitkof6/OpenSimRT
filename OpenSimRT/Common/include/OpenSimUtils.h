@@ -45,6 +45,12 @@ struct Common_API OpenSimUtils {
     static MomentArmFunctionT
     getMomentArmFromDynamicLibrary(const OpenSim::Model& model,
                                    std::string libraryPath);
+
+    /**
+     * Update the SimTK::State.
+     */
+    static void updateState(const OpenSim::Model& model, SimTK::State& state,
+                            const SimTK::Vector& q, const SimTK::Vector& qDot);
 };
 
 } // namespace OpenSimRT

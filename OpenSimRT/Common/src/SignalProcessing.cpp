@@ -36,6 +36,20 @@ std::map<int, std::vector<double>> SG_DERIVATIVE_COEF{
         {7, {0.10714, 0.07143, 0.03571, 0, -0.03571, -0.07143, -0.10714}}};
 
 /******************************************************************************/
+Vector binomial_mult(const int& n, const Vector& p) {
+    Vector a(2 * n, 0.0);
+    for (int i = 0; i < n; ++i) {
+        for (int j = i; j > 0; --j) {
+            a[2 * j] += p[2 * i] * a[2 * (j - 1)] -
+                        p[2 * i + 1] * a[2 * (j - 1) + 1];
+            a[2 * j + 1] += p[2 * i] * a[2 * (j - 1) + 1] +
+                            p[2 * i + 1] * a[2 * (j - 1)];
+        }
+        a[0] += p[2 * i];
+        a[1] += p[2 * i + 1];
+    }
+    return a;
+}
 
 void shiftColumnsRight(const Vector& column, Matrix& shifted) {
     if (column.size() != shifted.nrow()) {
@@ -326,6 +340,123 @@ Vector IIRFilter::filter(const Vector& xn) {
             THROW_EXCEPTION("undefined initial value policy");
         }
     }
+}
+
+ButterworthFilter::ButterworthFilter(
+        int dim, int filtOrder, double cutOffFreq, const FilterType& type,
+        const IIRFilter::InitialValuePolicy& policy) {
+    setupFilter(dim, filtOrder, cutOffFreq, type, policy);
+}
+
+void ButterworthFilter::setupFilter(
+        int dim, int filtOrder, double cutOffFreq, const FilterType& type,
+        const IIRFilter::InitialValuePolicy& policy) {
+    double sf; // scaling factor
+    Vector a;  // denominator coefficients
+    Vector b;  // numerator coefficients
+    if (type == FilterType::LowPass) {
+        sf = sf_bwlp(filtOrder, cutOffFreq);
+        a = dcof_bwlp(filtOrder, cutOffFreq);
+        b = ccof_bwlp(filtOrder) * sf;
+    } else if (type == FilterType::HighPass) {
+        sf = sf_bwhp(filtOrder, cutOffFreq);
+        a = dcof_bwhp(filtOrder, cutOffFreq);
+        b = ccof_bwhp(filtOrder) * sf;
+    } else {
+        THROW_EXCEPTION("Other filter types are not supported yet.");
+    }
+
+    // create iir filter with butter worth coefficients
+    iir = new IIRFilter(dim, a, b, policy);
+}
+
+Vector ButterworthFilter::ccof_bwlp(const int& n) {
+    Vector ccof(n + 1, 0.0);
+
+    ccof[0] = 1;
+    ccof[1] = n;
+    for (int i = 2; i <= n / 2; ++i) {
+        ccof[i] = (n - i + 1) * int(ccof[i - 1]) / i;
+        ccof[n - i] = ccof[i];
+    }
+    ccof[n - 1] = n;
+    ccof[n] = 1;
+    if (!ccof.size())
+        THROW_EXCEPTION("Unable to calculate numerator coefficients");
+    return ccof;
+}
+
+Vector ButterworthFilter::dcof_bwlp(const int& n, const double& fcf) {
+    Vector rcof(2 * n, 0.0);
+    const double theta = M_PI * fcf;
+    const double st = sin(theta);
+    const double ct = cos(theta);
+
+    for (int k = 0; k < n; ++k) {
+        const double parg = M_PI * (double) (2 * k + 1) / (double) (2 * n);
+        const double a = 1.0 + st * sin(parg);
+        rcof[2 * k] = -ct / a;
+        rcof[2 * k + 1] = -st * cos(parg) / a;
+    }
+
+    auto dcof = binomial_mult(n, rcof);
+
+    dcof[1] = dcof[0];
+    dcof[0] = 1.0;
+    for (int k = 3; k <= n; ++k) dcof[k] = dcof[2 * k - 2];
+    if (!dcof.size())
+        THROW_EXCEPTION("Unable to calculate denominator coefficients");
+    return dcof(0, n + 1);
+}
+
+double ButterworthFilter::sf_bwlp(const int& n, const double& fcf) {
+    double omega = M_PI * fcf;
+    double fomega = sin(omega);
+    double parg0 = M_PI / (double) (2 * n);
+    double sf = 1.0;
+
+    for (int k = 0; k < n / 2; ++k)
+        sf *= 1.0 + fomega * sin((double) (2 * k + 1) * parg0);
+
+    fomega = sin(omega / 2.0);
+    if (n % 2) sf *= fomega + cos(omega / 2.0);
+    sf = pow(fomega, n) / sf;
+
+    return sf;
+}
+
+Vector ButterworthFilter::ccof_bwhp(const int& n) {
+    auto ccof = ccof_bwlp(n);
+
+    for (int i = 0; i <= n; ++i)
+        if (i % 2) ccof[i] = -ccof[i];
+
+    return ccof;
+}
+
+Vector ButterworthFilter::dcof_bwhp(const int& n, const double& fcf) {
+    return dcof_bwlp(n, fcf);
+}
+
+double ButterworthFilter::sf_bwhp(const int& n, const double& fcf) {
+    double omega = M_PI * fcf;
+    double fomega = sin(omega);
+    double parg0 = M_PI / (double) (2 * n);
+    double sf = 1.0; // scaling factor
+
+    for (int k = 0; k < n / 2; ++k)
+        sf *= 1.0 + fomega * sin((double) (2 * k + 1) * parg0);
+
+    fomega = cos(omega / 2.0);
+
+    if (n % 2) sf *= fomega + sin(omega / 2.0);
+    sf = pow(fomega, n) / sf;
+
+    return sf;
+}
+
+Vector ButterworthFilter::filter(const SimTK::Vector& xn) {
+    return iir->filter(xn);
 }
 
 /******************************************************************************/

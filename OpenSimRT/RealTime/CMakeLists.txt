@@ -10,6 +10,8 @@ file(GLOB tests
   tests/TestSOFromFile.cpp
   tests/TestJRFromFile.cpp
   tests/TestMarkerReconstruction.cpp
+  tests/TestAccelerationGRFMPredictionFromFile.cpp
+  tests/TestContactForceGRFMPredictionFromFile.cpp
   )
 
 # dependencies

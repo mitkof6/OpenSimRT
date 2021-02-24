@@ -1,0 +1,89 @@
+/**
+ * @file AccelerationBasedPhaseDetector.h
+ *
+ * @brief Concrete implementation of the the GaitPhaseDetector based on foot
+ * acceleration values estimated in the model from kinematic data.
+ *
+ * @Author: Filip Konstantinos <filip.k@ece.upatras.gr>
+ */
+#pragma once
+
+#include "GRFMPrediction.h"
+#include "GaitPhaseDetector.h"
+#include "SignalProcessing.h"
+#include "internal/RealTimeExports.h"
+
+#include <SimTKcommon.h>
+#include <Simulation/Model/Model.h>
+#include <string>
+
+namespace OpenSimRT {
+
+/**
+ * Gait phase detector implementation based on foot acceleration values
+ * estimated in the model from kinematic data. Contact on ground is determined
+ * when the acceleration of determined points in foot crosses a given threshold.
+ */
+class RealTime_API AccelerationBasedPhaseDetector : public GaitPhaseDetector {
+ public:
+    struct Parameters {
+        int windowSize;          // windowSize to determine HS/TO events
+        double heelAccThreshold; // threshold at heel point
+        double toeAccThreshold;  // threshold at toe point
+
+        std::string rFootBodyName;       // right foot name
+        std::string lFootBodyName;       // left foot name
+        SimTK::Vec3 rHeelLocationInFoot; // acceleration point in R heel
+        SimTK::Vec3 lHeelLocationInFoot; // acceleration point in L heel
+        SimTK::Vec3 rToeLocationInFoot;  // acceleration point in R toe
+        SimTK::Vec3 lToeLocationInFoot;  // acceleration point in L toe
+
+        // bw filter Parameters
+        double samplingFrequency;
+        double accLPFilterFreq;
+        double velLPFilterFreq;
+        double posLPFilterFreq;
+        int accLPFilterOrder;
+        int velLPFilterOrder;
+        int posLPFilterOrder;
+
+        // order of differentiators
+        int posDiffOrder;
+        int velDiffOrder;
+    };
+
+    // ctor
+    AccelerationBasedPhaseDetector(const OpenSim::Model& otherModel,
+                                   const Parameters& parameters);
+
+    /**
+     * Update detector using the kinematic data.
+     */
+    void updDetector(const GRFMPrediction::Input& input);
+
+ private:
+    OpenSim::Model model;
+    SimTK::State state;
+    Parameters parameters;
+
+    // buffers with size = consecutive values. Hold values for both heel and
+    // toe that indicate when the acceleration exceeds the threshold.
+    SlidingWindow<SimTK::Vec2> rSlidingWindow;
+    SlidingWindow<SimTK::Vec2> lSlidingWindow;
+
+    // bw filters
+    SimTK::ReferencePtr<ButterworthFilter> posFilter;
+    SimTK::ReferencePtr<ButterworthFilter> velFilter;
+    SimTK::ReferencePtr<ButterworthFilter> accFilter;
+
+    // differentiators
+    SimTK::ReferencePtr<NumericalDifferentiator> posDiff;
+    SimTK::ReferencePtr<NumericalDifferentiator> velDiff;
+
+    // attached station points to foot
+    SimTK::ReferencePtr<OpenSim::Station> heelStationR;
+    SimTK::ReferencePtr<OpenSim::Station> heelStationL;
+    SimTK::ReferencePtr<OpenSim::Station> toeStationR;
+    SimTK::ReferencePtr<OpenSim::Station> toeStationL;
+};
+} // namespace OpenSimRT
