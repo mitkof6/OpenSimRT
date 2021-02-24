@@ -64,12 +64,14 @@ template <typename T> class IMU_API InputDriver {
     /**
      * List of pointers to generic listeners using the adapter interface class.
      */
-    std::vector<ListenerAdapter<T>*> listeners;
+    std::vector<std::shared_ptr<ListenerAdapter<T>>> listeners;
 
     /**
      * A map with thread-safe buffers to store IMU data from each port.
      */
-    mutable std::map<int, CircularBuffer<CIRCULAR_BUFFER_SIZE, T>*> buffer;
+    mutable std::map<int,
+                     std::unique_ptr<CircularBuffer<CIRCULAR_BUFFER_SIZE, T>>>
+            buffer;
 };
 
 } // namespace OpenSimRT

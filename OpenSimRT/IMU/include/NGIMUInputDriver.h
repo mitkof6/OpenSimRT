@@ -12,6 +12,7 @@
 #include "ip/UdpSocket.h"
 
 #include <Common/TimeSeriesTable.h>
+#include <algorithm>
 #include <vector>
 
 namespace OpenSimRT {
@@ -33,7 +34,7 @@ class IMU_API NGIMUInputDriver : public InputDriver<NGIMUData> {
     NGIMUInputDriver(const std::vector<std::string>& imuLabels,
                      const std::vector<std::string>& ips,
                      const std::vector<int>& ports);
-    ~NGIMUInputDriver(); // dtor
+    ~NGIMUInputDriver() = default; // dtor
 
     /**
      * Setup listening sockets.
@@ -95,6 +96,6 @@ class IMU_API NGIMUInputDriver : public InputDriver<NGIMUData> {
 
  private:
     SocketReceiveMultiplexer mux; // multipler for polling listener sockets
-    std::vector<UdpSocket*> udpSockets; // upd sockets
+    std::vector<std::unique_ptr<UdpSocket>> udpSockets; // upd sockets
 };
 } // namespace OpenSimRT

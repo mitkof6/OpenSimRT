@@ -179,23 +179,20 @@ void InverseKinematics::createIMUTasksFromMarkerData(
 void InverseKinematics::createIMUTasksFromObservationOrder(
         const Model& model, const vector<string>& observationOrder,
         vector<IMUTask>& imuTasks) {
-    const auto& onFrames = model.getComponentList<OpenSim::PhysicalFrame>();
-    std::vector<std::string> onFramesNames;
-    for (const auto& onFrame : onFrames) {
-        onFramesNames.push_back(onFrame.getName());
-    }
-
     for (const auto& frameName : observationOrder) {
-        auto found = std::find(onFramesNames.begin(), onFramesNames.end(),
-                               frameName);
+        // get the frame with the attached IMU (includes PhysicalFrameOffsets)
         const auto& frame =
                 model.findComponent<OpenSim::PhysicalFrame>(frameName);
-        const auto& bodyName = frame->findBaseFrame().getName();
-        if (found != onFramesNames.end()) {
+
+        if (frame) { // if the frame exists..
+            // get the base frame name
+            const auto& bodyName = frame->findBaseFrame().getName();
+
+            // create and push to imuTasks
             imuTasks.push_back({bodyName, bodyName,
                                 frame->findTransformInBaseFrame().R(), 1.0});
         } else {
-            cout << "imu: " + bodyName
+            cout << "imu: " + frameName
                  << " does not exist in model, thus skipped from tracking"
                  << endl;
         }

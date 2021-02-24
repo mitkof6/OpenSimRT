@@ -25,12 +25,10 @@ void NGIMUListener::ProcessMessage(const ReceivedMessage& m,
     // every time this function runs, it processes only one message, i.e.
     // /quaternions or /sensors, etc.
     try {
-        // the 32-first bits are the #seconds since Jan 1 1900 00:00 GMT. To
-        // start from 1970 (Unix epoch), remove the 70 years in seconds. Add 3
-        // hours since local timezone is GMT+03:00 (Greece)
-        auto time = (timeTag >> 32) +
-                    double(timeTag & 0xFFFFFFFF) / PICOSECS_RESOLUTION_BIN -
-                    RFC_PROTOCOL - GMT_LOCAL_TIMEZONE; // TODO find a better way
+        // get a double representation of the current timeStamp containing the
+        // number of seconds since Unix epoch time and the fractinoal part of
+        // the NTP timeStamp.
+        auto time = ntp2double(timeTag);
 
         // get /quaternions
         if (strcmp(m.AddressPattern(), "/quaternion") == 0) {
@@ -38,7 +36,7 @@ void NGIMUListener::ProcessMessage(const ReceivedMessage& m,
             float q1, q2, q3, q4;
             args >> q1 >> q2 >> q3 >> q4 >> osc::EndMessage;
             data.quaternion = NGIMUData::Quaternion{
-                    SimTK::Quaternion(q1, q2, q3, q4), time};
+                    time, SimTK::Quaternion(q1, q2, q3, q4)};
             bundleReadyFlags.set(0);
         }
 
@@ -64,8 +62,8 @@ void NGIMUListener::ProcessMessage(const ReceivedMessage& m,
             ReceivedMessageArgumentStream args = m.ArgumentStream();
             float ax, ay, az; // linear acceleration
             args >> ax >> ay >> az >> osc::EndMessage;
-            data.linear = NGIMUData::LinearAcceleration{SimTK::Vec3(ax, ay, az),
-                                                        time};
+            data.linear = NGIMUData::LinearAcceleration{
+                    time, SimTK::Vec3(ax, ay, az)};
             bundleReadyFlags.set(2);
         }
 
@@ -74,7 +72,7 @@ void NGIMUListener::ProcessMessage(const ReceivedMessage& m,
             ReceivedMessageArgumentStream args = m.ArgumentStream();
             float x;
             args >> x >> osc::EndMessage;
-            data.altitude = NGIMUData::Altitude{SimTK::Vec1(x), time};
+            data.altitude = NGIMUData::Altitude{time, SimTK::Vec1(x)};
             bundleReadyFlags.set(3);
         }
 

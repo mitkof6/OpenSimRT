@@ -7,7 +7,7 @@
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
 #pragma once
-#include "TimeDefinitions.h"
+#include "TimeConversion.h"
 #include "internal/IMUExports.h"
 
 #include <SimTKcommon.h>
@@ -27,23 +27,23 @@ struct IMU_API NGIMUData {
     typedef std::vector<std::pair<double, SimTK::Vector>> NGIMUPack;
 
     struct Quaternion {
-        SimTK::Quaternion q;
         double timeStamp;
+        SimTK::Quaternion q;
     };
     struct Sensors {
+        double timeStamp;
         SimTK::Vec3 acceleration; // in g
         SimTK::Vec3 gyroscope;    // in circ/sec
         SimTK::Vec3 magnetometer; // in uT
         SimTK::Vec1 barometer;    // in hPa
-        double timeStamp;
     };
     struct LinearAcceleration {
-        SimTK::Vec3 acceleration;
         double timeStamp;
+        SimTK::Vec3 acceleration;
     };
     struct Altitude {
-        SimTK::Vec1 measurement;
         double timeStamp;
+        SimTK::Vec1 measurement;
     };
 
     Sensors sensors;

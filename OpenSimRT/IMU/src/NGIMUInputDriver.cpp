@@ -11,22 +11,6 @@ using namespace OpenSim;
 // size of stream buffer
 #define OUTPUT_BUFFER_SIZE 1024
 
-/*
- * Coverts local time to NTP timestamp.
- * TODO this can be improved....
- */
-static TimeTag tv2ntp() {
-    auto timeNow = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                           std::chrono::system_clock::now().time_since_epoch())
-                           .count();
-    auto time = static_cast<double>(timeNow) / PICOSECS_RESOLUTION_DEC;
-    auto fracpart =
-            static_cast<uint32_t>((time - int(time)) * PICOSECS_RESOLUTION_DEC);
-    auto intpart =
-            static_cast<uint64_t>(time) + RFC_PROTOCOL + GMT_LOCAL_TIMEZONE;
-    return TimeTag((intpart << 32) + fracpart);
-}
-
 /**
  * Type-agnostic variadic template function for sending messages to
  * remote IP.
@@ -60,32 +44,22 @@ NGIMUInputDriver::NGIMUInputDriver(const std::vector<std::string>& imuLabels,
     setupInput(imuLabels, ips, ports); // start streaming
 }
 
-NGIMUInputDriver::~NGIMUInputDriver() {
-    // delete every new object and clear lists
-    for (auto listener : listeners) delete listener;
-    for (auto socket : udpSockets) delete socket;
-    for (auto x : buffer) delete x.second;
-    listeners.clear();
-    udpSockets.clear();
-    buffer.clear();
-}
-
 void NGIMUInputDriver::setupInput(const std::vector<std::string>& imuLabels,
                                   const std::vector<std::string>& ips,
                                   const std::vector<int>& ports) {
     for (int i = 0; i < ports.size(); ++i) {
         // create new listeners and sockets
-        listeners.push_back(new NGIMUListener());
-        udpSockets.push_back(new UdpSocket());
+        listeners.push_back(make_shared<NGIMUListener>());
+        udpSockets.push_back(make_unique<UdpSocket>());
 
         // assign ports and manager to listeners
         listeners[i]->name = imuLabels[i];
         listeners[i]->port = ports[i];
-        listeners[i]->driver = this;
+        listeners[i]->driver.reset(this);
 
         // initialize manager buffer
         buffer[ports[i]] =
-                new CircularBuffer<CIRCULAR_BUFFER_SIZE, NGIMUData>();
+                make_unique<CircularBuffer<CIRCULAR_BUFFER_SIZE, NGIMUData>>();
     }
 }
 
@@ -99,7 +73,8 @@ void NGIMUInputDriver::setupTransmitters(
                 IpEndpointName(remoteIPs[i].c_str(), remotePorts[i]));
 
         // send commands to imu
-        sendMessage(socket, "/time", tv2ntp());                // set IMU time
+        sendMessage(socket, "/time",
+                    TimeTag(tp2ntp(system_clock::now())));     // set IMU time
         sendMessage(socket, "/wifi/send/ip", localIP.c_str()); // pc ip
         sendMessage(socket, "/wifi/send/port", localPorts[i]); // port
         sendMessage(socket, "/wifi/client/lowpower", false);
@@ -121,8 +96,9 @@ void NGIMUInputDriver::startListening() {
 
         // bind socket, attach to mux, and run
         udpSockets[i]->Bind(IpEndpointName(ip.c_str(), port));
-        mux.AttachSocketListener(udpSockets[i],
-                                 dynamic_cast<PacketListener*>(listeners[i]));
+        mux.AttachSocketListener(
+                udpSockets[i].get(),
+                dynamic_cast<PacketListener*>(listeners[i].get()));
         std::cout << "Start Listening on port: " << port << std::endl;
     }
     // start listening..

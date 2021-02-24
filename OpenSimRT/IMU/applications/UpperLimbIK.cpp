@@ -87,14 +87,14 @@ void run() {
     SyncManager manager(syncRate, syncThreshold);
 
     // setup filters
-    LowPassSmoothFilter::Parameters ikFilterParam;
-    ikFilterParam.numSignals = model.getNumCoordinates();
-    ikFilterParam.memory = memory;
-    ikFilterParam.delay = delay;
-    ikFilterParam.cutoffFrequency = cutoffFreq;
-    ikFilterParam.splineOrder = splineOrder;
-    ikFilterParam.calculateDerivatives = false;
-    LowPassSmoothFilter ikFilter(ikFilterParam);
+    LowPassSmoothFilter::Parameters filterParam;
+    filterParam.numSignals = model.getNumCoordinates();
+    filterParam.memory = memory;
+    filterParam.delay = delay;
+    filterParam.cutoffFrequency = cutoffFreq;
+    filterParam.splineOrder = splineOrder;
+    filterParam.calculateDerivatives = false;
+    LowPassSmoothFilter filter(filterParam);
 
     // initialize ik (lower constraint weight and accuracy -> faster tracking)
     InverseKinematics ik(model, {}, imuTasks, SimTK::Infinity, 1e-5);
@@ -128,7 +128,7 @@ void run() {
                     {imuData.first, {}, clb.transform(imuData.second)});
 
             // filter
-            auto ikFiltered = ikFilter.filter({pose.t, pose.q});
+            auto ikFiltered = filter.filter({pose.t, pose.q});
             auto t = ikFiltered.t;
             auto q = ikFiltered.x;
 

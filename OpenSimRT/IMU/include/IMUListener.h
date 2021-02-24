@@ -3,7 +3,8 @@
  *
  * @brief Implements a generic interface for IMU Listeners. It is based on the
  * Adapter Design Pattern to decouple the implementation of IMU data acquisition
- * drivers from the IMU dependencies.
+ * drivers from the IMU dependencies (e.g., Wi-Fi, Bluetooth, OSC protocol and
+ * oscpack library, etc).
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
@@ -11,6 +12,7 @@
 #include "InputDriver.h"
 #include "internal/IMUExports.h"
 
+#include <memory>
 #include <string>
 
 namespace OpenSimRT {
@@ -21,8 +23,9 @@ namespace OpenSimRT {
  */
 template <typename T> class ListenerAdapter {
  public:
+    ListenerAdapter() = default;
     virtual ~ListenerAdapter() = default;
-    InputDriver<T>* driver; // pointer to base class imu driver
+    std::shared_ptr<InputDriver<T>> driver; // pointer to base class imu driver
     std::string name;       // imu name
     std::string ip;         // imu ip
     int port;               // imu port

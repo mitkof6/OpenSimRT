@@ -91,9 +91,13 @@ void run() {
         }
     } catch (std::exception& e) { cout << e.what() << endl; }
 
-    // store results
-    STOFileAdapter::write(qLogger,
-                          subjectDir + "real_time/inverse_kinematics/q.sto");
+    compareTables(
+            qLogger,
+            TimeSeriesTable(subjectDir + "real_time/inverse_kinematics/q.sto"));
+
+    // // store results
+    // STOFileAdapter::write(qLogger,
+    //                       subjectDir + "real_time/inverse_kinematics/q.sto");
 }
 
 int main(int argc, char* argv[]) {

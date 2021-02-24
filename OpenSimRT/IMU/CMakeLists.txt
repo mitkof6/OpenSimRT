@@ -17,8 +17,17 @@ endif()
 # global files
 file(GLOB includes include/*.h)
 file(GLOB sources src/*.cpp)
-file(GLOB applications applications/*.cpp)
-file(GLOB tests tests/*.cpp)
+# file(GLOB applications applications/*.cpp)
+file(
+  GLOB applications
+  applications/LowerLimbIK.cpp
+  applications/UpperLimbIK.cpp
+)
+# file(GLOB tests tests/*.cpp)
+file(GLOB tests
+  tests/TestLowerLimbIKFromFile.cpp
+  tests/TestUpperLimbIKFromFile.cpp
+)
 
 # dependencies
 include_directories(include/)
@@ -27,7 +36,7 @@ include_directories(../Common/include/)
 include_directories(../Moticon/include/)
 
 # dynamic library
-set(target NGIMU)
+set(target IMU)
 
 addlibrary(
   KIT ${target}
@@ -43,4 +52,5 @@ addtests(
 # applications
 addapplications(
   SOURCES ${applications}
-  LINKLIBS ${target} ${DEPENDENCY_LIBRARIES})
+  LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
+)
