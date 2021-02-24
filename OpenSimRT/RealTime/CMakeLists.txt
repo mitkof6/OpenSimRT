@@ -9,6 +9,7 @@ file(GLOB tests
   tests/TestIDFromFile.cpp
   tests/TestSOFromFile.cpp
   tests/TestJRFromFile.cpp
+  tests/TestMarkerReconstruction.cpp
   )
 
 # dependencies
