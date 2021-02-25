@@ -6,7 +6,6 @@
 
 #include <OpenSim/Simulation/Model/BodySet.h>
 #include <OpenSim/Simulation/Model/Muscle.h>
-#include <SimTKcommon/internal/State.h>
 
 using namespace std;
 using namespace OpenSim;
@@ -62,12 +61,13 @@ void ExternalWrench::computeForce(const State& state,
 
     // re-express point in applied body frame
     Vec3 point = input.point;
-    point = pointExpressedInBody.findStationLocationInAnotherFrame(
-            state, point, appliedToBody);
+    engine.transformPosition(state, pointExpressedInBody, point, appliedToBody,
+                             point);
 
     // re-express force in ground frame
     Vec3 force = input.force;
-    force = forceExpressedInBody.expressVectorInGround(state, force);
+    engine.transform(state, forceExpressedInBody, force, getModel().getGround(),
+                     force);
 
     // add-in force to the corresponding slot in bodyForces
     getModel().getMatterSubsystem().addInStationForce(
@@ -76,7 +76,8 @@ void ExternalWrench::computeForce(const State& state,
 
     // re-express torque in ground frame
     Vec3 torque = input.torque;
-    torque = forceExpressedInBody.expressVectorInGround(state, torque);
+    engine.transform(state, forceExpressedInBody, torque,
+                     getModel().getGround(), torque);
 
     // add-in torque in the corresponding slot in bodyForces
     getModel().getMatterSubsystem().addInBodyTorque(

@@ -34,12 +34,18 @@ namespace OpenSimRT {
 class IMU_API IMUCalibrator {
  public:
     /**
-     * Construct a calibrator object.
+     * Construct a calibrator object. The constructor uses the Type-Erasure
+     * pattern/idiom that is based on automatic type deduction to remove the
+     * dependency on the IMUData type of the input driver. The only requirement
+     * is that the IMUData type of the driver MUST have a member function
+     * `getQuaternion()` to receive quaternion estimations for each IMU sensor.
      */
     template <typename T>
     IMUCalibrator(const OpenSim::Model& otherModel,
                   const InputDriver<T>* const driver,
                   const std::vector<std::string>& observationOrder)
+            // instantiate the DriverErasure object by forwarding the input
+            // driver in its contructor.
             : impl(new DriverErasure<T>(
                       std::forward<const InputDriver<T>* const>(driver))),
               model(*otherModel.clone()) {
@@ -92,7 +98,8 @@ class IMU_API IMUCalibrator {
 
  private:
     /**
-     * Type erasure on imu InputDriver types. Base class
+     * Type erasure on imu InputDriver types. Base class. Provides an interface
+     * for the functionality of derived classes.
      */
     class IMU_API DriverErasureBase {
      public:
@@ -104,7 +111,9 @@ class IMU_API IMUCalibrator {
     };
 
     /**
-     * Type erasure on imu InputDriver types. Erasure class
+     * Type erasure on imu InputDriver types. Erasure class. Automatic type
+     * deduction of the driver's IMUData type <T>, allows any Input driver to be
+     * passed in the constructor.
      */
     template <typename T>
     class IMU_API DriverErasure : public DriverErasureBase {
@@ -117,7 +126,8 @@ class IMU_API IMUCalibrator {
             while (std::chrono::duration_cast<std::chrono::seconds>(
                            std::chrono::steady_clock::now() - start)
                            .count() < timeout) {
-                // get frame measurements
+                // get frame measurements. `getData()` is common to all input
+                // drivers
                 initIMUDataTable.push_back(m_driver->getData());
             }
         }
@@ -126,7 +136,8 @@ class IMU_API IMUCalibrator {
             std::cout << "Recording Static Pose..." << std::endl;
             size_t i = 0;
             while (i < numSamples) {
-                // get frame measurements
+                // get frame measurements. `getData()` is common to all input
+                // drivers
                 initIMUDataTable.push_back(m_driver->getData());
                 ++i;
             }
@@ -151,6 +162,8 @@ class IMU_API IMUCalibrator {
             // Quaternion product for each imu
             for (int j = 0; j < m; ++j)
                 for (int i = 0; i < n; ++i) {
+                    // NOTE: requires `.getQuaternion()` function of the IMUData
+                    // type.
                     const auto& q = initIMUDataTable[i][j].getQuaternion();
                     avgQuaternionErrors[j] = avgQuaternionErrors[j] * (~q * q);
                 }
@@ -166,6 +179,8 @@ class IMU_API IMUCalibrator {
             // add the error back to the first sample
             auto avgQuaternions(avgQuaternionErrors);
             for (int i = 0; i < m; ++i) {
+                // NOTE: requires `.getQuaternion()` function of the IMUData
+                // type.
                 const auto& q0 = initIMUDataTable[0][i].getQuaternion();
                 const auto& qe = avgQuaternionErrors[i];
                 avgQuaternions[i] = qe * q0;
@@ -186,7 +201,8 @@ class IMU_API IMUCalibrator {
 
     OpenSim::Model model;
     SimTK::State state;
-    std::unique_ptr<DriverErasureBase> impl; // erasure implementation instance
+    std::unique_ptr<DriverErasureBase>
+            impl; // pointer to DriverErasureBase class
     std::vector<SimTK::Quaternion> staticPoseQuaternions; // static pose data
     std::map<std::string, SimTK::Rotation> imuBodiesInGround; // R_GB per body
     std::vector<std::string> imuBodiesObservationOrder;       // imu order

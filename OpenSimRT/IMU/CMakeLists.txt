@@ -33,7 +33,6 @@ file(GLOB tests
 include_directories(include/)
 include_directories(../RealTime/include/)
 include_directories(../Common/include/)
-include_directories(../Moticon/include/)
 
 # dynamic library
 set(target IMU)
