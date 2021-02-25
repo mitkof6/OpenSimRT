@@ -49,15 +49,17 @@ void run() {
             ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
     auto grfLeftTorqueIdentifier =
             ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
+    auto grfOrigin = ini.getSimtkVec(section, "GRF_ORIGIN", Vec3(0));
 
     // virtual contact surface as ground
     auto platform_offset = ini.getReal(section, "PLATFORM_OFFSET", 0.0);
 
+    // loop simulation
     auto removeNLastRows =
             ini.getInteger(section, "REMOVE_N_LAST_TABLE_ROWS", 0);
     auto simulationLoops = ini.getInteger(section, "SIMULATION_LOOPS", 0);
 
-    // rt filter
+    // filter
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
     auto delay = ini.getInteger(section, "DELAY", 0);
@@ -161,7 +163,7 @@ void run() {
     grfmParameters.directionWindowSize = directionWindowSize;
     GRFMPrediction grfm(model, grfmParameters, &detector);
 
-    // initialize id and logger
+    // id
     InverseDynamics id(model, wrenchParameters);
     auto tauLogger = id.initializeLogger();
 
@@ -190,7 +192,7 @@ void run() {
         auto qDot = ikFiltered.xDot;
         auto qDDot = ikFiltered.xDDot;
 
-        // increment and reset loop and frame counters, respectively
+        // increment loop
         if (++i == qTable.getNumRows()) {
             i = 0;
             loopCounter++;
@@ -210,10 +212,10 @@ void run() {
                 chrono::duration_cast<chrono::milliseconds>(t2 - t1).count());
 
         // project on plane
-        grfmOutput.right.point = projectionOnPlane(
-                grfmOutput.right.point, Vec3(0, -0.0075, 0), Vec3(0, 1, 0));
-        grfmOutput.left.point = projectionOnPlane(
-                grfmOutput.left.point, Vec3(0, -0.0075, 0), Vec3(0, 1, 0));
+        grfmOutput.right.point =
+                projectionOnPlane(grfmOutput.right.point, grfOrigin);
+        grfmOutput.left.point =
+                projectionOnPlane(grfmOutput.left.point, grfOrigin);
 
         // setup ID inputn
         ExternalWrench::Input grfRightWrench = {grfmOutput.right.point,
@@ -245,15 +247,29 @@ void run() {
                     sumDelayMS.size()
          << " ms" << endl;
 
-    // store results
-    STOFileAdapter::write(grfRightLogger,
-                          subjectDir +
-                                  "real_time/grfm_prediction/wrench_right.sto");
-    STOFileAdapter::write(grfLeftLogger,
-                          subjectDir +
-                                  "real_time/grfm_prediction/wrench_left.sto");
-    STOFileAdapter::write(tauLogger,
-                          subjectDir + "real_time/grfm_prediction/tau.sto");
+    compareTables(grfRightLogger,
+                  TimeSeriesTable(subjectDir + "real_time/grfm_prediction/"
+                                               "force_based/wrench_right.sto"));
+    compareTables(grfLeftLogger,
+                  TimeSeriesTable(subjectDir + "real_time/grfm_prediction/"
+                                               "force_based/wrench_left.sto"));
+    compareTables(
+            tauLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/grfm_prediction/force_based/tau.sto"));
+
+    // // store results
+    // STOFileAdapter::write(
+    //         grfRightLogger,
+    //         subjectDir +
+    //                 "real_time/grfm_prediction/force_based/wrench_right.sto");
+    // STOFileAdapter::write(
+    //         grfLeftLogger,
+    //         subjectDir +
+    //                 "real_time/grfm_prediction/force_based/wrench_left.sto");
+    // STOFileAdapter::write(
+    //         tauLogger,
+    //         subjectDir + "real_time/grfm_prediction/force_based/tau.sto");
 }
 
 int main(int argc, char* argv[]) {

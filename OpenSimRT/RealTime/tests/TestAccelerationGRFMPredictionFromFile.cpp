@@ -9,6 +9,7 @@
 #include "Visualization.h"
 
 #include <Actuators/Thelen2003Muscle.h>
+#include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 
 using namespace std;
@@ -49,9 +50,7 @@ void run() {
             ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
     auto grfLeftTorqueIdentifier =
             ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
-
-    // virtual contact surface as ground
-    auto platform_offset = ini.getReal(section, "PLATFORM_OFFSET", 0.0);
+    auto grfOrigin = ini.getSimtkVec(section, "GRF_ORIGIN", Vec3(0));
 
     // loop simulation
     auto removeNLastRows =
@@ -145,26 +144,26 @@ void run() {
     LowPassSmoothFilter filter(filterParam);
 
     // acceleration-based event detector
-    AccelerationBasedPhaseDetector::Parameters parameters;
-    parameters.heelAccThreshold = heelAccThreshold;
-    parameters.toeAccThreshold = toeAccThreshold;
-    parameters.windowSize = windowSize;
-    parameters.rFootBodyName = rFootBodyName;
-    parameters.lFootBodyName = lFootBodyName;
-    parameters.rHeelLocationInFoot = rHeelLocation;
-    parameters.lHeelLocationInFoot = lHeelLocation;
-    parameters.rToeLocationInFoot = rToeLocation;
-    parameters.lToeLocationInFoot = lToeLocation;
-    parameters.samplingFrequency = samplingFrequency;
-    parameters.accLPFilterFreq = accLPFilterFreq;
-    parameters.velLPFilterFreq = velLPFilterFreq;
-    parameters.posLPFilterFreq = posLPFilterFreq;
-    parameters.accLPFilterOrder = accLPFilterOrder;
-    parameters.velLPFilterOrder = velLPFilterOrder;
-    parameters.posLPFilterOrder = posLPFilterOrder;
-    parameters.posDiffOrder = posDiffOrder;
-    parameters.velDiffOrder = velDiffOrder;
-    AccelerationBasedPhaseDetector detector(model, parameters);
+    AccelerationBasedPhaseDetector::Parameters detectorParameters;
+    detectorParameters.heelAccThreshold = heelAccThreshold;
+    detectorParameters.toeAccThreshold = toeAccThreshold;
+    detectorParameters.windowSize = windowSize;
+    detectorParameters.rFootBodyName = rFootBodyName;
+    detectorParameters.lFootBodyName = lFootBodyName;
+    detectorParameters.rHeelLocationInFoot = rHeelLocation;
+    detectorParameters.lHeelLocationInFoot = lHeelLocation;
+    detectorParameters.rToeLocationInFoot = rToeLocation;
+    detectorParameters.lToeLocationInFoot = lToeLocation;
+    detectorParameters.samplingFrequency = samplingFrequency;
+    detectorParameters.accLPFilterFreq = accLPFilterFreq;
+    detectorParameters.velLPFilterFreq = velLPFilterFreq;
+    detectorParameters.posLPFilterFreq = posLPFilterFreq;
+    detectorParameters.accLPFilterOrder = accLPFilterOrder;
+    detectorParameters.velLPFilterOrder = velLPFilterOrder;
+    detectorParameters.posLPFilterOrder = posLPFilterOrder;
+    detectorParameters.posDiffOrder = posDiffOrder;
+    detectorParameters.velDiffOrder = velDiffOrder;
+    AccelerationBasedPhaseDetector detector(model, detectorParameters);
 
     // grfm prediction
     GRFMPrediction::Parameters grfmParameters;
@@ -228,10 +227,10 @@ void run() {
                 chrono::duration_cast<chrono::milliseconds>(t2 - t1).count());
 
         // project on plane
-        grfmOutput.right.point = projectionOnPlane(
-                grfmOutput.right.point, Vec3(0, -0.0075, 0), Vec3(0, 1, 0));
-        grfmOutput.left.point = projectionOnPlane(
-                grfmOutput.left.point, Vec3(0, -0.0075, 0), Vec3(0, 1, 0));
+        grfmOutput.right.point =
+                projectionOnPlane(grfmOutput.right.point, grfOrigin);
+        grfmOutput.left.point =
+                projectionOnPlane(grfmOutput.left.point, grfOrigin);
 
         // setup ID inputn
         ExternalWrench::Input grfRightWrench = {grfmOutput.right.point,
@@ -263,15 +262,31 @@ void run() {
                     sumDelayMS.size()
          << " ms" << endl;
 
-    // store results
-    STOFileAdapter::write(grfRightLogger,
-                          subjectDir +
-                                  "real_time/grfm_prediction/wrench_right.sto");
-    STOFileAdapter::write(grfLeftLogger,
-                          subjectDir +
-                                  "real_time/grfm_prediction/wrench_left.sto");
-    STOFileAdapter::write(tauLogger,
-                          subjectDir + "real_time/grfm_prediction/tau.sto");
+    compareTables(grfRightLogger,
+                  TimeSeriesTable(subjectDir +
+                                  "real_time/grfm_prediction/"
+                                  "acceleration_based/wrench_right.sto"));
+    compareTables(grfLeftLogger,
+                  TimeSeriesTable(subjectDir +
+                                  "real_time/grfm_prediction/"
+                                  "acceleration_based/wrench_left.sto"));
+    compareTables(
+            tauLogger,
+            TimeSeriesTable(
+                    subjectDir +
+                    "real_time/grfm_prediction/acceleration_based/tau.sto"));
+
+    // // store results
+    // STOFileAdapter::write(grfRightLogger,
+    //                       subjectDir + "real_time/grfm_prediction/"
+    //                                    "acceleration_based/wrench_right.sto");
+    // STOFileAdapter::write(grfLeftLogger,
+    //                       subjectDir + "real_time/grfm_prediction/"
+    //                                    "acceleration_based/wrench_left.sto");
+    // STOFileAdapter::write(
+    //         tauLogger,
+    //         subjectDir +
+    //                 "real_time/grfm_prediction/acceleration_based/tau.sto");
 }
 
 int main(int argc, char* argv[]) {

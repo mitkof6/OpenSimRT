@@ -139,9 +139,9 @@ template <typename T> bool isVectorFinite(const SimTK::Vector_<T>& v) {
 /**
  * Compute the projection of a point or vector on a arbitrary plane.
  */
-static SimTK::Vec3 projectionOnPlane(const SimTK::Vec3& point,
-                                     const SimTK::Vec3& planeOrigin,
-                                     const SimTK::Vec3& planeNormal) {
+static SimTK::Vec3
+projectionOnPlane(const SimTK::Vec3& point, const SimTK::Vec3& planeOrigin,
+                  const SimTK::Vec3& planeNormal = SimTK::Vec3(0, 1, 0)) {
     return point - SimTK::dot(point - planeOrigin, planeNormal) * planeNormal;
 }
 
