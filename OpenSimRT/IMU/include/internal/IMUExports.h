@@ -1,5 +1,5 @@
 #ifdef WIN32
-#   ifdef NGIMU_EXPORTS
+#   ifdef IMU_EXPORTS
 #       define IMU_API __declspec(dllexport)
 #   else
 #       define IMU_API  __declspec(dllimport)

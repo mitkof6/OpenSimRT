@@ -101,7 +101,7 @@ class IMU_API IMUCalibrator {
      * Type erasure on imu InputDriver types. Base class. Provides an interface
      * for the functionality of derived classes.
      */
-    class IMU_API DriverErasureBase {
+    class DriverErasureBase {
      public:
         virtual ~DriverErasureBase() = default;
 
@@ -116,7 +116,7 @@ class IMU_API IMUCalibrator {
      * passed in the constructor.
      */
     template <typename T>
-    class IMU_API DriverErasure : public DriverErasureBase {
+    class DriverErasure : public DriverErasureBase {
      public:
         DriverErasure(const InputDriver<T>* const driver) : m_driver(driver) {}
 
