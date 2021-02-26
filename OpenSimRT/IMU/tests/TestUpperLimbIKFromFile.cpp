@@ -73,6 +73,7 @@ void run() {
     auto qLogger = ik.initializeLogger();
 
     // visualizer
+    ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
     BasicModelVisualizer visualizer(model);
 
     // mean delay
