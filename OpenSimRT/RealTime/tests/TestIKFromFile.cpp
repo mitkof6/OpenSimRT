@@ -81,6 +81,7 @@ void run() {
 
         // record
         qLogger.appendRow(pose.t, ~pose.q);
+
         // this_thread::sleep_for(chrono::milliseconds(10));
     }
 

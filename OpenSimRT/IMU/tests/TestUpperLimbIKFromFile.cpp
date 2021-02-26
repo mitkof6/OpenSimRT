@@ -11,7 +11,7 @@
 #include "NGIMUInputFromFileDriver.h"
 #include "Settings.h"
 #include "Visualization.h"
-
+#include "OpenSimUtils.h"
 #include <Actuators/Schutte1993Muscle_Deprecated.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 
@@ -44,6 +44,7 @@ void run() {
     // setup model
     Object::RegisterType(Schutte1993Muscle_Deprecated());
     Model model(modelFile);
+    OpenSimUtils::removeActuators(model);
 
     // marker tasks
     vector<InverseKinematics::MarkerTask> markerTasks;
@@ -74,14 +75,27 @@ void run() {
     // visualizer
     BasicModelVisualizer visualizer(model);
 
+    // mean delay
+    int sumDelayMS = 0;
+    int numFrames = 0;
+
     try { // main loop
         while (!driver.shouldTerminate()) {
             // get input from imus
             auto imuData = driver.getFrame();
+            numFrames++;
 
             // solve ik
+            chrono::high_resolution_clock::time_point t1;
+            t1 = chrono::high_resolution_clock::now();
+
             auto pose = ik.solve(
                     {imuData.first, {}, clb.transform(imuData.second)});
+
+            chrono::high_resolution_clock::time_point t2;
+            t2 = chrono::high_resolution_clock::now();
+            sumDelayMS +=
+                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
             // visualize
             visualizer.update(pose.q);
@@ -90,6 +104,9 @@ void run() {
             qLogger.appendRow(pose.t, ~pose.q);
         }
     } catch (std::exception& e) { cout << e.what() << endl; }
+
+    cout << "Mean delay: " << (double) sumDelayMS / numFrames
+         << " ms" << endl;
 
     // // store results
     // STOFileAdapter::write(

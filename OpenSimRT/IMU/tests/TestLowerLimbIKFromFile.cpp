@@ -12,7 +12,7 @@
 #include "Settings.h"
 #include "Utils.h"
 #include "Visualization.h"
-
+#include "OpenSimUtils.h"
 #include <Actuators/Thelen2003Muscle.h>
 #include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
@@ -47,6 +47,7 @@ void run() {
     // setup model
     Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);
+    OpenSimUtils::removeActuators(model);
 
     // imu tasks
     vector<InverseKinematics::IMUTask> imuTasks;
@@ -71,14 +72,27 @@ void run() {
     // visualizer
     BasicModelVisualizer visualizer(model);
 
+    // mean delay
+    int sumDelayMS = 0;
+    int numFrames = 0;
+
     try { // main loop
         while (!(driver.shouldTerminate())) {
             // get input from sensors
             auto imuData = driver.getFrame();
+            numFrames++;
 
             // solve ik
+            chrono::high_resolution_clock::time_point t1;
+            t1 = chrono::high_resolution_clock::now();
+
             auto pose = ik.solve(
                     {imuData.first, {}, clb.transform(imuData.second)});
+
+            chrono::high_resolution_clock::time_point t2;
+            t2 = chrono::high_resolution_clock::now();
+            sumDelayMS +=
+                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
             // visualize
             visualizer.update(pose.q);
@@ -87,6 +101,9 @@ void run() {
             qLogger.appendRow(pose.t, ~pose.q);
         }
     } catch (std::exception& e) { cout << e.what() << endl; }
+
+    cout << "Mean delay: " << (double) sumDelayMS / numFrames
+         << " ms" << endl;
 
     // // store results
     // STOFileAdapter::write(
