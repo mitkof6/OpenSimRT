@@ -47,6 +47,7 @@ void run() {
     auto qLogger = ik.initializeLogger();
 
     // visualizer
+    ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
     BasicModelVisualizer visualizer(model);
 
     // mean delay
@@ -74,6 +75,8 @@ void run() {
 
         // record
         qLogger.appendRow(pose.t, ~pose.q);
+
+        // this_thread::sleep_for(chrono::milliseconds(10));
     }
 
     cout << "Mean delay: " << (double) sumDelayMS / markerData.getNumFrames()

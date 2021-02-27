@@ -52,7 +52,7 @@ InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
     }
     markerAssemblyConditions->defineObservationOrder(markerObservationOrder);
     if (markerObservationOrder.size() != 0) {
-        assembler->adoptAssemblyGoal(markerAssemblyConditions);
+        assembler->adoptAssemblyGoal(markerAssemblyConditions.get());
     }
 
     // populate assembly conditions for markers
@@ -65,13 +65,14 @@ InverseKinematics::InverseKinematics(const OpenSim::Model& otherModel,
         }
         const auto& body = model.getBodySet()[bodyIndex];
         const auto& mobod = body.getMobilizedBody();
-        imuAssemblyConditions->addOSensor(task.name, mobod, task.orientation,
-                                          task.weight);
+        imuAssemblyConditions->addOSensor(
+                task.name, mobod, task.orientation, // orientationInB = R_BS
+                task.weight);
         imuObservationOrder.push_back(task.name);
     }
     imuAssemblyConditions->defineObservationOrder(imuObservationOrder);
     if (imuObservationOrder.size() != 0) {
-        assembler->adoptAssemblyGoal(imuAssemblyConditions);
+        assembler->adoptAssemblyGoal(imuAssemblyConditions.get());
     }
 
     assembler->initialize(state);
@@ -95,7 +96,7 @@ InverseKinematics::Output InverseKinematics::solve(const Input& input) {
 TimeSeriesTable InverseKinematics::initializeLogger() {
     auto columnNames =
             OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
-    
+
     TimeSeriesTable q;
     q.setColumnLabels(columnNames);
     return q;
@@ -178,11 +179,20 @@ void InverseKinematics::createIMUTasksFromMarkerData(
 void InverseKinematics::createIMUTasksFromObservationOrder(
         const Model& model, const vector<string>& observationOrder,
         vector<IMUTask>& imuTasks) {
-    for (auto body : observationOrder) {
-        if (model.getBodySet().getIndex(body) >= 0) {
-            imuTasks.push_back({body, body, Rotation(), 1.0});
+    for (const auto& frameName : observationOrder) {
+        // get the frame with the attached IMU (includes PhysicalFrameOffsets)
+        const auto& frame =
+                model.findComponent<OpenSim::PhysicalFrame>(frameName);
+
+        if (frame) { // if the frame exists..
+            // get the base frame name
+            const auto& bodyName = frame->findBaseFrame().getName();
+
+            // create and push to imuTasks
+            imuTasks.push_back({bodyName, bodyName,
+                                frame->findTransformInBaseFrame().R(), 1.0});
         } else {
-            cout << "imu: " + body
+            cout << "imu: " + frameName
                  << " does not exist in model, thus skipped from tracking"
                  << endl;
         }

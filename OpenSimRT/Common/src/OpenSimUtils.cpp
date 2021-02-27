@@ -77,6 +77,8 @@ void OpenSimUtils::removeActuators(OpenSim::Model& model) {
         int index = model.getForceSet().getIndex(act, 0);
         model.updForceSet().remove(index);
     }
+    model.finalizeFromProperties();
+    model.finalizeConnections();
 }
 
 TimeSeriesTable OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
@@ -118,24 +120,26 @@ TimeSeriesTable OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
     return table;
 }
 
-MomentArmFunctionT OpenSimUtils::getMomentArmFromDynamicLibrary(
-    const Model& model, string libraryPath) {
+MomentArmFunctionT
+OpenSimUtils::getMomentArmFromDynamicLibrary(const Model& model,
+                                             string libraryPath) {
     // On Windows, we cannot include C++ constructs (e.g., vector<string>) in an
     // Extern C statement. For now we do not define the runtime checking on
     // Windows. However, on Linux this operation is performed. In the future we
     // will try to find a better solution that can work also on Windows.
 #if __GNUG__
     typedef std::vector<std::string> (*ContainerT)();
-	auto getModelMuscleSymbolicOrder = loadDynamicLibrary<ContainerT>(
+    auto getModelMuscleSymbolicOrder = loadDynamicLibrary<ContainerT>(
             libraryPath, "getModelMuscleSymbolicOrder");
     auto getModelCoordinateSymbolicOrder = loadDynamicLibrary<ContainerT>(
             libraryPath, "getModelCoordinateSymbolicOrder");
 
-	// check if runtime moment arm is consistent with the model
-	const auto& coordinateNamesinMBOrder =
+    // check if runtime moment arm is consistent with the model
+    const auto& coordinateNamesinMBOrder =
             OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
     auto coordinateNamesinSymbolicOrder = getModelCoordinateSymbolicOrder();
-    ENSURE_ORDER_IN_VECTORS(coordinateNamesinMBOrder, coordinateNamesinSymbolicOrder);
+    ENSURE_ORDER_IN_VECTORS(coordinateNamesinMBOrder,
+                            coordinateNamesinSymbolicOrder);
 
     const auto& muscleNamesinMBOrder = OpenSimUtils::getMuscleNames(model);
     auto muscleNamesinSymbolicOrder = getModelMuscleSymbolicOrder();
