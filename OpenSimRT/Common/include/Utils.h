@@ -145,5 +145,24 @@ static SimTK::Vec3 projectionOnPlane(const SimTK::Vec3& point,
     return point - SimTK::dot(point - planeOrigin, planeNormal) * planeNormal;
 }
 
+/**
+ * Hamilton quaternion product
+ */
+static inline SimTK::Quaternion operator*(const SimTK::Quaternion& a,
+                                          const SimTK::Quaternion& b) {
+    SimTK::Quaternion c;
+    c[0] = a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3];
+    c[1] = a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2];
+    c[2] = a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1];
+    c[3] = a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0];
+    return c;
+}
+
+/**
+ *  Overwrite SImTK operator~ for quaternions, to compute the conjugate
+ */
+static inline SimTK::Quaternion operator~(const SimTK::Quaternion& q) {
+    return SimTK::Quaternion(q[0], -q[1], -q[2], -q[3]);
+}
 } // namespace OpenSimRT
 #endif
