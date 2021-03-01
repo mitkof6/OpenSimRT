@@ -148,6 +148,7 @@ OpenSimUtils::getMomentArmFromDynamicLibrary(const Model& model,
     auto calcMomentArm = loadDynamicLibrary<MomentArmFunctionT>(
             libraryPath, "calcMomentArm");
     return calcMomentArm;
+
 }
 
 void OpenSimUtils::updateState(const OpenSim::Model& model, SimTK::State& state,
