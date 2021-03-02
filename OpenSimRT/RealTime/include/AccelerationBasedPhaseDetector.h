@@ -39,17 +39,17 @@ class RealTime_API AccelerationBasedPhaseDetector : public GaitPhaseDetector {
         SimTK::Vec3 lToeLocationInFoot;  // acceleration point in L toe
 
         // bw filter Parameters
-        double samplingFrequency;
-        double accLPFilterFreq;
-        double velLPFilterFreq;
-        double posLPFilterFreq;
-        int accLPFilterOrder;
-        int velLPFilterOrder;
-        int posLPFilterOrder;
+        double samplingFrequency; // signal frequency (fs)
+        double accLPFilterFreq; // foot acceleration lp filter target freq (fc)
+        double velLPFilterFreq; // foot velocity lp filter target freq (fc)
+        double posLPFilterFreq; // foot position lp filter target freq (fc)
+        int accLPFilterOrder;   // foot acceleration lp filter order
+        int velLPFilterOrder;   // foot velocity lp filter order
+        int posLPFilterOrder;   // foot position lp filter order
 
         // order of differentiators
-        int posDiffOrder;
-        int velDiffOrder;
+        int posDiffOrder; // position differentiator order
+        int velDiffOrder; // velocity differentiator order
     };
 
     // ctor

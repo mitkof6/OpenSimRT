@@ -83,7 +83,9 @@ void run() {
          << " ms" << endl;
 
     // Compare results with reference tables.
-    compareTables(qLogger, TimeSeriesTable(subjectDir + "real_time/inverse_kinematics/q.sto"));
+    OpenSimUtils::compareTables(
+            qLogger,
+            TimeSeriesTable(subjectDir + "real_time/inverse_kinematics/q.sto"));
 
     // store results
     // STOFileAdapter::write(qLogger,

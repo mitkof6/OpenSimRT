@@ -8,6 +8,7 @@
 #ifndef OPENSIM_UTILS_H
 #define OPENSIM_UTILS_H
 
+#include "Exception.h"
 #include "internal/CommonExports.h"
 
 #include <Common/TimeSeriesTable.h>
@@ -47,10 +48,70 @@ struct Common_API OpenSimUtils {
                                    std::string libraryPath);
 
     /**
-     * Update the SimTK::State.
+     * Update the state of the osim model by assigning the `q` and `qDot`
+     * vectors, containing the generalized coordinates and generalized
+     * velocities, respectively, in the model's coordinates.
      */
     static void updateState(const OpenSim::Model& model, SimTK::State& state,
                             const SimTK::Vector& q, const SimTK::Vector& qDot);
+
+    /**
+     * Compare two OpenSim::Datatables or any of the derived types (as long as
+     * they share the same data types). Number of columns and rows must match,
+     * otherwise throws an exception. Comparison is performed by computing the
+     * RMSE of the columns with common labels acquired from the 'query' table.
+     * If the computed RMSE of any of the match columns is larger than the given
+     * threshold it throws an exception.
+     *
+     * @param queryTable - Query table to compare.
+     *
+     * @param refTable - Reference table to be compare against.
+     *
+     * @param threshold - Threshold value (default is 1e-5).
+     */
+    template <template <typename, typename> class Table, typename T, typename E>
+    static void compareTables(const Table<T, E>& queryTable,
+                       const Table<T, E>& refTable,
+                       const double& threshold = 1e-5) {
+        if (!(queryTable.getNumRows() == refTable.getNumRows()))
+            THROW_EXCEPTION("Number of rows in given tables do not match.");
+        if (!(queryTable.getNumColumns() == refTable.getNumColumns()))
+            THROW_EXCEPTION("Number of columns in given tables do not match.");
+
+        // create a flatten copy of the tables
+        auto queryFlat = queryTable.flatten();
+        auto refFlat = refTable.flatten();
+
+        // get column labels
+        auto queryLabels = queryFlat.getColumnLabels();
+        auto refLabels = refFlat.getColumnLabels();
+
+        // find and store the indexes of the column labels in tables
+        std::vector<int> mapRefToQuery;
+        for (const auto& label : queryLabels) {
+            auto found = std::find(refLabels.begin(), refLabels.end(), label);
+            mapRefToQuery.push_back(std::distance(refLabels.begin(), found));
+        }
+
+        // compute the rmse of the matched columns
+        for (size_t i = 0; i < mapRefToQuery.size(); ++i) {
+            if (mapRefToQuery[i] >= 0) {
+                auto queryVec = queryFlat.getDependentColumnAtIndex(i);
+                auto refVec =
+                        refFlat.getDependentColumnAtIndex(mapRefToQuery[i]);
+                auto rmse = sqrt((queryVec - refVec).normSqr() /
+                                 queryFlat.getNumRows());
+                // std::cout << "Column '" << queryLabels[i] << "' has RMSE = "
+                // << rmse
+                //           << std::endl;
+                SimTK_ASSERT3_ALWAYS(
+                        (rmse < threshold),
+                        "Column '%s' FAILED to meet accuracy of %f "
+                        "RMS with RMSE %f.",
+                        queryLabels[i].c_str(), threshold, rmse);
+            }
+        }
+    }
 };
 
 } // namespace OpenSimRT

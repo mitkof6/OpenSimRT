@@ -105,9 +105,20 @@ void run() {
     SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setup.ini for testing");
     SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
     SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setup.ini for testing");
-    compareTables(q, TimeSeriesTable(subjectDir + "real_time/filtering/proposed_filter/q_filtered.sto"));
-    compareTables(qDot, TimeSeriesTable(subjectDir + "real_time/filtering/proposed_filter/qDot_filtered.sto"));
-    compareTables(qDDot, TimeSeriesTable(subjectDir + "real_time/filtering/proposed_filter/qDDot_filtered.sto"));
+    OpenSimUtils::compareTables(
+            q, TimeSeriesTable(
+                       subjectDir +
+                       "real_time/filtering/proposed_filter/q_filtered.sto"));
+    OpenSimUtils::compareTables(
+            qDot,
+            TimeSeriesTable(
+                    subjectDir +
+                    "real_time/filtering/proposed_filter/qDot_filtered.sto"));
+    OpenSimUtils::compareTables(
+            qDDot,
+            TimeSeriesTable(
+                    subjectDir +
+                    "real_time/filtering/proposed_filter/qDDot_filtered.sto"));
 
     // store results
     // STOFileAdapter::write(q, subjectDir + "real_time/filtering/q_filtered.sto");

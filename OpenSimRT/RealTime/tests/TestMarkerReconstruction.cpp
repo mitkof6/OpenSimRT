@@ -11,6 +11,7 @@
 #include "INIReader.h"
 #include "InverseKinematics.h"
 #include "MarkerReconstruction.h"
+#include "OpenSimUtils.h"
 #include "Settings.h"
 #include "Utils.h"
 
@@ -113,10 +114,11 @@ void run() {
     }
 
     // compare results with reference table.
-    compareTables(logger, TimeSeriesTable(subjectDir +
-                                          "real_time/marker_reconstruction/"
-                                          "reconstructed_markers.sto")
-                                  .pack<SimTK::Vec3>());
+    OpenSimUtils::compareTables(
+            logger,
+            TimeSeriesTable(subjectDir + "real_time/marker_reconstruction/"
+                                         "reconstructed_markers.sto")
+                    .pack<SimTK::Vec3>());
 
     // // store results
     // STOFileAdapter::write(logger.flatten(),

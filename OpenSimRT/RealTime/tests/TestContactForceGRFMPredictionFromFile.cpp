@@ -1,3 +1,12 @@
+/**
+ * @file TestContactForceBasedGRFMPredictionFromFile.cpp
+ *
+ * @brief Test the GRF&M prediction method with the ContactForceBased
+ * PhaseDetector. Increases the simulation time by repeating the recorded motion
+ * X times, in order to provide enough time for the detector to adapt.
+ *
+ * @author Filip Konstantinos <filip.k@ece.upatras.gr>
+ */
 #include "ContactForceBasedPhaseDetector.h"
 #include "GRFMPrediction.h"
 #include "INIReader.h"
@@ -54,10 +63,11 @@ void run() {
     // virtual contact surface as ground
     auto platform_offset = ini.getReal(section, "PLATFORM_OFFSET", 0.0);
 
-    // loop simulation
+    // repeat cyclic motion X times
+    auto simulationLoops = ini.getInteger(section, "SIMULATION_LOOPS", 0);
+    // remove last N samples in motion for smooth transition between loops
     auto removeNLastRows =
             ini.getInteger(section, "REMOVE_N_LAST_TABLE_ROWS", 0);
-    auto simulationLoops = ini.getInteger(section, "SIMULATION_LOOPS", 0);
 
     // filter
     auto memory = ini.getInteger(section, "MEMORY", 0);
@@ -175,15 +185,19 @@ void run() {
     visualizer.addDecorationGenerator(leftGRFDecorator);
 
     // mean delay
-    vector<int> sumDelayMS;
+    int sumDelayMS;
+    int sumDelayMSCounter;
 
     int loopCounter = 0;
     int i = 0;
+    // repeat the simulation `simulationLoops` times
     for (int k = 0; k < qTable.getNumRows() * simulationLoops; k++) {
         // get raw pose from table
         auto qRaw = qTable.getRowAtIndex(i).getAsVector();
         double t = qTable.getIndependentColumn()[i];
 
+        // increment the time by the total simulation time plus the sampling
+        // period, to keep increasing after each simulation loop
         t += loopCounter * (qTable.getIndependentColumn().back() + 0.01);
 
         // filter
@@ -208,8 +222,9 @@ void run() {
 
         chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();
-        sumDelayMS.push_back(
-                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count());
+        sumDelayMS +=
+                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+        sumDelayMSCounter++;
 
         // project on plane
         grfmOutput.right.point =
@@ -242,18 +257,18 @@ void run() {
         tauLogger.appendRow(ikFiltered.t, ~idOutput.tau);
     }
 
-    cout << "Mean delay: "
-         << std::accumulate(sumDelayMS.begin(), sumDelayMS.end(), 0.0) /
-                    sumDelayMS.size()
-         << " ms" << endl;
+    cout << "Mean delay: " << double(sumDelayMS) / sumDelayMSCounter << " ms"
+         << endl;
 
-    compareTables(grfRightLogger,
-                  TimeSeriesTable(subjectDir + "real_time/grfm_prediction/"
-                                               "force_based/wrench_right.sto"));
-    compareTables(grfLeftLogger,
-                  TimeSeriesTable(subjectDir + "real_time/grfm_prediction/"
-                                               "force_based/wrench_left.sto"));
-    compareTables(
+    OpenSimUtils::compareTables(
+            grfRightLogger,
+            TimeSeriesTable(subjectDir + "real_time/grfm_prediction/"
+                                         "force_based/wrench_right.sto"));
+    OpenSimUtils::compareTables(grfLeftLogger,
+                                TimeSeriesTable(subjectDir +
+                                                "real_time/grfm_prediction/"
+                                                "force_based/wrench_left.sto"));
+    OpenSimUtils::compareTables(
             tauLogger,
             TimeSeriesTable(subjectDir +
                             "real_time/grfm_prediction/force_based/tau.sto"));

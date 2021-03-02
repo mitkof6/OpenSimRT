@@ -216,7 +216,10 @@ void run() {
          << endl;
 
     // Compare results with reference tables.
-    compareTables(jrLogger, TimeSeriesTable(subjectDir + "real_time/joint_reaction_analysis/jr.sto"));
+    OpenSimUtils::compareTables(
+            jrLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/joint_reaction_analysis/jr.sto"));
 
     // store results
     // STOFileAdapter::write(jrLogger,

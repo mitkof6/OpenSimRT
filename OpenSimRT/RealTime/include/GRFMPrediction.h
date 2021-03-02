@@ -37,8 +37,9 @@ class RealTime_API GaitPhaseState {
  * toe-off, etc.). It estimates the total GRF&M from kinematic data during gait
  * using either the Newton-Euler equations or by solving the ID. Seperation into
  * right/left components is achieved using the Smooth Transition Assumption
- * funtions [Ren et al.]. The CoP is estimated assuming a smooth transition
- * between two specified station points in heel and toe.
+ * funtions [Ren et al. https://doi.org/10.1016/j.jbiomech.2008.06.001]. The CoP
+ * is estimated assuming a smooth transition between two specified station
+ * points in heel and toe.
  */
 class RealTime_API GRFMPrediction {
     /**
@@ -51,6 +52,11 @@ class RealTime_API GRFMPrediction {
      */
     typedef std::function<SimTK::Vec3(const double&, const SimTK::Vec3&)>
             CoPTrajectory;
+
+    /**
+     * Select method for computing the total reactions loads.
+     */
+    enum class Method { NewtonEuler, InverseDynamics };
 
  public:
     struct Parameters {
@@ -82,6 +88,10 @@ class RealTime_API GRFMPrediction {
     Output solve(const Input& input);
 
  private:
+    // select the method for computing the total reaction loads based on the
+    // input string
+    std::map<std::string, Method> methodSelector;
+
     // transition functions based on the STA
     TransitionFuction reactionComponentTransition; // STA fucntions
     // TransitionFuction anteriorForceTransition; // STA function for F_x

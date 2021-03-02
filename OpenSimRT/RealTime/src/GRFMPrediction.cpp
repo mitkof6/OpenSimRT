@@ -1,5 +1,6 @@
 #include "GRFMPrediction.h"
 
+#include "Exception.h"
 #include "GaitPhaseDetector.h"
 #include "OpenSimUtils.h"
 #include "Utils.h"
@@ -8,13 +9,6 @@ using namespace std;
 using namespace OpenSim;
 using namespace OpenSimRT;
 using namespace SimTK;
-
-// clip a given value if exceeds the given boundaries
-template <typename T> T clip(const T& n, const T& lower, const T& upper) {
-    return std::max(lower, std::min(n, upper));
-}
-
-//==============================================================================
 
 GRFMPrediction::GRFMPrediction(const Model& otherModel,
                                const Parameters& aParameters,
@@ -53,20 +47,51 @@ GRFMPrediction::GRFMPrediction(const Model& otherModel,
     state = model.initSystem();
 
     // define STA functions by Ren et al.
+    // https://doi.org/10.1016/j.jbiomech.2008.06.001
+    // NOTE: anteriorForceTransition is replaced with
+    // reactionComponentTransition due to innacurate results.
     reactionComponentTransition = [&](const double& t) -> double {
+        // STA functions depend on class' private member Tds. Clip return values
+        // in order to not exceed the range [0,1] in case of inaccurate
+        // estimation of Tds.
         return clip(std::exp(-std::pow((2.0 * t / Tds), 3)), 0.0, 1.0);
     };
 
     // define CoP trajectory (linear transition from heel -> metatarsal)
+    // Source: https://doi.org/10.1016/j.jbiomech.2013.09.012
     copPosition = [&](const double& t, const Vec3& d) -> Vec3 {
         const auto omega = 2.0 * Pi / Tss;
+        // clip the scale factor if exceeds the range [0,1].
         const auto scale =
                 clip(-2.0 / (3 * Pi) *
                              (sin(omega * t) - sin(2 * omega * t) / 8 -
                               3.0 / 4.0 * omega * t),
                      0.0, 1.0);
+        // scale the distance vector d (heel -> metatarsal)
         return scale * d;
     };
+
+    // list valid string names with the correpsonding method
+    methodSelector["inversedynamics"] = Method::InverseDynamics;
+    methodSelector["inverse_dynamics"] = Method::InverseDynamics;
+    methodSelector["inverse-dynamics"] = Method::InverseDynamics;
+    methodSelector["id"] = Method::InverseDynamics;
+    methodSelector["newtoneuler"] = Method::NewtonEuler;
+    methodSelector["newton_euler"] = Method::NewtonEuler;
+    methodSelector["newton-euler"] = Method::NewtonEuler;
+    methodSelector["ne"] = Method::NewtonEuler;
+
+    // list available method keys
+    vector<string> methodkeys;
+    transform(begin(methodSelector), end(methodSelector),
+              back_inserter(methodkeys),
+              [](const auto& pair) { return pair.first; });
+
+    // test if input method in parameter list is valid.
+    auto it = find(methodkeys.begin(), methodkeys.end(),
+                   String::toLower(parameters.method));
+    if (it == methodkeys.end())
+        THROW_EXCEPTION("Wrong input method. Select appropriate input name.");
 }
 
 void GRFMPrediction::computeTotalReactionComponents(const Input& input,
@@ -76,7 +101,8 @@ void GRFMPrediction::computeTotalReactionComponents(const Input& input,
     const auto& matter = model.getMatterSubsystem();
 
     // total forces / moments
-    if (parameters.method == "ID") {
+    if (methodSelector[String::toLower(parameters.method)] ==
+        Method::InverseDynamics) {
         // ====================================================================
         // method 1: compute total forces/moment from pelvis using ID
         // ====================================================================
@@ -114,7 +140,8 @@ void GRFMPrediction::computeTotalReactionComponents(const Input& input,
         // method 2: compute the reaction forces/moment based on the
         // Newton-Euler equations
         //====================================================================
-    } else if (parameters.method == "Newton-Euler") {
+    } else if (methodSelector[String::toLower(parameters.method)] ==
+               Method::NewtonEuler) {
         // compute body velocities and accelerations
         SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
         SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
@@ -292,7 +319,8 @@ void GRFMPrediction::seperateReactionComponents(
     }
 }
 
-void GRFMPrediction::computeReactionPoint(const double& t, SimTK::Vec3& rightPoint,
+void GRFMPrediction::computeReactionPoint(const double& t,
+                                          SimTK::Vec3& rightPoint,
                                           SimTK::Vec3& leftPoint) {
     // get previous SS time-period
     Tss = gaitPhaseDetector->getSingleSupportDuration();
