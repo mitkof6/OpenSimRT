@@ -162,7 +162,7 @@ void run() {
 
     // grfm prediction
     GRFMPrediction::Parameters grfmParameters;
-    grfmParameters.method = grfmMethod;
+    grfmParameters.method = GRFMPrediction::selectMethod(grfmMethod);
     grfmParameters.pelvisBodyName = pelvisBodyName;
     grfmParameters.rStationBodyName = rFootBodyName;
     grfmParameters.lStationBodyName = lFootBodyName;

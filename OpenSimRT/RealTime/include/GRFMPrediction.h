@@ -53,15 +53,15 @@ class RealTime_API GRFMPrediction {
     typedef std::function<SimTK::Vec3(const double&, const SimTK::Vec3&)>
             CoPTrajectory;
 
+ public:
     /**
      * Select method for computing the total reactions loads.
      */
     enum class Method { NewtonEuler, InverseDynamics };
 
- public:
     struct Parameters {
         int directionWindowSize;
-        std::string method;                             // Newton-Euler or ID
+        Method method;                                  // Newton-Euler or ID
         std::string pelvisBodyName;                     // pelvis body name
         std::string rStationBodyName, lStationBodyName; // foot body names
         SimTK::Vec3 rHeelStationLocation, lHeelStationLocation; // begin of cop
@@ -83,15 +83,18 @@ class RealTime_API GRFMPrediction {
                    GaitPhaseDetector*); // ctor
 
     /**
+     * Select the name of the method used to compute the total reaction loads
+     * F_ext and M_ext. Computation is performed using either the Newton-Euler
+     * equations of motion, or the by solving the Inverse-Dynamics (ID) method.
+     */
+    static Method selectMethod(const std::string& methodName);
+
+    /**
      * Compute the ground reaction forces, moments and cop.
      */
     Output solve(const Input& input);
 
  private:
-    // select the method for computing the total reaction loads based on the
-    // input string
-    std::map<std::string, Method> methodSelector;
-
     // transition functions based on the STA
     TransitionFuction reactionComponentTransition; // STA fucntions
     // TransitionFuction anteriorForceTransition; // STA function for F_x

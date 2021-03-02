@@ -70,27 +70,24 @@ GRFMPrediction::GRFMPrediction(const Model& otherModel,
         // scale the distance vector d (heel -> metatarsal)
         return scale * d;
     };
+}
 
-    // list valid string names with the correpsonding method
-    methodSelector["inversedynamics"] = Method::InverseDynamics;
-    methodSelector["inverse_dynamics"] = Method::InverseDynamics;
-    methodSelector["inverse-dynamics"] = Method::InverseDynamics;
-    methodSelector["id"] = Method::InverseDynamics;
-    methodSelector["newtoneuler"] = Method::NewtonEuler;
-    methodSelector["newton_euler"] = Method::NewtonEuler;
-    methodSelector["newton-euler"] = Method::NewtonEuler;
-    methodSelector["ne"] = Method::NewtonEuler;
+GRFMPrediction::Method
+GRFMPrediction::selectMethod(const std::string& methodName) {
+    // lsits of lower-case valid names of the input strings
+    vector<string> validNENames = {"newtoneuler", "newton-euler",
+                                   "newton_euler", "ne"};
+    vector<string> validIDNames = {"inversedynamics", "inverse-dynamics",
+                                   "inverse_dynamics", "id"};
 
-    // list available method keys
-    vector<string> methodkeys;
-    transform(begin(methodSelector), end(methodSelector),
-              back_inserter(methodkeys),
-              [](const auto& pair) { return pair.first; });
-
-    // test if input method in parameter list is valid.
-    auto it = find(methodkeys.begin(), methodkeys.end(),
-                   String::toLower(parameters.method));
-    if (it == methodkeys.end())
+    // find if input method exists in lists and return selected enum type
+    if (find(validNENames.begin(), validNENames.end(),
+             String::toLower(methodName)) != validNENames.end())
+        return Method::NewtonEuler;
+    else if (find(validIDNames.begin(), validIDNames.end(),
+                  String::toLower(methodName)) != validIDNames.end())
+        return Method::InverseDynamics;
+    else
         THROW_EXCEPTION("Wrong input method. Select appropriate input name.");
 }
 
@@ -101,8 +98,7 @@ void GRFMPrediction::computeTotalReactionComponents(const Input& input,
     const auto& matter = model.getMatterSubsystem();
 
     // total forces / moments
-    if (methodSelector[String::toLower(parameters.method)] ==
-        Method::InverseDynamics) {
+    if (parameters.method == Method::InverseDynamics) {
         // ====================================================================
         // method 1: compute total forces/moment from pelvis using ID
         // ====================================================================
@@ -140,8 +136,7 @@ void GRFMPrediction::computeTotalReactionComponents(const Input& input,
         // method 2: compute the reaction forces/moment based on the
         // Newton-Euler equations
         //====================================================================
-    } else if (methodSelector[String::toLower(parameters.method)] ==
-               Method::NewtonEuler) {
+    } else if (parameters.method == Method::NewtonEuler) {
         // compute body velocities and accelerations
         SimTK::Vector_<SimTK::SpatialVec> bodyVelocities;
         SimTK::Vector_<SimTK::SpatialVec> bodyAccelerations;
