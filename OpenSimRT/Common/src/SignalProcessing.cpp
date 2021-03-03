@@ -351,6 +351,9 @@ ButterworthFilter::ButterworthFilter(
 void ButterworthFilter::setupFilter(
         int dim, int filtOrder, double cutOffFreq, const FilterType& type,
         const IIRFilter::InitialValuePolicy& policy) {
+    if (cutOffFreq <= 0 || cutOffFreq >= 1)
+        THROW_EXCEPTION(
+                "Digital filter critical frequencies must be 0 < Wn < 1");
     double sf; // scaling factor
     Vector a;  // denominator coefficients
     Vector b;  // numerator coefficients
