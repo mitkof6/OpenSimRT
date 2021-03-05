@@ -4,6 +4,7 @@
 #include "Utils.h"
 
 #include <SimTKcommon/Scalar.h>
+#include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/VectorMath.h>
 #define _USE_MATH_DEFINES
 #include <OpenSim/Common/GCVSpline.h>
@@ -335,7 +336,7 @@ Vector IIRFilter::filter(const Vector& xn) {
         if (iv == Zero) {
             return Vector(n, 0.0);
         } else if (iv == Signal) {
-            return xn;
+            return Vector(xn.size(), &xn[0]);
         } else {
             THROW_EXCEPTION("undefined initial value policy");
         }

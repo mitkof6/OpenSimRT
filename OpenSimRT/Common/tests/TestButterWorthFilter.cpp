@@ -9,13 +9,10 @@
 #include "OpenSimUtils.h"
 #include "Settings.h"
 #include "SignalProcessing.h"
-#include "Utils.h"
 
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
-#include <OpenSim/Common/Storage.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
-#include <SimTKcommon/internal/BigMatrix.h>
 #include <chrono>
 #include <iostream>
 
@@ -59,7 +56,7 @@ void run() {
     // initialize filters
     ButterworthFilter filter(model.getNumCoordinates(), filtOrder,
                              (2 * cutOffFreq) / 100.0, type,
-                             IIRFilter::InitialValuePolicy::Zero);
+                             IIRFilter::InitialValuePolicy::Signal);
 
     // logger
     auto columnNames =
