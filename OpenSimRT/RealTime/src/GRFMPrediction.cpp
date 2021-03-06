@@ -180,10 +180,12 @@ GRFMPrediction::computeGaitDirectionRotation(const std::string& bodyName) {
     // rotation about the vertical axis to transform the reaction components
     // from the opensim global reference frame to the gait-direction
     // reference frame
-    return SimTK::Rotation(
-            std::atan(SimTK::dot(Vec3(0, 1, 0),
-                                 SimTK::cross(gaitDirection, Vec3(1, 0, 0)))),
-            Vec3(0, 1, 0));
+    auto crossProd =
+            SimTK::cross(gaitDirection, Vec3(1, 0, 0));      // |a|.|b|.sin(q).n
+    auto dotProd = SimTK::dot(gaitDirection, Vec3(1, 0, 0)); // |a|.|b|.cos(q)
+    auto q = std::atan(crossProd.norm() / dotProd);
+
+    return SimTK::Rotation(q, Vec3(0, 1, 0));
 }
 
 GRFMPrediction::Output
