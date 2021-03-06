@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+# install dependencies in case they are missing
+sudo apt-get --yes install git cmake cmake-curses-gui \
+                           freeglut3-dev libxi-dev libxmu-dev \
+                           liblapack-dev swig python-dev \
+                           openjdk-8-jdk
+
+try_clone_checkout() {
+    url="${1}"
+    ref="${2}"
+
+    dir=$(basename "${url}" | sed 's/.git$//')
+
+    echo "${0}: ${dir}: must be built from source for Linux builds"
+    if [ ! -d "${dir}" ]; then
+        git clone "${url}"
+        cd "${dir}"
+        git checkout "${ref}"
+        cd -
+    else
+        echo "${0}: ${dir}: already exists: skipping clone"
+    fi
+}
+
+# clone repo
+try_clone_checkout "https://github.com/mitkof6/opensim-core.git" "bindings_timestepper"
+
+# build dependencies
+cd opensim-core
+mkdir build_dependencies
+cd build_dependencies
+cmake ../dependencies/ \
+      -DCMAKE_INSTALL_PREFIX='../install/dependencies' \
+      -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+
+# build opensim-core
+cd ..
+mkdir build_opensim
+cd build_opensim
+cmake .. \
+      -DCMAKE_INSTALL_PREFIX="../install/" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOPENSIM_DEPENDENCIES_DIR="../install/dependencies" \
+      -DSIMBODY_HOME="../install/dependencies/simbody" \
+      -DBUILD_PYTHON_WRAPPING=ON \
+      -DOPENSIM_PYTHON_VERSION=3 \
+      -DBUILD_API_EXAMPLES=OFF \
+      -DBUILD_TESTING=OFF \
+      -DWITH_BTK=ON
+make -j$(nproc)
+make install
