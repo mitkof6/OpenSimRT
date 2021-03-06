@@ -90,7 +90,7 @@ void NGIMUListener::ProcessMessage(const ReceivedMessage& m,
         // when all messages are processed, push IMU bundle to buffer
         if (bundleReadyFlags.all()) { pushDataToManagerBuffer(port, data); }
 
-    } catch (Exception& e) {
+    } catch (osc::Exception& e) {
         cout << "Error while parsing message: " << m.AddressPattern() << ": "
              << e.what() << "\n";
     }
