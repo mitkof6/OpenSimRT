@@ -23,7 +23,7 @@ plt.rcParams.update({
 
 subject_dir = os.path.abspath('../')
 osim_results = os.path.join(subject_dir, 'inverse_dynamics/')
-output_dir = os.path.join(subject_dir, 'real_time/grfm_prediction/acceleration_based/')
+output_dir = os.path.join(subject_dir, 'real_time/grfm_prediction/force_based/')
 
 tau_reference_file = os.path.join(osim_results, 'task_InverseDynamics.sto')
 tau_rt_file = os.path.join(output_dir, 'tau.sto')

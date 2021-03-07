@@ -24,7 +24,7 @@ plt.rcParams.update({
 # data
 
 subject_dir = os.path.abspath('../')
-results_dir = os.path.join(subject_dir, 'real_time/grfm_prediction/acceleration_based/')
+results_dir = os.path.join(subject_dir, 'real_time/grfm_prediction/force_based/')
 experimental_dir = os.path.join(subject_dir, 'experimental_data/')
 
 right_wrench_rt_file = os.path.join(results_dir, 'wrench_right.sto')
