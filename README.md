@@ -2,14 +2,23 @@
 
 # Real-Time Musculoskeletal Kinematics and Dynamics Analysis Using Marker- and IMU-Based Solutions in Rehabilitation
 
-[![Demo video](https://simtk.org/logos/real_time?dummy_value=1261688311)](https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4)
-<!-- <p align="center"><iframe width="560" height="315" src="https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe></p> -->
+![Demo video](https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4)
 
 This project aims to explore the possibility of estimating a multitude of
 kinematic and dynamic quantities using subject-specific musculoskeletal models
 in real-time. The framework was designed to operate with marker-based and
 inertial measurement units enabling extensions far beyond dedicated motion
-capture laboratories.
+capture laboratories. An overview of how different can be linked-to calculate
+the joint reaction loads is presented:
+
+![pipeline](./doc/figures/real_time_pipeline.pdf)
+
+We have used this pipeline to provide real-time biofeedback during gait
+retraining to reduce the loading of the knee:
+
+![visualization_front_end](./doc/figures/visualization_front_end.png)
+
+![gait_retraining](./doc/gait_retraining_session.png)
 
 Relative projects:
 
@@ -17,7 +26,7 @@ Relative projects:
 - [CEINMS](https://simtk.org/projects/ceinms/)
 - [Motekmedical HBM](https://www.motekmedical.com/software/hbm/)
 
-# Organization
+## Organization
 
 The project is organized into sub-modules. Each sub-module contains the code,
 tests, and applications. In the test files, we perform unit tests of each
@@ -52,13 +61,13 @@ into `scale`, `inverse_kinematics`, `inverse_dynamics`,
 `residual_reduction_algorithm`, `static_optimziation`,
 `computed_muscle_control`. The `real_time` folder contains results from the
 tests of different sub-modules. The `scripts` sub-folder contains automatic
-`Python` scripts that compare real-time and offline results and generate files
+Python scripts that compare real-time and offline results and generate files
 into the corresponding folders. Finally, `real_time/moment_arm` contains Python
-auto-generated `C++` code for calculating the moment arm matrix (pre-computed
-symbolic representation) used linked on runtime depending on the model being
+auto-generated C++ code for calculating the moment arm matrix (pre-computed
+symbolic representation) that is linked on runtime depending on the model being
 used.
 
-# Dependencies
+## Dependencies
 
 This project depends on several libraries:
 
@@ -74,7 +83,7 @@ For more information on how to build and set up these dependencies, please look
 at the continuous integration scripts. To run the tests and examples that use
 files as inputs instead of streams, you will only need `opensim-core`.
 
-# Acknowledge
+## Acknowledge
 
 If you find this useful you can acknowledge it as follows:
 
