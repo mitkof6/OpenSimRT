@@ -8,8 +8,8 @@ This project aims to explore the possibility of estimating a multitude of
 kinematic and dynamic quantities using subject-specific musculoskeletal models
 in real-time. The framework was designed to operate with marker-based and
 inertial measurement units enabling extensions far beyond dedicated motion
-capture laboratories. An overview of how different can be linked-to calculate
-the joint reaction loads is presented:
+capture laboratories. An overview of how different modules can be linked-to
+calculate the joint reaction loads is presented below:
 
 ![pipeline](./doc/figures/real_time_pipeline.png)
 
@@ -18,7 +18,7 @@ retraining to reduce the loading of the knee:
 
 ![visualization_front_end](./doc/figures/visualization_front_end.png)
 
-![gait_retraining](./doc/gait_retraining_session.png)
+![gait_retraining](./doc/figures/gait_retraining_session.png)
 
 Relative projects:
 
