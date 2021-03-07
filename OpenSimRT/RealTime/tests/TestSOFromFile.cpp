@@ -121,8 +121,16 @@ void run() {
          << endl;
 
     // Compare results with reference tables.
-    compareTables(fmLogger, TimeSeriesTable(subjectDir + "real_time/muscle_optimization/fm.sto"), 1e-3);
-    compareTables(amLogger, TimeSeriesTable(subjectDir + "real_time/muscle_optimization/am.sto"), 1e-3);
+    OpenSimUtils::compareTables(
+            fmLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/muscle_optimization/fm.sto"),
+            1e-3);
+    OpenSimUtils::compareTables(
+            amLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/muscle_optimization/am.sto"),
+            1e-3);
 
     // store results
     // STOFileAdapter::write(fmLogger,

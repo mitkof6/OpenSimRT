@@ -201,6 +201,68 @@ class Common_API IIRFilter {
 };
 
 /**
+ * A multidimensional digital Butterworth filter.
+ */
+class Common_API ButterworthFilter {
+ public:
+    /**
+     * Chose between LowPass, HighPass, BandPass or BandCut filter type.
+     */
+    enum class FilterType { LowPass, HighPass, BandPass, BandCut };
+
+    /**
+     * Construct an n-dimentional Butterworth filter.
+     *
+     * @param [dim] - signal dimension
+     * @param [filtOrder] - filter's order
+     * @param [cutOffFreq] - cutoff frequency
+     * @param [type] - filter type (LowPass, HighPass, BandPass, BandCut)
+     * @param [policy] - use zero or signal's input value as initilization.
+     */
+    ButterworthFilter(int dim, int filtOrder, double cutOffFreq,
+                      const FilterType& type,
+                      const IIRFilter::InitialValuePolicy& policy);
+
+    /**
+     * Setup the Butterworth filter.
+     *
+     * @param [dim] - signal dimension
+     * @param [filtOrder] - filter's order
+     * @param [cutOffFreq] - cutoff frequency
+     * @param [type] - filter type (LowPass, HighPass, BandPass, BandCut)
+     * @param [policy] - use zero or signal's input value as initilization.
+     */
+    void setupFilter(int dim, int filtOrder, double cutOffFreq,
+                     const FilterType& type,
+                     const IIRFilter::InitialValuePolicy& policy);
+
+    /**
+     * Filter the input signal.
+     */
+    SimTK::Vector filter(const SimTK::Vector& xn);
+
+ private:
+    // lp
+    SimTK::Vector ccof_bwlp(const int& n);
+    SimTK::Vector dcof_bwlp(const int& n, const double& fcf);
+    double sf_bwlp(const int& n, const double& fcf);
+
+    // hp
+    SimTK::Vector ccof_bwhp(const int& n);
+    SimTK::Vector dcof_bwhp(const int& n, const double& fcf);
+    double sf_bwhp(const int& n, const double& fcf);
+
+    // bp
+    // ... TODO
+
+    // bc
+    //... TODO
+
+    // pointer to iirFilter
+    SimTK::ReferencePtr<IIRFilter> iir;
+};
+
+/**
  * \brief A multidimensional FIR filter.
  *
  *     y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]

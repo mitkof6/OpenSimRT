@@ -202,12 +202,29 @@ void run() {
     SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setup.ini for testing");
     SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
     SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setup.ini for testing");
-    compareTables(tauLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));
-    compareTables(grfLeftLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/wrench_left.sto"));
-    compareTables(grfRightLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/wrench_right.sto"));
-    compareTables(qLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/q_filtered.sto"));
-    compareTables(qDotLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/qDot_filtered.sto"));
-    compareTables(qDDotLogger, TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/qDDot_filtered.sto"));
+    OpenSimUtils::compareTables(
+            tauLogger,
+            TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));
+    OpenSimUtils::compareTables(
+            grfLeftLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/inverse_dynamics/wrench_left.sto"));
+    OpenSimUtils::compareTables(
+            grfRightLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/inverse_dynamics/wrench_right.sto"));
+    OpenSimUtils::compareTables(
+            qLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/inverse_dynamics/q_filtered.sto"));
+    OpenSimUtils::compareTables(
+            qDotLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/inverse_dynamics/qDot_filtered.sto"));
+    OpenSimUtils::compareTables(
+            qDDotLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/inverse_dynamics/qDDot_filtered.sto"));
 
     // store results
     // STOFileAdapter::write(tauLogger,

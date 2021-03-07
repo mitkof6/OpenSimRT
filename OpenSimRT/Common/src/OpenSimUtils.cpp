@@ -148,4 +148,16 @@ OpenSimUtils::getMomentArmFromDynamicLibrary(const Model& model,
     auto calcMomentArm = loadDynamicLibrary<MomentArmFunctionT>(
             libraryPath, "calcMomentArm");
     return calcMomentArm;
+
+}
+
+void OpenSimUtils::updateState(const OpenSim::Model& model, SimTK::State& state,
+                               const SimTK::Vector& q,
+                               const SimTK::Vector& qDot) {
+    const auto& coordinateSet = model.getCoordinatesInMultibodyTreeOrder();
+    if (coordinateSet.size() != q.size()) THROW_EXCEPTION("Wrong dimensions");
+    for (size_t i = 0; i < coordinateSet.size(); ++i) {
+        coordinateSet[i]->setValue(state, q[i]);
+        coordinateSet[i]->setSpeedValue(state, qDot[i]);
+    }
 }

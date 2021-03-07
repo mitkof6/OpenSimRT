@@ -73,60 +73,6 @@ std::string dump(const T& vec, std::string delimiter,
 }
 
 /**
- * Compare two OpenSim::Datatables or any of the derived types (as long as they
- * share the same data types). Number of columns and rows must match, otherwise
- * throws an exception. Comparison is performed by computing the RMSE of the
- * columns with common labels acquired from the 'query' table. If the computed
- * RMSE of any of the match columns is larger than the given threshold it throws
- * an exception.
- *
- * @param queryTable - Query table to compare.
- *
- * @param refTable - Reference table to be compare against.
- *
- * @param threshold - Threshold value (default is 1e-5).
- */
-template <template <typename, typename> class Table, typename T, typename E>
-void compareTables(const Table<T, E>& queryTable, const Table<T, E>& refTable,
-                   const double& threshold = 1e-5) {
-    if (!(queryTable.getNumRows() == refTable.getNumRows()))
-        THROW_EXCEPTION("Number of rows in given tables do not match.");
-    if (!(queryTable.getNumColumns() == refTable.getNumColumns()))
-        THROW_EXCEPTION("Number of columns in given tables do not match.");
-
-    // create a flatten copy of the tables
-    auto queryFlat = queryTable.flatten();
-    auto refFlat = refTable.flatten();
-
-    // get column labels
-    auto queryLabels = queryFlat.getColumnLabels();
-    auto refLabels = refFlat.getColumnLabels();
-
-    // find and store the indexes of the column labels in tables
-    std::vector<int> mapRefToQuery;
-    for (const auto& label : queryLabels) {
-        auto found = std::find(refLabels.begin(), refLabels.end(), label);
-        mapRefToQuery.push_back(std::distance(refLabels.begin(), found));
-    }
-
-    // compute the rmse of the matched columns
-    for (size_t i = 0; i < mapRefToQuery.size(); ++i) {
-        if (mapRefToQuery[i] >= 0) {
-            auto queryVec = queryFlat.getDependentColumnAtIndex(i);
-            auto refVec = refFlat.getDependentColumnAtIndex(mapRefToQuery[i]);
-            auto rmse = sqrt((queryVec - refVec).normSqr() /
-                             queryFlat.getNumRows());
-            //std::cout << "Column '" << queryLabels[i] << "' has RMSE = " << rmse
-            //           << std::endl;
-            SimTK_ASSERT3_ALWAYS(
-                    (rmse < threshold),
-                    "Column '%s' FAILED to meet accuracy of %f RMS with RMSE %f.",
-                    queryLabels[i].c_str(), threshold, rmse);
-        }
-    }
-}
-
-/**
  * Determine if a SimTK::Vector_<T> has finite elements.
  */
 template <typename T> bool isVectorFinite(const SimTK::Vector_<T>& v) {
@@ -139,9 +85,9 @@ template <typename T> bool isVectorFinite(const SimTK::Vector_<T>& v) {
 /**
  * Compute the projection of a point or vector on a arbitrary plane.
  */
-static SimTK::Vec3 projectionOnPlane(const SimTK::Vec3& point,
-                                     const SimTK::Vec3& planeOrigin,
-                                     const SimTK::Vec3& planeNormal) {
+static SimTK::Vec3
+projectionOnPlane(const SimTK::Vec3& point, const SimTK::Vec3& planeOrigin,
+                  const SimTK::Vec3& planeNormal = SimTK::Vec3(0, 1, 0)) {
     return point - SimTK::dot(point - planeOrigin, planeNormal) * planeNormal;
 }
 
@@ -164,5 +110,13 @@ static inline SimTK::Quaternion operator*(const SimTK::Quaternion& a,
 static inline SimTK::Quaternion operator~(const SimTK::Quaternion& q) {
     return SimTK::Quaternion(q[0], -q[1], -q[2], -q[3]);
 }
+
+/**
+ * Clip a given value if exceeds the given boundaries.
+ */
+template <typename T> T clip(const T& n, const T& lower, const T& upper) {
+    return std::max(lower, std::min(n, upper));
+}
+
 } // namespace OpenSimRT
 #endif
