@@ -11,7 +11,7 @@ inertial measurement units enabling extensions far beyond dedicated motion
 capture laboratories. An overview of how different can be linked-to calculate
 the joint reaction loads is presented:
 
-![pipeline](./doc/figures/real_time_pipeline.pdf)
+![pipeline](./doc/figures/real_time_pipeline.png)
 
 We have used this pipeline to provide real-time biofeedback during gait
 retraining to reduce the loading of the knee:
