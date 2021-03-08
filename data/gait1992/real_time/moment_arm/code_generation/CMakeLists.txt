@@ -49,7 +49,7 @@ addLibrary(
   SOURCES ${sources}
   INCLUDES ${includes}
   LINKLIBS ${OpenSim_LIBRARIES})
-set_target_properties(${target} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${target} PROPERTIES LINKER_LANGUAGE CXX PREFIX "")
 
 # tests
 addTests(

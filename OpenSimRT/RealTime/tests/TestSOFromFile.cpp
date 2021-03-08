@@ -14,7 +14,7 @@
 #include "Simulation.h"
 #include "Utils.h"
 #include "Visualization.h"
-
+#include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Simulation/Model/Muscle.h>
 #include <iostream>
@@ -26,7 +26,7 @@ using namespace OpenSimRT;
 
 void run() {
     cout << "Warning" << endl
-         << "This test might fail on different machines. " 
+         << "This test might fail on different machines. "
          << "The performance of the optimization depends on the underlying OS. "
          << "We think it has to do with how threads are scheduled by the OS. "
          << "We did not observed this behavior with OpenSim v3.3." << endl << endl;
@@ -51,6 +51,7 @@ void run() {
     auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
     auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
 
+    Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);
     model.initSystem();
 
@@ -122,7 +123,7 @@ void run() {
 
     // Compare results with reference tables. Test might fail on a different
     // machine, possibly due to compilation differences.
-    try {
+    // try {
         OpenSimUtils::compareTables(
             fmLogger,
             TimeSeriesTable(subjectDir +
@@ -133,9 +134,9 @@ void run() {
             TimeSeriesTable(subjectDir +
                             "real_time/muscle_optimization/am.sto"),
             1e-1);
-    } catch (exception& e) {
-        cout << e.what() << endl;
-    }
+    // } catch (exception& e) {
+    //     cout << e.what() << endl;
+    // }
 
     // store results
     // STOFileAdapter::write(fmLogger,
