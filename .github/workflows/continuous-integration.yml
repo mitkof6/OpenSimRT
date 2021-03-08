@@ -39,6 +39,7 @@ jobs:
     - name: Setup opensim-core
       if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
+        mkdir ~/dependencies
         wget https://sourceforge.net/projects/dependencies/files/opensim-core/opensim-core-4.1-ubuntu-18.04.tar.xz
         tar -xvf opensim-core-4.1-ubuntu-18.04.tar.xz ~/dependencies
 
