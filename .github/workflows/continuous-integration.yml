@@ -1,0 +1,86 @@
+name: CI
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master
+  # branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in
+# parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    name: Build and test on Ubuntu 18.04
+    # The type of runner that the job will run on
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v1
+
+    # install packages
+    - name: Install packages
+      run: |
+        sudo apt-get install freeglut3-dev libxi-dev libxmu-dev liblapack-dev
+        sudo apt-get install doxygen cmake # swig python-dev
+
+    # cache dependencies to improve execution time
+    - name: Cache dependencies
+      id: cache-dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/dependencies
+        key: ${{ runner.os }}-dependencies-${{ hashFiles('dependencies/*') }}
+
+    # setup OpenSim
+    - name: Setup opensim-core
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
+      run: |
+        mkdir ~/dependencies
+        wget https://sourceforge.net/projects/dependencies/files/opensim-core/opensim-core-4.1-ubuntu-18.04.tar.xz
+        tar -xvf opensim-core-4.1-ubuntu-18.04.tar.xz -C ~/dependencies
+
+    # setup OSCPack
+    - name: Setup OSCPack
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
+      run: |
+        wget https://sourceforge.net/projects/dependencies/files/oscpack/oscpack-ubuntu-18.04.tar.xz
+        tar -xvf oscpack-ubuntu-18.04.tar.xz -C ~/dependencies
+
+    # setup ViconDataStreamSDK
+    - name: Setup ViconDataStreamSDK
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
+      run: |
+        wget https://sourceforge.net/projects/dependencies/files/vicon/ViconDataStreamSDK_1.7.1_96542h.tar.xz
+        tar -xvf ViconDataStreamSDK_1.7.1_96542h.tar.xz -C ~/dependencies
+
+    # build
+    - name: Build
+      run: |
+        source $GITHUB_WORKSPACE/.github/workflows/env_variables
+        mkdir build
+        cd build
+        cmake ../ \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX:PATH=../install \
+            -DOpenSim_DIR=$OpenSim_DIR \
+            -DCONTINUOUS_INTEGRATION=ON \
+            -DBUILD_TESTING=ON \
+            -DBUILD_DOCUMENTATION=OFF \
+            -DDOXYGEN_USE_MATHJAX=ON \
+            -DBUILD_MOMENT_ARM=ON \
+            -DBUILD_IMU=ON \
+            -DBUILD_VICON=OFF \
+            -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
+        make -j$(nproc)
+
+    # test
+    - name: Test
+      run: |
+        source $GITHUB_WORKSPACE/.github/workflows/env_variables
+        ctest --parallel -j$(nproc) -VV --output-on-failure -E TestMomentArm

@@ -11,6 +11,7 @@
 #include "Simulation.h"
 #include "Visualization.h"
 #include "Utils.h"
+#include <Actuators/Schutte1993Muscle_Deprecated.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
 #include <SimTKcommon/Scalar.h>
@@ -31,6 +32,7 @@ void run() {
     auto trcFile = subjectDir + ini.getString(section, "TRC_FILE", "");
 
     // setup model
+    Object::RegisterType(Schutte1993Muscle_Deprecated());
     Model model(modelFile);
     OpenSimUtils::removeActuators(model);
 
