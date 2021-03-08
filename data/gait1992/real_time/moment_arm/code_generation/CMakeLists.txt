@@ -37,7 +37,10 @@ link_directories(${OpenSim_LIB_DIR})
 # global files
 file(GLOB includes MomentArm.h MomentArmExports.h)
 file(GLOB sources MomentArm.cpp)
-file(GLOB tests TestMomentArm.cpp)
+file(GLOB tests
+  # sometimes this produces seg fault during CI
+  TestMomentArm.cpp
+)
 
 # dynamic library
 set(target Gait1992MomentArm)
@@ -46,7 +49,7 @@ addLibrary(
   SOURCES ${sources}
   INCLUDES ${includes}
   LINKLIBS ${OpenSim_LIBRARIES})
-set_target_properties(${target} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${target} PROPERTIES LINKER_LANGUAGE CXX PREFIX "")
 
 # tests
 addTests(

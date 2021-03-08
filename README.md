@@ -1,6 +1,9 @@
-[![Build Status](https://travis-ci.com/mitkof6/OpenSimRT.svg?token=6jXyQbpyyXVTJGTxHvxD&branch=master)](https://travis-ci.com/mitkof6/OpenSimRT)
+![.github/workflows/continuous-integration.yml](https://github.com/mitkof6/OpenSimRT/workflows/.github/workflows/continuous-integration.yml/badge.svg)
 
-# Real-Time Musculoskeletal Kinematics and Dynamics Analysis Using Marker- and IMU-Based Solutions in Rehabilitation
+# OpenSimRT
+
+*Real-Time Musculoskeletal Kinematics and Dynamics Analysis Using Marker- and
+IMU-Based Solutions in Rehabilitation*
 
 ![Demo video](https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4)
 
@@ -84,8 +87,9 @@ This project depends on several libraries:
    [oscpack](https://github.com/mitkof6/oscpack).
 
 For more information on how to build and set up these dependencies, please look
-at the continuous integration scripts. To run the tests and examples that use
-files as inputs instead of streams, you will only need `opensim-core`.
+at the continuous integration script (`.github/workflows/`) and the
+`dependencies` folder. To run the tests and examples that use files as inputs
+instead of streams, you will only need `opensim-core`.
 
 ## Acknowledge
 

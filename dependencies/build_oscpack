@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+try_clone_checkout() {
+    url="${1}"
+    ref="${2}"
+
+    dir=$(basename "${url}" | sed 's/.git$//')
+
+    echo "${0}: ${dir}: must be built from source for Linux builds"
+    if [ ! -d "${dir}" ]; then
+        git clone "${url}"
+        cd "${dir}"
+        git checkout "${ref}"
+        cd -
+    else
+        echo "${0}: ${dir}: already exists: skipping clone"
+    fi
+}
+
+# clone repo
+try_clone_checkout "https://github.com/mitkof6/oscpack" "master"
+
+# build oscpack
+cd oscpack
+mkdir build
+cd build
+cmake ../ \
+      -DCMAKE_INSTALL_PREFIX='../install' \
+      -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
