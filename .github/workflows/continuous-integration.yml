@@ -28,35 +28,45 @@ jobs:
         sudo apt-get install doxygen swig python-dev cmake
 
     # setup dependencies
+    - name: Cache dependencies
+      id: cache-dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/dependencies
+        key: ${{ runner.os }}-dependencies-${{ hashFiles('dependencies/*') }}
+
     # setup OpenSim
     - name: Setup opensim-core
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
         wget https://sourceforge.net/projects/dependencies/files/opensim-core/opensim-core-4.1-ubuntu-18.04.tar.xz
-        tar -xvf opensim-core-4.1-ubuntu-18.04.tar.xz
-        export OPENSIM_HOME=$(pwd)/opensim-core
-        export OpenSim_DIR=$OPENSIM_HOME/lib/cmake/OpenSim
-        export PATH=$OPENSIM_HOME/bin:$PATH
-        export LD_LIBRARY_PATH=$OPENSIM_HOME/lib:$LD_LIBRARY_PATH
+        tar -xvf opensim-core-4.1-ubuntu-18.04.tar.xz ~/dependencies
 
     # setup OSCPack
     - name: Setup OSCPack
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
         wget https://sourceforge.net/projects/dependencies/files/oscpack/oscpack-ubuntu-18.04.tar.xz
-        tar -xvf oscpack-ubuntu-18.04.tar.xz
-        export OSCPACK_DIR=$(pwd)/oscpack
-        export LD_LIBRARY_PATH=$OSCPACK_DIR/lib:$LD_LIBRARY_PATH
+        tar -xvf oscpack-ubuntu-18.04.tar.xz ~/dependencies
 
     # setup ViconDataStreamSDK
     - name: Setup ViconDataStreamSDK
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
         wget https://sourceforge.net/projects/dependencies/files/vicon/ViconDataStreamSDK_1.7.1_96542h.tar.xz
-        tar -xvf ViconDataStreamSDK_1.7.1_96542h.tar.xz
-        export VICONDATASTREAM_DIR=$(pwd)/ViconDataStreamSDK_1.7.1_96542h/Linux64-boost-1.58.0/20170125_96542h.x64
-        export LD_LIBRARY_PATH=$VICONDATASTREAM_DIR:$LD_LIBRARY_PATH
+        tar -xvf ViconDataStreamSDK_1.7.1_96542h.tar.xz ~/dependencies
 
     # build and test
     - name: Build and test
       run: |
+        export OPENSIM_HOME=~/dependencies/opensim-core
+        export OpenSim_DIR=$OPENSIM_HOME/lib/cmake/OpenSim
+        export PATH=$OPENSIM_HOME/bin:$PATH
+        export LD_LIBRARY_PATH=$OPENSIM_HOME/lib:$LD_LIBRARY_PATH
+        export OSCPACK_DIR=~/dependencies/oscpack
+        export LD_LIBRARY_PATH=$OSCPACK_DIR/lib:$LD_LIBRARY_PATH
+        export VICONDATASTREAM_DIR=~/dependencies/ViconDataStreamSDK_1.7.1_96542h/Linux64-boost-1.58.0/20170125_96542h.x64
+        export LD_LIBRARY_PATH=$VICONDATASTREAM_DIR:$LD_LIBRARY_PATH
         mkdir build
         cd build
         cmake ../
