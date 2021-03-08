@@ -87,8 +87,9 @@ This project depends on several libraries:
    [oscpack](https://github.com/mitkof6/oscpack).
 
 For more information on how to build and set up these dependencies, please look
-at the continuous integration scripts. To run the tests and examples that use
-files as inputs instead of streams, you will only need `opensim-core`.
+at the continuous integration script (`.github/workflows/`) and the
+`dependencies` folder. To run the tests and examples that use files as inputs
+instead of streams, you will only need `opensim-core`.
 
 ## Acknowledge
 
