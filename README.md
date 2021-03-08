@@ -13,8 +13,12 @@ calculate the joint reaction loads is presented below:
 
 ![pipeline](./doc/figures/real_time_pipeline.png)
 
-We have used this pipeline to provide real-time biofeedback during gait
-retraining to reduce the loading of the knee:
+The basic operations presented in the above figure were re-implemented in a
+manner that enables us to call them iteratively so that information can be
+processed frame-by-frame. Emphasis was given that each algorithm is implemented
+in a simple manner. Tests were performed to ensure that online and offline
+results agree. We have used this pipeline to provide real-time biofeedback
+during gait retraining to reduce the loading of the knee:
 
 ![visualization_front_end](./doc/figures/visualization_front_end.png)
 
