@@ -19,6 +19,8 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-18.04
     steps:
+    - uses: actions/checkout@v1
+
     # install packages
     - name: Install packages
       run: |
@@ -55,11 +57,10 @@ jobs:
     # build and test
     - name: Build and test
       run: |
-        # git submodule update --init
         mkdir build
         cd build
         cmake ../
-            -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+            -DCMAKE_BUILD_TYPE:STRING=Release
             -DCMAKE_INSTALL_PREFIX:PATH=../install
             -DOpenSim_DIR:PATH=$OpenSim_DIR
             -DCONTINUOUS_INTEGRATION=ON
