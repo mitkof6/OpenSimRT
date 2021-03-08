@@ -85,5 +85,6 @@ jobs:
             -DBUILD_VICON=OFF \
             -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
         make -j$(nproc)
-        ctest --parallel -j$(nproc)
+        ls -la
+        ctest --parallel -j$(nproc) --output-on-failure
         make install

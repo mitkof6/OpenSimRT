@@ -39,7 +39,7 @@ file(GLOB includes MomentArm.h MomentArmExports.h)
 file(GLOB sources MomentArm.cpp)
 file(GLOB tests
   # sometimes this produces seg fault during CI
-  # TestMomentArm.cpp
+  TestMomentArm.cpp
 )
 
 # dynamic library
