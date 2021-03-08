@@ -25,7 +25,7 @@ option(BUILD_DOCUMENTATION
 option(USE_UNITY_BUILD "Enable to speed up the building" OFF)
 
 # build Vicon interface
-option(BUILD_VICON "Build Vicon streamer interface" OFF)
+option(BUILD_VICON "Build Vicon streamer interface" ON)
 
 # build IMU interface
 option(BUILD_IMU "Build IMU streamer interface" ON)

@@ -8,43 +8,50 @@
 #ifndef VICON_DATA_STREAM_H
 #define VICON_DATA_STREAM_H
 
-#include <iostream>
-#include <DataStreamClient.h>
+#include "CircularBuffer.h"
 #include "InverseDynamics.h"
-#include "SimulationUtils.h"
 #include "internal/ViconExports.h"
 
+#include <DataStreamClient.h>
+
+namespace OpenSimRT {
 /**
  * \brief Connects with Vicon server and collects marker and force plate forces.
  */
 class Vicon_API ViconDataStream {
-public:
-    ViconDataStreamSDK::CPP::Client client;
-    std::vector<SimTK::Vec3> labForcePlatePositions;
-    std::vector<std::string> forcePlateNames;
-    std::vector<std::string> markerNames;
-    int forcePlates;
-    double previousMarkerDataTime, previousForceDataTime;
+ public:
     struct MarkerData {
         double time;
         std::map<std::string, SimTK::Vec3> markers;
     };
+
     struct ForceData {
         double time;
         std::map<std::string, ExternalWrench::Input> externalWrenches;
     };
-    CircularBuffer<2000, MarkerData> markerBuffer;
-    CircularBuffer<2000, ForceData> forceBuffer;
-    bool shouldTerminate;
-public:
+
     ViconDataStream(std::vector<SimTK::Vec3> labForcePlatePositions);
+
     void connect(std::string hostName);
     void initialize(ViconDataStreamSDK::CPP::Direction::Enum xAxis,
-		    ViconDataStreamSDK::CPP::Direction::Enum yAxis,
-		    ViconDataStreamSDK::CPP::Direction::Enum zAxis);
+                    ViconDataStreamSDK::CPP::Direction::Enum yAxis,
+                    ViconDataStreamSDK::CPP::Direction::Enum zAxis);
     void startAcquisition();
-private:
+
+    CircularBuffer<2000, MarkerData> markerBuffer;
+    CircularBuffer<2000, ForceData> forceBuffer;
+    std::vector<std::string> markerNames;
+    std::vector<std::string> forcePlateNames;
+
+    bool shouldTerminate;
+
+ private:
     void getFrame();
+
+    ViconDataStreamSDK::CPP::Client client;
+    std::vector<SimTK::Vec3> labForcePlatePositions;
+    int forcePlates;
+    double previousMarkerDataTime, previousForceDataTime;
 };
 
 /**
@@ -60,6 +67,7 @@ private:
  *   Backward
  * };
  */
-Vicon_API ViconDataStreamSDK::CPP::Direction::Enum stringToDirection(std::string direction);
-
+Vicon_API ViconDataStreamSDK::CPP::Direction::Enum
+stringToDirection(std::string direction);
+} // namespace OpenSimRT
 #endif

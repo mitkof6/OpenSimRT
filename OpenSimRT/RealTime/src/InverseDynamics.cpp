@@ -61,13 +61,12 @@ void ExternalWrench::computeForce(const State& state,
 
     // re-express point in applied body frame
     Vec3 point = input.point;
-    engine.transformPosition(state, pointExpressedInBody, point, appliedToBody,
-                             point);
+    point = pointExpressedInBody.findStationLocationInAnotherFrame(
+            state, point, appliedToBody);
 
     // re-express force in ground frame
     Vec3 force = input.force;
-    engine.transform(state, forceExpressedInBody, force, getModel().getGround(),
-                     force);
+    force = forceExpressedInBody.expressVectorInGround(state, force);
 
     // add-in force to the corresponding slot in bodyForces
     getModel().getMatterSubsystem().addInStationForce(
@@ -76,8 +75,7 @@ void ExternalWrench::computeForce(const State& state,
 
     // re-express torque in ground frame
     Vec3 torque = input.torque;
-    engine.transform(state, forceExpressedInBody, torque,
-                     getModel().getGround(), torque);
+    torque = forceExpressedInBody.expressVectorInGround(state, torque);
 
     // add-in torque in the corresponding slot in bodyForces
     getModel().getMatterSubsystem().addInBodyTorque(
