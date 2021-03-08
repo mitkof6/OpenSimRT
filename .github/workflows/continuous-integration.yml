@@ -41,21 +41,21 @@ jobs:
       run: |
         mkdir ~/dependencies
         wget https://sourceforge.net/projects/dependencies/files/opensim-core/opensim-core-4.1-ubuntu-18.04.tar.xz
-        tar -xvf opensim-core-4.1-ubuntu-18.04.tar.xz ~/dependencies
+        tar -xvf opensim-core-4.1-ubuntu-18.04.tar.xz -C ~/dependencies
 
     # setup OSCPack
     - name: Setup OSCPack
       if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
         wget https://sourceforge.net/projects/dependencies/files/oscpack/oscpack-ubuntu-18.04.tar.xz
-        tar -xvf oscpack-ubuntu-18.04.tar.xz ~/dependencies
+        tar -xvf oscpack-ubuntu-18.04.tar.xz -C ~/dependencies
 
     # setup ViconDataStreamSDK
     - name: Setup ViconDataStreamSDK
       if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
         wget https://sourceforge.net/projects/dependencies/files/vicon/ViconDataStreamSDK_1.7.1_96542h.tar.xz
-        tar -xvf ViconDataStreamSDK_1.7.1_96542h.tar.xz ~/dependencies
+        tar -xvf ViconDataStreamSDK_1.7.1_96542h.tar.xz -C ~/dependencies
 
     # build and test
     - name: Build and test
