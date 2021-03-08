@@ -1,5 +1,5 @@
 /**
- * @file testIKWithVicon.cpp
+ * @file IKWithVicon.cpp
  *
  * \brief Interface inverse kinematics with Vicon server.
  *
