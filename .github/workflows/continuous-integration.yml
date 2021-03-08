@@ -70,7 +70,7 @@ jobs:
             -DBUILD_MOMENT_ARM=ON
             -DBUILD_IMU=ON
             -DBUILD_VICON=OFF
-            -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
+            -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
         make -j8
         ctest
         make install
