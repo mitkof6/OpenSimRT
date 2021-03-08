@@ -39,7 +39,8 @@ void run() {
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
 
-	auto momentArmLibraryPath = ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+	auto momentArmLibraryPath = LIBRARY_OUTPUT_PATH + "/" +
+        ini.getString(section, "MOMENT_ARM_LIBRARY", "");
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
@@ -123,7 +124,7 @@ void run() {
 
     // Compare results with reference tables. Test might fail on a different
     // machine, possibly due to compilation differences.
-    // try {
+    try {
         OpenSimUtils::compareTables(
             fmLogger,
             TimeSeriesTable(subjectDir +
@@ -134,9 +135,9 @@ void run() {
             TimeSeriesTable(subjectDir +
                             "real_time/muscle_optimization/am.sto"),
             1e-1);
-    // } catch (exception& e) {
-    //     cout << e.what() << endl;
-    // }
+    } catch (exception& e) {
+        cout << e.what() << endl;
+    }
 
     // store results
     // STOFileAdapter::write(fmLogger,

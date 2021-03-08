@@ -14,7 +14,7 @@
 #include "Simulation.h"
 #include "Utils.h"
 #include "Visualization.h"
-
+#include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <iostream>
 #include <thread>
@@ -65,6 +65,7 @@ void run() {
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
     // setup model
+    Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);
     OpenSimUtils::removeActuators(model);
     model.initSystem();
