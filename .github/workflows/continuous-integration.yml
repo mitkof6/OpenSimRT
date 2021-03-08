@@ -64,7 +64,13 @@ jobs:
             -DCMAKE_INSTALL_PREFIX:PATH=../install
             -DOpenSim_DIR:PATH=$OpenSim_DIR
             -DCONTINUOUS_INTEGRATION=ON
-            # -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
+            -DBUILD_TESTING=ON
+            -DBUILD_DOCUMENTATION=ON
+            -DDOXYGEN_USE_MATHJAX=ON
+            -DBUILD_MOMENT_ARM=ON
+            -DBUILD_IMU=ON
+            -DBUILD_VICON=OFF
+            -DCMAKE_PREFIX_PATH=$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
         make -j8
         ctest
         make install
