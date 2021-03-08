@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
+    - uses: c-py/action-dotenv-to-setenv@v2
 
     # install packages
     - name: Install packages
@@ -61,8 +62,9 @@ jobs:
 
     # build
     - name: Build
+      with:
+        env-file: env_variables
       run: |
-        source export_variables
         mkdir build
         cd build
         cmake ../ \
@@ -81,6 +83,7 @@ jobs:
 
     # test
     - name: Test
+      with:
+        env-file: env_variables
       run: |
-        source export_variables
-        ctest --parallel -j$(nproc) --output-on-failure -E TestMomentArm
+        ctest --parallel -j$(nproc) -VV --output-on-failure -E TestMomentArm
