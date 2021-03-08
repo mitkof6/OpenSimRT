@@ -71,9 +71,9 @@ jobs:
         mkdir build
         cd build
         cmake ../
-            -DCMAKE_BUILD_TYPE:STRING=Release
+            -DCMAKE_BUILD_TYPE=Release
             -DCMAKE_INSTALL_PREFIX:PATH=../install
-            -DOpenSim_DIR:PATH=$OpenSim_DIR
+            -DOpenSim_DIR=$OpenSim_DIR
             -DCONTINUOUS_INTEGRATION=ON
             -DBUILD_TESTING=ON
             -DBUILD_DOCUMENTATION=ON
@@ -82,6 +82,6 @@ jobs:
             -DBUILD_IMU=ON
             -DBUILD_VICON=OFF
             -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
-        make -j8
-        ctest
+        make j$(nproc)
+        ctest --parallel j$(nproc)
         make install
