@@ -70,18 +70,18 @@ jobs:
         export LD_LIBRARY_PATH=$VICONDATASTREAM_DIR:$LD_LIBRARY_PATH
         mkdir build
         cd build
-        cmake ../
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_INSTALL_PREFIX:PATH=../install
-            -DOpenSim_DIR=$OpenSim_DIR
-            -DCONTINUOUS_INTEGRATION=ON
-            -DBUILD_TESTING=ON
-            -DBUILD_DOCUMENTATION=ON
-            -DDOXYGEN_USE_MATHJAX=ON
-            -DBUILD_MOMENT_ARM=ON
-            -DBUILD_IMU=ON
-            -DBUILD_VICON=OFF
-            -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
+        cmake ../ \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX:PATH=../install \
+            -DOpenSim_DIR=$OpenSim_DIR \
+            -DCONTINUOUS_INTEGRATION=ON \
+            -DBUILD_TESTING=ON \
+            -DBUILD_DOCUMENTATION=ON \
+            -DDOXYGEN_USE_MATHJAX=ON \
+            -DBUILD_MOMENT_ARM=ON \
+            -DBUILD_IMU=ON \
+            -DBUILD_VICON=OFF \
+            -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR \
         make j$(nproc)
         ctest --parallel j$(nproc)
         make install
