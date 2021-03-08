@@ -59,17 +59,10 @@ jobs:
         wget https://sourceforge.net/projects/dependencies/files/vicon/ViconDataStreamSDK_1.7.1_96542h.tar.xz
         tar -xvf ViconDataStreamSDK_1.7.1_96542h.tar.xz -C ~/dependencies
 
-    # build and test
-    - name: Build and test
+    # build
+    - name: Build
       run: |
-        export OPENSIM_HOME=~/dependencies/opensim-core
-        export OpenSim_DIR=$OPENSIM_HOME/lib/cmake/OpenSim
-        export PATH=$OPENSIM_HOME/bin:$PATH
-        export LD_LIBRARY_PATH=$OPENSIM_HOME/lib:$LD_LIBRARY_PATH
-        export OSCPACK_DIR=~/dependencies/oscpack
-        export LD_LIBRARY_PATH=$OSCPACK_DIR/lib:$LD_LIBRARY_PATH
-        export VICONDATASTREAM_DIR=~/dependencies/ViconDataStreamSDK_1.7.1_96542h/Linux64-boost-1.58.0/20170125_96542h.x64
-        export LD_LIBRARY_PATH=$VICONDATASTREAM_DIR:$LD_LIBRARY_PATH
+        source export_variables
         mkdir build
         cd build
         cmake ../ \
@@ -85,6 +78,9 @@ jobs:
             -DBUILD_VICON=OFF \
             -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
         make -j$(nproc)
-        ls -la
+
+    # test
+    - name: Test
+      run: |
+        source export_variables
         ctest --parallel -j$(nproc) --output-on-failure -E TestMomentArm
-        make install
