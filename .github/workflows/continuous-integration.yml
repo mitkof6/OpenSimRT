@@ -62,7 +62,7 @@ jobs:
     # build
     - name: Build
       run: |
-        source ./env_variables
+        source ${{ GITHUB_WORKSPACE }}/.github/workflows/env_variables
         mkdir build
         cd build
         cmake ../ \
@@ -82,5 +82,5 @@ jobs:
     # test
     - name: Test
       run: |
-        source ./env_variables
+        source ${{ GITHUB_WORKSPACE }}/.github/workflows/env_variables
         ctest --parallel -j$(nproc) -VV --output-on-failure -E TestMomentArm
