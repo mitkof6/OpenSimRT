@@ -12,6 +12,7 @@
 #define VICON_DATA_STREAM_H
 
 #include "CircularBuffer.h"
+#include "InverseDynamics.h"
 #include "internal/ViconExports.h"
 
 #include <DataStreamClient.h>
@@ -24,12 +25,6 @@ namespace OpenSimRT {
  */
 class Vicon_API ViconDataStream {
  public:
-    struct ExternalWrench {
-        SimTK::Vec3 force;
-        SimTK::Vec3 torque;
-        SimTK::Vec3 point;
-    };
-
     struct MarkerData {
         double time;
         std::map<std::string, SimTK::Vec3> markers;
@@ -37,7 +32,7 @@ class Vicon_API ViconDataStream {
 
     struct ForceData {
         double time;
-        std::map<std::string, ExternalWrench> externalWrenches;
+        std::map<std::string, ExternalWrench::Input> externalWrenches;
     };
 
     ViconDataStream(std::vector<SimTK::Vec3> labForcePlatePositions);
