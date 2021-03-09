@@ -27,7 +27,7 @@ include_directories(../RealTime/include/)
 
 # dynamic library
 set(target Vicon)
-addlibrary(
+addLibrary(
   KIT ${target}
   SOURCES ${sources}
   INCLUDES ${includes}
@@ -35,13 +35,13 @@ addlibrary(
 )
 
 # tests
-addtests(
+addTests(
   TESTPROGRAMS ${tests}
   LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
 )
 
 # applications
-addapplications(
+addApplications(
   SOURCES ${applications}
   LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
 )

@@ -3,16 +3,20 @@
  *
  * \brief An interface with Vicon server for marker and force acquisition.
  *
+ * NOTE: This class has been adapted from the RTOSIM project
+ * [https://github.com/RealTimeBiomechanics/rtosim].
+ *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #ifndef VICON_DATA_STREAM_H
 #define VICON_DATA_STREAM_H
 
 #include "CircularBuffer.h"
-#include "InverseDynamics.h"
 #include "internal/ViconExports.h"
 
 #include <DataStreamClient.h>
+#include <SimTKcommon.h>
+#include <map>
 
 namespace OpenSimRT {
 /**
@@ -20,6 +24,12 @@ namespace OpenSimRT {
  */
 class Vicon_API ViconDataStream {
  public:
+    struct ExternalWrench {
+        SimTK::Vec3 force;
+        SimTK::Vec3 torque;
+        SimTK::Vec3 point;
+    };
+
     struct MarkerData {
         double time;
         std::map<std::string, SimTK::Vec3> markers;
@@ -27,7 +37,7 @@ class Vicon_API ViconDataStream {
 
     struct ForceData {
         double time;
-        std::map<std::string, ExternalWrench::Input> externalWrenches;
+        std::map<std::string, ExternalWrench> externalWrenches;
     };
 
     ViconDataStream(std::vector<SimTK::Vec3> labForcePlatePositions);

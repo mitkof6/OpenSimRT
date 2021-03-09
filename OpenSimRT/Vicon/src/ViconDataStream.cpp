@@ -196,7 +196,7 @@ void ViconDataStream::getFrame() {
                     grfPoint[2] = 0;
                 }
 
-                ExternalWrench::Input forcePlateData;
+                ExternalWrench forcePlateData;
                 forcePlateData.force = -grfVec;
                 forcePlateData.point = grfPoint;
                 forcePlateData.torque = -grfTorque;

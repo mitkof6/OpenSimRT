@@ -12,7 +12,6 @@
 #include <iostream>
 
 using namespace std;
-using namespace OpenSim;
 using namespace OpenSimRT;
 using namespace SimTK;
 
