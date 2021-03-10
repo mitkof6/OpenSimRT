@@ -3,8 +3,9 @@
  *
  * \brief An interface with Vicon server for marker and force acquisition.
  *
- * NOTE: This class has been adapted from the RTOSIM project
- * [https://github.com/RealTimeBiomechanics/rtosim].
+ * Acknowledgement: This class has been mainly adapted from the RTOSIM project
+ * [https://github.com/RealTimeBiomechanics/rtosim] by Pizzolato et al.
+ * http://dx.doi.org/10.1080/10255842.2016.1240789
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */

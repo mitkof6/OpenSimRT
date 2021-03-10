@@ -5,6 +5,8 @@
 #include <map>
 #include <thread>
 
+#define MM_TO_M(x) 0.01 * x
+
 using namespace std;
 using namespace SimTK;
 using namespace OpenSimRT;
@@ -125,9 +127,9 @@ void ViconDataStream::getFrame() {
                 if (!markerGlobalTranslation.Occluded) {
                     // convert to meters
                     markerData.markers[markerName] = Vec3(
-                            0.001 * markerGlobalTranslation.Translation[0],
-                            0.001 * markerGlobalTranslation.Translation[1],
-                            0.001 * markerGlobalTranslation.Translation[2]);
+                            MM_TO_M(markerGlobalTranslation.Translation[0]),
+                            MM_TO_M(markerGlobalTranslation.Translation[1]),
+                            MM_TO_M(markerGlobalTranslation.Translation[2]));
                 } else {
                     markerData.markers[markerName] = Vec3(NaN);
                 }
