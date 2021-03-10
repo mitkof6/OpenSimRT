@@ -75,7 +75,7 @@ jobs:
             -DDOXYGEN_USE_MATHJAX=ON \
             -DBUILD_MOMENT_ARM=ON \
             -DBUILD_IMU=ON \
-            -DBUILD_VICON=OFF \
+            -DBUILD_VICON=ON \
             -DCMAKE_PREFIX_PATH=$OpenSim_DIR:$OSCPACK_DIR/lib:$VICONDATASTREAM_DIR
         make -j$(nproc)
 
@@ -83,4 +83,4 @@ jobs:
     - name: Test
       run: |
         source $GITHUB_WORKSPACE/.github/workflows/env_variables
-        ctest --parallel -j$(nproc) -VV --output-on-failure -E TestMomentArm
+        ctest --parallel -j$(nproc) -VV --output-on-failure -E TestMomentArm TestViconSDK

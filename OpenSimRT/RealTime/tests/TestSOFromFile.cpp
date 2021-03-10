@@ -39,7 +39,7 @@ void run() {
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
 
-	auto momentArmLibraryPath = LIBRARY_OUTPUT_PATH + "/" +
+    auto momentArmLibraryPath = LIBRARY_OUTPUT_PATH + "/" +
         ini.getString(section, "MOMENT_ARM_LIBRARY", "");
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
@@ -56,9 +56,9 @@ void run() {
     Model model(modelFile);
     model.initSystem();
 
-	// load and verify moment arm function
-	auto calcMomentArm =
-		OpenSimUtils::getMomentArmFromDynamicLibrary(model, momentArmLibraryPath);
+    // load and verify moment arm function
+    auto calcMomentArm =
+        OpenSimUtils::getMomentArmFromDynamicLibrary(model, momentArmLibraryPath);
 
     // get kinematics as a table with ordered coordinates
     auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
