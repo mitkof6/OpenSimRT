@@ -110,3 +110,9 @@ ABSTRACT = {This study aims to explore the possibility of estimating a multitude
 DOI = {10.3390/s21051804}
 }
 ```
+
+*Funding*
+
+This work was supported by the EC Horizon 2020 project OACTIVE: Advanced
+personalized, multi-scale computer models preventing osteoarthritis, Grant
+Agreement No. 777159 (http://oactive.eu/).

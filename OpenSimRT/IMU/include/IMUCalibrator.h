@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file IMUCalibrator.h
  *
  * @brief Calibration of the IMU data required before using the IK module.
@@ -115,8 +133,7 @@ class IMU_API IMUCalibrator {
      * deduction of the driver's IMUData type <T>, allows any Input driver to be
      * passed in the constructor.
      */
-    template <typename T>
-    class DriverErasure : public DriverErasureBase {
+    template <typename T> class DriverErasure : public DriverErasureBase {
      public:
         DriverErasure(const InputDriver<T>* const driver) : m_driver(driver) {}
 

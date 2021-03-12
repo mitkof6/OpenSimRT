@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-#
 # Evaluates the accuracy of the real-time ground reaction forces, moments and
 # center of pressure estimation method by comparing the estimation results with
 # the measured data.
 #
 # author: Filip Konstantinos <filip.k@ece.upatras.gr>
-
 # %%
 import os
 import numpy as np

@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file SlidingWindow.h
  *
  * \brief Basic implementation of a sliding window. Computes the mean value of a
@@ -8,13 +26,14 @@
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
-#ifndef SLIDING_WINDOW_H
-#define SLIDING_WINDOW_H
+#pragma once
 
 #include "internal/CommonExports.h"
 
 #include <SimTKcommon.h>
 #include <numeric>
+
+namespace OpenSimRT {
 
 /** @brief Basic sliding window implementation. New data are pushed in-front of
  * a fixed sized buffer, and old data are discarded. The size of the window is
@@ -22,8 +41,8 @@
  * by explicitely setting the size with 'setSize()' member function. The mean
  * value can be computed using the 'mean()' member function. */
 template <typename T> struct SlidingWindow {
-    SimTK::Array_<T> data;  // sliding window data
-    std::size_t capacity; // sliding window size
+    SimTK::Array_<T> data; // sliding window data
+    std::size_t capacity;  // sliding window size
 
     // set initial values
     void init(SimTK::Array_<T>&& aData) {
@@ -74,4 +93,5 @@ template <typename T> struct SlidingWindow {
         return true;
     }
 };
-#endif /* SLIDING_WINDOW_H */
+
+} // namespace OpenSimRT

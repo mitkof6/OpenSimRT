@@ -1,13 +1,31 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file LowerLimbIK.cpp
  *
  * @brief Online IK with NGIMU data on the lower body.
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
+#include "IMUCalibrator.h"
 #include "INIReader.h"
 #include "InverseKinematics.h"
-#include "IMUCalibrator.h"
 #include "NGIMUInputDriver.h"
 #include "Settings.h"
 #include "SignalProcessing.h"
@@ -76,8 +94,7 @@ void run() {
     auto imuLogger = driver.initializeLogger();
 
     // calibrator
-    IMUCalibrator clb =
-            IMUCalibrator(model, &driver, imuObservationOrder);
+    IMUCalibrator clb = IMUCalibrator(model, &driver, imuObservationOrder);
     clb.recordTime(3.0); // record for 3 seconds
     clb.setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
     clb.computeHeadingRotation(imuBaseBody, imuDirectionAxis);

@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file TestIDFromFile.cpp
  *
  * \brief Loads results from OpenSim IK and externally applied forces and
@@ -8,12 +26,13 @@
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "INIReader.h"
+#include "InverseDynamics.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
 #include "SignalProcessing.h"
-#include "Simulation.h"
 #include "Utils.h"
 #include "Visualization.h"
+
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <iostream>
@@ -117,7 +136,8 @@ void run() {
 
     // test with state space filter
     // StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
-    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9, cutoffFreq});
+    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9,
+    // cutoffFreq});
 
     // initialize id and logger
     InverseDynamics id(model, wrenchParameters);
@@ -199,10 +219,14 @@ void run() {
 
     // Compare results with reference tables. Make sure that M, D,
     // spline order, fc are the same as the test.
-    SimTK_ASSERT_ALWAYS(memory == 35, "ensure that MEMORY = 35 in setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(memory == 35,
+                        "ensure that MEMORY = 35 in setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(delay == 14,
+                        "ensure that DELAY = 35 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(cutoffFreq == 6,
+                        "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(splineOrder == 3,
+                        "ensure that SPLINE_ORDER = 3 setup.ini for testing");
     OpenSimUtils::compareTables(
             tauLogger,
             TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));

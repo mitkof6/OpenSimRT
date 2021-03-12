@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file TestSOFromFile.cpp
  *
  * \brief Loads results from OpenSim IK and externally applied forces and
@@ -9,11 +27,12 @@
  */
 #include "Exception.h"
 #include "INIReader.h"
+#include "MuscleOptimization.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
-#include "Simulation.h"
 #include "Utils.h"
 #include "Visualization.h"
+
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Simulation/Model/Muscle.h>
@@ -29,7 +48,8 @@ void run() {
          << "This test might fail on different machines. "
          << "The performance of the optimization depends on the underlying OS. "
          << "We think it has to do with how threads are scheduled by the OS. "
-         << "We did not observed this behavior with OpenSim v3.3." << endl << endl;
+         << "We did not observed this behavior with OpenSim v3.3." << endl
+         << endl;
 
     // subject data
     INIReader ini(INI_FILE);
@@ -39,15 +59,17 @@ void run() {
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
 
-    auto momentArmLibraryPath = LIBRARY_OUTPUT_PATH + "/" +
-        ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+    auto momentArmLibraryPath =
+            LIBRARY_OUTPUT_PATH + "/" +
+            ini.getString(section, "MOMENT_ARM_LIBRARY", "");
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
     auto delay = ini.getInteger(section, "DELAY", 0);
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
-    auto convergenceTolerance = ini.getReal(section, "CONVERGENCE_TOLERANCE", 0);
+    auto convergenceTolerance =
+            ini.getReal(section, "CONVERGENCE_TOLERANCE", 0);
     auto memoryHistory = ini.getReal(section, "MEMORY_HISTORY", 0);
     auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
     auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
@@ -57,8 +79,8 @@ void run() {
     model.initSystem();
 
     // load and verify moment arm function
-    auto calcMomentArm =
-        OpenSimUtils::getMomentArmFromDynamicLibrary(model, momentArmLibraryPath);
+    auto calcMomentArm = OpenSimUtils::getMomentArmFromDynamicLibrary(
+            model, momentArmLibraryPath);
 
     // get kinematics as a table with ordered coordinates
     auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
@@ -126,24 +148,24 @@ void run() {
     // machine, possibly due to compilation differences.
     try {
         OpenSimUtils::compareTables(
-            fmLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/muscle_optimization/fm.sto"),
-            1e-1);
+                fmLogger,
+                TimeSeriesTable(subjectDir +
+                                "real_time/muscle_optimization/fm.sto"),
+                1e-1);
         OpenSimUtils::compareTables(
-            amLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/muscle_optimization/am.sto"),
-            1e-1);
-    } catch (exception& e) {
-        cout << e.what() << endl;
-    }
+                amLogger,
+                TimeSeriesTable(subjectDir +
+                                "real_time/muscle_optimization/am.sto"),
+                1e-1);
+    } catch (exception& e) { cout << e.what() << endl; }
 
     // store results
     // STOFileAdapter::write(fmLogger,
-    //                       subjectDir + "real_time/muscle_optimization/fm.sto");
+    //                       subjectDir +
+    //                       "real_time/muscle_optimization/fm.sto");
     // STOFileAdapter::write(amLogger,
-    //                       subjectDir + "real_time/muscle_optimization/am.sto");
+    //                       subjectDir +
+    //                       "real_time/muscle_optimization/am.sto");
 }
 
 int main(int argc, char* argv[]) {

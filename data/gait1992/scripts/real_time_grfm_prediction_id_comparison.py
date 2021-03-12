@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-#
 # Evaluates the accuracy of the real-time ground reaction forces, moments and
 # center of pressure estimation method by comparing the results acquired after
 # solving the ID with the measured and estimated reaction loads.
 #
 # author: Filip Konstantinos <filip.k@ece.upatras.gr>
-
 # %%
 import os
 from utils import read_from_storage, annotate_plot, to_gait_cycle
@@ -19,6 +16,7 @@ plt.rcParams.update({
     'legend.framealpha': 0.2
 })
 
+# %%
 # data
 
 subject_dir = os.path.abspath('../')

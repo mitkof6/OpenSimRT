@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file TestAccelerationBasedGRFMPredictionFromFile.cpp
  *
  * @brief Test the GRF&M prediction method with the AccelerationBased
@@ -13,7 +31,6 @@
 #include "OpenSimUtils.h"
 #include "Settings.h"
 #include "SignalProcessing.h"
-#include "Simulation.h"
 #include "Utils.h"
 #include "Visualization.h"
 
@@ -277,14 +294,13 @@ void run() {
     // relax tolerance because of floating point errors between target machines
     OpenSimUtils::compareTables(
             grfRightLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/grfm_prediction/"
-                            "acceleration_based/wrench_right.sto"),
+            TimeSeriesTable(subjectDir + "real_time/grfm_prediction/"
+                                         "acceleration_based/wrench_right.sto"),
             1e-1);
     OpenSimUtils::compareTables(
             grfLeftLogger,
             TimeSeriesTable(subjectDir + "real_time/grfm_prediction/"
-                            "acceleration_based/wrench_left.sto"),
+                                         "acceleration_based/wrench_left.sto"),
             1e-1);
     OpenSimUtils::compareTables(
             tauLogger,

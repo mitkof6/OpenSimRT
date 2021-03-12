@@ -1,12 +1,29 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file InverseKinematics.h
  *
  * \brief Utilities for performing inverse kinematics.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
-#ifndef INVERSE_KINEMATICS_H
-#define INVERSE_KINEMATICS_H
+#pragma once
 
 #include "internal/RealTimeExports.h"
 
@@ -150,5 +167,3 @@ class RealTime_API InverseKinematics {
 };
 
 } // namespace OpenSimRT
-
-#endif

@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file TestJRFromFile.cpp
  *
  * \brief Loads results from OpenSim IK, externally applied forces and muscle
@@ -7,19 +25,22 @@
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
+#include "Exception.h"
+#include "INIReader.h"
+#include "InverseDynamics.h"
+#include "JointReaction.h"
+#include "Settings.h"
+#include "SignalProcessing.h"
+#include "Utils.h"
+#include "OpenSimUtils.h"
+#include "Visualization.h"
+
+#include <OpenSim/Actuators/Thelen2003Muscle.h>
+#include <OpenSim/Common/STOFileAdapter.h>
+#include <OpenSim/Simulation/Model/BodySet.h>
+#include <OpenSim/Simulation/Model/Muscle.h>
 #include <iostream>
 #include <thread>
-#include <OpenSim/Simulation/Model/Muscle.h>
-#include <OpenSim/Actuators/Thelen2003Muscle.h>
-#include <OpenSim/Simulation/Model/BodySet.h>
-#include <OpenSim/Common/STOFileAdapter.h>
-#include "Simulation.h"
-#include "INIReader.h"
-#include "Settings.h"
-#include "Utils.h"
-#include "Exception.h"
-#include "SignalProcessing.h"
-#include "Visualization.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -31,24 +52,36 @@ void run() {
     INIReader ini(INI_FILE);
     auto section = "TEST_JR_FROM_FILE";
     auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-    auto modelFile = subjectDir +  ini.getString(section, "MODEL_FILE", "");
+    auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto soFile = subjectDir + ini.getString(section, "SO_FILE", "");
 
-    auto grfRightApplyBody = ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
-    auto grfRightForceExpressed = ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
-    auto grfRightPointExpressed = ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
-    auto grfRightPointIdentifier = ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
-    auto grfRightForceIdentifier = ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
-    auto grfRightTorqueIdentifier = ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
+    auto grfRightApplyBody =
+            ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
+    auto grfRightForceExpressed =
+            ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
+    auto grfRightPointExpressed =
+            ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
+    auto grfRightPointIdentifier =
+            ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
+    auto grfRightForceIdentifier =
+            ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
+    auto grfRightTorqueIdentifier =
+            ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
 
-    auto grfLeftApplyBody = ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
-    auto grfLeftForceExpressed = ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
-    auto grfLeftPointExpressed = ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
-    auto grfLeftPointIdentifier = ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
-    auto grfLeftForceIdentifier = ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
-    auto grfLeftTorqueIdentifier = ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
+    auto grfLeftApplyBody =
+            ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
+    auto grfLeftForceExpressed =
+            ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
+    auto grfLeftPointExpressed =
+            ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
+    auto grfLeftPointIdentifier =
+            ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
+    auto grfLeftForceIdentifier =
+            ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
+    auto grfLeftTorqueIdentifier =
+            ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
@@ -96,8 +129,8 @@ void run() {
     // check time alignment
     if (soFm.getSize() != qTable.getNumRows()) {
         THROW_EXCEPTION("ik and so storages of different size " +
-                        toString(qTable.getNumRows()) + " != " +
-                        toString(soFm.getSize()));
+                        toString(qTable.getNumRows()) +
+                        " != " + toString(soFm.getSize()));
     }
 
     // setup filters
@@ -122,7 +155,8 @@ void run() {
 
     // test with state space filter
     // StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
-    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9, cutoffFreq});
+    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9,
+    // cutoffFreq});
 
     // initialize joint reaction
     JointReaction jr(model, wrenchParameters);
@@ -177,16 +211,18 @@ void run() {
         // approximately 0.07s delay. Since we use 0.01 sampling rate
         // delay is 7.
         auto soStateVector = soFm.getStateVector(i - delay);
-        auto temp = Vector(soStateVector->getSize(), &soStateVector->getData()[0]);
-        auto fm = temp(0, model.getMuscles().getSize()); // extract only muscle forces
+        auto temp =
+                Vector(soStateVector->getSize(), &soStateVector->getData()[0]);
+        auto fm = temp(
+                0, model.getMuscles().getSize()); // extract only muscle forces
 
         // perform jr
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
 
         auto jrOutput = jr.solve(
-            {ikFiltered.t, q, qDot, fm,
-             vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
+                {ikFiltered.t, q, qDot, fm,
+                 vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 
         chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();
@@ -202,8 +238,10 @@ void run() {
         Vec3 kneeJoint;
         state.updQ() = q;
         model.realizePosition(state);
-        kneeJoint = model.getBodySet().get("tibia_r")
-            .findStationLocationInAnotherFrame(state, Vec3(0), model.getGround());
+        kneeJoint = model.getBodySet()
+                            .get("tibia_r")
+                            .findStationLocationInAnotherFrame(
+                                    state, Vec3(0), model.getGround());
         rightKneeForceDecorator->update(kneeJoint, kneeForce);
 
         // log data (use filter time to align with delay)
@@ -223,13 +261,14 @@ void run() {
 
     // store results
     // STOFileAdapter::write(jrLogger,
-    //                       subjectDir + "real_time/joint_reaction_analysis/jr.sto");
+    //                       subjectDir +
+    //                       "real_time/joint_reaction_analysis/jr.sto");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     try {
         run();
-    } catch (exception &e) {
+    } catch (exception& e) {
         cout << e.what() << endl;
         return -1;
     }

@@ -1,3 +1,22 @@
+/**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ */
 #include "SignalProcessing.h"
 
 #include "Exception.h"
@@ -87,7 +106,8 @@ LowPassSmoothFilter::LowPassSmoothFilter(const Parameters& parameters)
     if (parameters.calculateDerivatives) {
         ENSURE_BOUNDS(parameters.splineOrder, 1, 7);
         if (parameters.splineOrder % 2 == 0) {
-            THROW_EXCEPTION("spline order should be an odd number between 1 and 7");
+            THROW_EXCEPTION(
+                    "spline order should be an odd number between 1 and 7");
         }
     }
 
@@ -274,13 +294,13 @@ LowPassSmoothFilterTS::Output LowPassSmoothFilterTS::filter() {
 /******************************************************************************/
 
 StateSpaceFilter::StateSpaceFilter(const Parameters& parameters)
-    : fc(parameters.cutoffFrequency), nc(parameters.numSignals),
-      state(Output{numeric_limits<double>::infinity(), Vector(nc, 0.0),
-                   Vector(nc, 0.0), Vector(nc, 0.0), false}) {}
+        : fc(parameters.cutoffFrequency), nc(parameters.numSignals),
+          state(Output{numeric_limits<double>::infinity(), Vector(nc, 0.0),
+                       Vector(nc, 0.0), Vector(nc, 0.0), false}) {}
 
 StateSpaceFilter::Output StateSpaceFilter::filter(const Input& input) {
-    double t = input.t - 0.07;  // compensate for filter lag
-    Vector x(nc, &input.x[0]);  // we copy because vector is transposed
+    double t = input.t - 0.07; // compensate for filter lag
+    Vector x(nc, &input.x[0]); // we copy because vector is transposed
     if (t < state.t) {
         state.x = x;
         state.xDot = 0.0;

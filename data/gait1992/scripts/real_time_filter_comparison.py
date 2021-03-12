@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 # Evaluates the accuracy of the real-time filtering method.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
 import os
 import numpy as np
 from utils import read_from_storage, plot_sto_file, rmse_metric, annotate_plot

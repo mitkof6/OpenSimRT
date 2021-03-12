@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Animation of the missing marker reconstruction in marker-based motion capture.
 #
 # author: Filip Konstantinos <filip.k@ece.upatras.gr>

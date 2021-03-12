@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file SyncManager.h
  *
  * \brief Implementation of a manager responsible for the synchronization of
@@ -59,7 +77,7 @@ template <typename ETX = double> class SyncManager {
      *
      * @param delay - Delay in number of samples of the output entry. Default=1.
      */
-    std::pair<ETX, std::vector<SimTK::Vector_<ETX>>> getPack(size_t delay=1) {
+    std::pair<ETX, std::vector<SimTK::Vector_<ETX>>> getPack(size_t delay = 1) {
         const auto& v = _table.getIndependentColumn();
         if (!_isCurrentTimeSet) {
             interpolateNanValues();
@@ -291,9 +309,9 @@ template <typename ETX = double> class SyncManager {
 
  private:
     /** (terminate call) Recursive function for determining if the element in
-    * Args... list is an STL-like contairer of std::pairs or an std::pair.
-    * Applies given function (f) for every pair in the Args... list (including
-    * std::pairs in the STL-like containers) */
+     * Args... list is an STL-like contairer of std::pairs or an std::pair.
+     * Applies given function (f) for every pair in the Args... list (including
+     * std::pairs in the STL-like containers) */
     template <std::size_t I = 0, typename... Args, typename F>
     inline typename std::enable_if<I == sizeof...(Args), void>::type
     map(std::tuple<Args...>& t, F&& f) { // terminate call
@@ -556,4 +574,5 @@ template <typename ETX = double> class SyncManager {
     std::map<size_t, size_t> _vectorSizePerPack;
     OpenSim::DataTable _table;
 };
+
 } // namespace OpenSimRT
