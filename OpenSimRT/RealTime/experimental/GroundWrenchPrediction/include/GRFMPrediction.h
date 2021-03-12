@@ -86,6 +86,7 @@ class RealTime_API GRFMPrediction {
         SimTK::Vec3 rHeelStationLocation, lHeelStationLocation; // begin of cop
         SimTK::Vec3 rToeStationLocation, lToeStationLocation;   // end of cop
     };
+
     struct Input {
         double t;
         SimTK::Vector q;

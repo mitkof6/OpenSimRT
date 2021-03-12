@@ -114,6 +114,7 @@ void BasicModelVisualizer::update(const Vector& q,
 #endif
     // kinematics
     state.updQ() = q;
+    model.realizePosition(state);
     // muscle activations
     // TODO handle path actuators
     if (muscleActivations.size() == model.getMuscles().getSize()) {

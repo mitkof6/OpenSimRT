@@ -33,6 +33,9 @@ option(BUILD_IMU "Build IMU streamer interface" ON)
 # build code generation (example model moment arm)
 option(BUILD_MOMENT_ARM "Build code generated moment arm projects" ON)
 
+# Use experimental features
+option(USE_EXPERIMENTAL "Use experimental features" ON)
+
 # compilation database (completion for Linux)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

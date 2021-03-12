@@ -145,7 +145,7 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
 
     // check if dt is consistent
     if (abs(dt - dtPrev) > 1e-5) {
-        THROW_EXCEPTION("signal sampling frequency is not constant");
+        // THROW_EXCEPTION("signal sampling frequency is not constant");
     }
 
     // filter
@@ -177,115 +177,6 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
         // free allocated memory
         delete[] xRaw;
         delete[] xFiltered;
-    }
-
-    return output;
-}
-
-/******************************************************************************/
-LowPassSmoothFilterTS::LowPassSmoothFilterTS(const Parameters& parameters)
-        : parameters(parameters), initializationCounter(parameters.memory - 1),
-          newDataReady(false), dataMatrixReady(false) {
-    ENSURE_POSITIVE(parameters.numSignals);
-    // at least 5 slots to define derivatives (5 - 4 > 0)
-    ENSURE_POSITIVE(parameters.memory - 4);
-    ENSURE_POSITIVE(parameters.cutoffFrequency);
-    // if we need time derivatives then we are between [2, M - 2]
-    ENSURE_BOUNDS(parameters.delay, 2, parameters.memory - 2);
-    if (parameters.calculateDerivatives) {
-        ENSURE_BOUNDS(parameters.splineOrder, 1, 7);
-        if (parameters.splineOrder % 2 == 0) {
-            THROW_EXCEPTION(
-                    "spline order should be an odd number between 1 and 7");
-        }
-    }
-
-    // initialize variables
-    N = parameters.numSignals;
-    M = parameters.memory;
-    D = parameters.delay;
-
-    time = Matrix(1, M, 0.0);
-    data = Matrix(N, M, 0.0);
-
-    xRaw = new double[M];
-    xFiltered = new double[M];
-}
-
-LowPassSmoothFilterTS::~LowPassSmoothFilterTS() {
-    // free allocated memory
-    delete[] xRaw;
-    delete[] xFiltered;
-}
-
-void LowPassSmoothFilterTS::updState(
-        const LowPassSmoothFilterTS::Input& input) {
-    {
-        // lock
-        lock_guard<mutex> locker(monitor);
-
-        // shift data column left and set last column as the new data
-        shiftColumnsLeft(Vector(1, input.t), time);
-        shiftColumnsLeft(input.x, data);
-
-        // check if initialized and set ready state
-        if (initializationCounter > 0) {
-            initializationCounter--;
-        } else {
-            dataMatrixReady = true;
-        }
-
-        // set flag for new entry
-        newDataReady = true;
-    }
-
-    // notify after unlocking
-    cond.notify_one();
-}
-
-LowPassSmoothFilterTS::Output LowPassSmoothFilterTS::filter() {
-    std::unique_lock<std::mutex> lock(monitor);
-    cond.wait(lock, [&]() { return dataMatrixReady && newDataReady; });
-    newDataReady = false; // do not filter unless new data are entered in matrix
-
-    // set dt
-    dt = time[0][M - 1] - time[0][M - 2];
-    dtPrev = time[0][M - 2] - time[0][M - 3];
-
-    // check if dt is consistent
-    if (abs(dt - dtPrev) > 1e-5) {
-        THROW_EXCEPTION("signal sampling frequency is not constant");
-    }
-
-    // output
-    Output output;
-    output.t = time[0][M - D - 1];
-    output.x = Vector(N);
-    output.xDot = Vector(N);
-    output.xDDot = Vector(N);
-
-    // filter
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; ++j) { xRaw[j] = data[i][j]; }
-
-        // apply a low pass filter; O = M / 2 is used for the order of the FIR
-        // filter, because internally the filter performs a convolution over
-        // [-O, O] = 2 M / 2 = M.
-        OpenSim::Signal::LowpassFIR(parameters.memory / 2, dt,
-                                    parameters.cutoffFrequency, M, xRaw,
-                                    xFiltered);
-
-        // calculate smooth splines
-        if (parameters.calculateDerivatives) {
-            OpenSim::GCVSpline spline(parameters.splineOrder, M, &time[0][0],
-                                      xFiltered);
-            output.x[i] = spline.calcValue(Vector(1, output.t));
-            output.xDot[i] = spline.calcDerivative({0}, Vector(1, output.t));
-            output.xDDot[i] =
-                    spline.calcDerivative({0, 0}, Vector(1, output.t));
-        } else {
-            output.x[i] = xFiltered[M - D - 1];
-        }
     }
 
     return output;

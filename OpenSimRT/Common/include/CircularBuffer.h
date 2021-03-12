@@ -22,13 +22,14 @@
  * \brief Implementation of a thread safe circular buffer.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
- * @contribution Filip Konstantinos <filip.k@ece.upatras.gr>
+ * contribution: Filip Konstantinos <filip.k@ece.upatras.gr>
  */
 #pragma once
 
 #include "Exception.h"
 
 #include <algorithm>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <mutex>
@@ -45,6 +46,7 @@ template <int history, typename T> class CircularBuffer {
         current = 0;
         startOver = false;
         newValue = false;
+        externalNotification = false;
         buffer.resize(history);
     }
 
@@ -56,6 +58,11 @@ template <int history, typename T> class CircularBuffer {
         } else {
             return false;
         }
+    }
+
+    void externalNotify() {
+        externalNotification = true;
+        bufferNotEmpty.notify_one();
     }
 
     void add(const T& value) {
@@ -82,8 +89,11 @@ template <int history, typename T> class CircularBuffer {
         // lock
         std::unique_lock<std::mutex> lock(monitor);
         // check if data are available to proceed
-        bufferNotEmpty.wait(lock,
-                            [&]() { return notEmpty(M) && newValue == true; });
+        bufferNotEmpty.wait(lock, [&]() {
+            return (notEmpty(M) && newValue == true) ||
+                   externalNotification.load();
+        });
+        externalNotification = false;
         newValue = false; // when buffer is no longer empty, condition variable
                           // is no longer in "wait" state, and the cosumer
                           // thread draws data from the buffer until the buffer
@@ -106,6 +116,7 @@ template <int history, typename T> class CircularBuffer {
     int current;
     bool startOver;
     bool newValue;
+    std::atomic<bool> externalNotification;
     std::vector<T> buffer;
     std::mutex monitor;
     std::condition_variable bufferNotEmpty;

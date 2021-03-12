@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file TestContactForceBasedGRFMPredictionFromFile.cpp
+ * @file TestContactForceGRFMPredictionFromFile.cpp
  *
  * @brief Test the GRF&M prediction method with the ContactForceBased
  * PhaseDetector. Increases the simulation time by repeating the recorded motion

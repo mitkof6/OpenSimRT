@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file NGIMUInputDriverFromFile.h
+ * @file NGIMUInputFromFileDriver.h
  *
  * @brief Concrete implementation of the IMUInputDriver to stream NGIMU data
  * from file in a separate thread.

@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file TestAccelerationBasedGRFMPredictionFromFile.cpp
+ * @file TestAccelerationGRFMPredictionFromFile.cpp
  *
  * @brief Test the GRF&M prediction method with the AccelerationBased
  * PhaseDetector. Increases the simulation time by repeating the recorded motion

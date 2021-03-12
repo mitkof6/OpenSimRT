@@ -16,19 +16,20 @@
  * You should have received a copy of the GNU General Public License along with
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
- *
- * @file IMUExports.h
- *
- * \brief Export/import definition for dynamic libraries.
- *
- * @author Dimitar Stanev <jimstanev@gmail.com>
  */
-#ifdef WIN32
-#    ifdef IMU_EXPORTS
-#        define IMU_API __declspec(dllexport)
-#    else
-#        define IMU_API __declspec(dllimport)
-#    endif
-#else
-#    define IMU_API
-#endif // WIN32
+#include "ExternalForceBasedPhaseDetector.h"
+
+#include <algorithm>
+
+using namespace OpenSimRT;
+
+ExternalForceBasedPhaseDetector::ExternalForceBasedPhaseDetector(
+        const Parameters& otherParameters)
+        : GaitPhaseDetector(otherParameters.windowSize),
+          parameters(otherParameters) {}
+
+void ExternalForceBasedPhaseDetector::updDetector(const Input& input) {
+    // update detector internal state
+    updDetectorState(input.t, input.rForce - parameters.threshold,
+                     input.lForce - parameters.threshold);
+}
