@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Evaluates the accuracy of the real-time inverse dynamics method.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>

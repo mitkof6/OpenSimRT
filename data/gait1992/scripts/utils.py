@@ -1,7 +1,7 @@
 # Utility functions.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
 import re
 import opensim
 import numpy as np

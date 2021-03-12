@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file SignalProcessing.h
  *
  * \brief Utilities for filtering signals.
@@ -6,14 +24,14 @@
  * @author Dimitar Stanev <jimstanev@gmail.com>
  * contribution: Filip Konstantinos <filip.k@ece.upatras.gr>
  */
-#ifndef SIGNAL_PROCESSING_H
-#define SIGNAL_PROCESSING_H
+#pragma once
 
 #include "internal/CommonExports.h"
 
 #include <SimTKcommon.h>
 #include <condition_variable>
 #include <mutex>
+
 namespace OpenSimRT {
 
 /**
@@ -48,11 +66,11 @@ namespace OpenSimRT {
 class Common_API LowPassSmoothFilter {
  public: /* public data structures */
     struct Parameters {
-        int numSignals;   // number of signals that are filtered
-        int memory;       // memory buffer of the filter
-        double cutoffFrequency; // low pass cutoff frequency
-        int delay;              // sample delay to evaluate the result
-        int splineOrder;        // spline order use 3
+        int numSignals;            // number of signals that are filtered
+        int memory;                // memory buffer of the filter
+        double cutoffFrequency;    // low pass cutoff frequency
+        int delay;                 // sample delay to evaluate the result
+        int splineOrder;           // spline order use 3
         bool calculateDerivatives; // whether to calculate derivatives
     };
     struct Input {
@@ -64,7 +82,7 @@ class Common_API LowPassSmoothFilter {
         SimTK::Vector x;
         SimTK::Vector xDot;
         SimTK::Vector xDDot;
-        bool isValid;           // requires at least # memory samples
+        bool isValid; // requires at least # memory samples
     };
 
  public: /* public interface */
@@ -124,7 +142,6 @@ class Common_API LowPassSmoothFilterTS {
     double* xRaw;
     double* xFiltered;
 
-
     // thread synchronization parameters
     bool newDataReady = false;
     bool dataMatrixReady = false;
@@ -144,8 +161,8 @@ class Common_API LowPassSmoothFilterTS {
  */
 class Common_API StateSpaceFilter {
  public:
-     struct Parameters {
-        int numSignals;   // number of signals that are filtered
+    struct Parameters {
+        int numSignals;         // number of signals that are filtered
         double cutoffFrequency; // low pass cutoff frequency
     };
     struct Input {
@@ -302,5 +319,3 @@ class Common_API NumericalDifferentiator : public FIRFilter {
 };
 
 } // namespace OpenSimRT
-
-#endif

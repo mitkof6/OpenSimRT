@@ -1,3 +1,22 @@
+/**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ */
 #include "InverseKinematics.h"
 
 #include "Exception.h"
@@ -7,16 +26,16 @@
 #include <OpenSim/Simulation/Model/MarkerSet.h>
 #include <OpenSim/Tools/IKCoordinateTask.h>
 
-using OpenSim::Model;
-using OpenSim::MarkerData;
-using OpenSim::Units;
-using OpenSim::IKTaskSet;
 using OpenSim::IKCoordinateTask;
+using OpenSim::IKTaskSet;
+using OpenSim::MarkerData;
+using OpenSim::Model;
 using OpenSim::TimeSeriesTable;
-using std::vector;
-using std::string;
+using OpenSim::Units;
 using std::cout;
 using std::endl;
+using std::string;
+using std::vector;
 using namespace SimTK;
 using namespace OpenSimRT;
 

@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file TestLowerLimbIKFromFile.cpp
  *
  * @brief Test IK with prerecorded NGIMU data on the lower body.
@@ -9,10 +27,11 @@
 #include "INIReader.h"
 #include "InverseKinematics.h"
 #include "NGIMUInputFromFileDriver.h"
+#include "OpenSimUtils.h"
 #include "Settings.h"
 #include "Utils.h"
 #include "Visualization.h"
-#include "OpenSimUtils.h"
+
 #include <Actuators/Thelen2003Muscle.h>
 #include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
@@ -91,8 +110,8 @@ void run() {
 
             chrono::high_resolution_clock::time_point t2;
             t2 = chrono::high_resolution_clock::now();
-            sumDelayMS +=
-                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+            sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
+                                  .count();
 
             // visualize
             visualizer.update(pose.q);
@@ -102,8 +121,7 @@ void run() {
         }
     } catch (std::exception& e) { cout << e.what() << endl; }
 
-    cout << "Mean delay: " << (double) sumDelayMS / numFrames
-         << " ms" << endl;
+    cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
 
     // // store results
     // STOFileAdapter::write(

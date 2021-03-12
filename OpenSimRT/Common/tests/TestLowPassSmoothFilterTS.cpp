@@ -1,4 +1,22 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file TestLowPassSmoothFilterTS.cpp
  *
  * \brief Tests thread-safe implementation of LowPassSmoothFilter.
@@ -7,15 +25,16 @@
  */
 #include "Exception.h"
 #include "INIReader.h"
+#include "OpenSimUtils.h"
 #include "Settings.h"
 #include "SignalProcessing.h"
 #include "Utils.h"
-#include "OpenSimUtils.h"
+
+#include <Actuators/Thelen2003Muscle.h>
 #include <Common/Exception.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/Storage.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
-#include <Actuators/Thelen2003Muscle.h>
 #include <SimTKcommon/Scalar.h>
 #include <chrono>
 #include <iostream>
@@ -62,7 +81,7 @@ void run() {
 
     // logger
     auto columnNames =
-        OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
+            OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
     TimeSeriesTable q, qDot, qDDot;
     q.setColumnLabels(columnNames);
     qDot.setColumnLabels(columnNames);
@@ -72,9 +91,9 @@ void run() {
     thread updateFilt([&]() {
         // loop through ik storage
         for (int i = 0; i < qTable.getNumRows(); i++) {
-        // get raw pose from table
-        double t = qTable.getIndependentColumn()[i];
-        auto qRaw = qTable.getRowAtIndex(i).getAsVector();
+            // get raw pose from table
+            double t = qTable.getIndependentColumn()[i];
+            auto qRaw = qTable.getRowAtIndex(i).getAsVector();
             // update filter state
             filter.updState({t, qRaw});
 
@@ -104,10 +123,14 @@ void run() {
 
     // Compare results with reference tables. Make sure that M, D,
     // spline order, fc are the same as the test.
-    SimTK_ASSERT_ALWAYS(memory == 35, "ensure that MEMORY = 35 in setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(delay == 14, "ensure that DELAY = 35 setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(cutoffFreq == 6, "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(splineOrder == 3, "ensure that SPLINE_ORDER = 3 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(memory == 35,
+                        "ensure that MEMORY = 35 in setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(delay == 14,
+                        "ensure that DELAY = 35 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(cutoffFreq == 6,
+                        "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
+    SimTK_ASSERT_ALWAYS(splineOrder == 3,
+                        "ensure that SPLINE_ORDER = 3 setup.ini for testing");
     OpenSimUtils::compareTables(
             q, TimeSeriesTable(
                        subjectDir +
@@ -125,7 +148,8 @@ void run() {
 
     // // store results
     // STOFileAdapter::write(q,
-    //                       subjectDir + "real_time/filtering/q_filtered_ts.sto");
+    //                       subjectDir +
+    //                       "real_time/filtering/q_filtered_ts.sto");
     // STOFileAdapter::write(
     //         qDot, subjectDir + "real_time/filtering/qDot_filtered_ts.sto");
     // STOFileAdapter::write(

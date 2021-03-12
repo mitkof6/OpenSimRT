@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Evaluates the accuracy of the Butterworth filter implementation.
 #

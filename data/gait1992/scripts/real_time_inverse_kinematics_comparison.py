@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 # Evaluates the accuracy of the real-time inverse kinematics method.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
 import os
 import numpy as np
 from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
@@ -13,7 +12,7 @@ import matplotlib
 matplotlib.rcParams.update({'font.size': 12})
 matplotlib.rcParams.update({'legend.framealpha': 0.2})
 
-##
+# %%
 # data
 
 gait_cycle = True
@@ -25,7 +24,7 @@ q_reference_file = os.path.join(subject_dir,
                                 'inverse_kinematics/task_InverseKinematics.mot')
 q_rt_file = os.path.join(output_dir, 'q.sto')
 
-##
+# %%
 # read data
 
 q_reference = read_from_storage(q_reference_file)
@@ -39,7 +38,7 @@ if gait_cycle:
 
 plot_sto_file(q_rt_file, q_rt_file + '.pdf', 3)
 
-##
+# %%
 # compare
 
 d_q_total = []
@@ -98,4 +97,4 @@ with open(output_dir + 'metrics.txt', 'w') as file_handle:
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_q_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_q_total, ddof=1), 3)))
 
-##
+# %%

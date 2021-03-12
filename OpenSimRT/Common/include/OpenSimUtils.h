@@ -1,12 +1,29 @@
 /**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ *
  * @file OpenSimUtils.h
  *
  * \brief Common OpenSim operations and functions.
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
-#ifndef OPENSIM_UTILS_H
-#define OPENSIM_UTILS_H
+#pragma once
 
 #include "Exception.h"
 #include "internal/CommonExports.h"
@@ -71,8 +88,8 @@ struct Common_API OpenSimUtils {
      */
     template <template <typename, typename> class Table, typename T, typename E>
     static void compareTables(const Table<T, E>& queryTable,
-                       const Table<T, E>& refTable,
-                       const double& threshold = 1e-5) {
+                              const Table<T, E>& refTable,
+                              const double& threshold = 1e-5) {
         if (!(queryTable.getNumRows() == refTable.getNumRows()))
             THROW_EXCEPTION("Number of rows in given tables do not match.");
         if (!(queryTable.getNumColumns() == refTable.getNumColumns()))
@@ -115,5 +132,3 @@ struct Common_API OpenSimUtils {
 };
 
 } // namespace OpenSimRT
-
-#endif

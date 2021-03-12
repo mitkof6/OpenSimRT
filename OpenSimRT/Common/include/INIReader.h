@@ -4,16 +4,11 @@
 // Go to the project home page for more info:
 //
 // http://code.google.com/p/inih/
-
+#pragma once
 #include <SimTKcommon.h>
 #include <regex>
 #include <stdexcept>
-
 #pragma warning(disable : 4251)
-
-#ifndef INI_READER_H
-#define INI_READER_H
-
 #include <type_traits>
 #include <vector>
 #include <map>
@@ -181,5 +176,3 @@ public:
                                      const char* name, const char* value),
                        void* user);
 };
-
-#endif

@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 # Evaluates the accuracy of the real-time muscle optimization method.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
 import os
 import numpy as np
 from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
@@ -14,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-##
+# %%
 # data
 
 gait_cycle = True
@@ -31,7 +30,7 @@ tauRes_rt_file = os.path.join(output_dir, 'tauRes.sto')
 plot_sto_file(am_rt_file, am_rt_file + '.pdf', 3)
 plot_sto_file(tauRes_rt_file, tauRes_rt_file + '.pdf', 3)
 
-##
+# %%
 # read data
 
 fm_reference = read_from_storage(fm_reference_file)
@@ -45,7 +44,7 @@ if gait_cycle:
 
 plot_sto_file(fm_rt_file, fm_rt_file + '.pdf', 3)
 
-##
+# %%
 # compare
 
 d_fm_total = []
@@ -87,4 +86,4 @@ with open(output_dir + 'metrics.txt', 'w') as file_handle:
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_fm_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_fm_total, ddof=1), 3)))
 
-##
+# %%

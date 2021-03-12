@@ -5,8 +5,8 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
-#include <stdio.h>
 #include <stdexcept>
+#include <stdio.h>
 
 /* Nonzero to allow multi-line value parsing, in the style of Python's
    ConfigParser. If allowed, ini_parse() will call the handler with the same
@@ -198,7 +198,7 @@ int INIReader::ini_parse_file(FILE* file,
                 /* No ']' found on section line */
                 error = lineno;
             }
-        } else if (*start && (*start != ';'  || *start != '#')) {
+        } else if (*start && (*start != ';' || *start != '#')) {
             /* Not a comment, must be a name[=:]value pair */
             end = find_char_or_comment(start, '=');
             if (*end != '=') { end = find_char_or_comment(start, ':'); }

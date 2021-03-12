@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Evaluates the accuracy of the real-time missing marker reconstruction method.
 #
 # author: Filip Konstantinos <filip.k@ece.upatras.gr>

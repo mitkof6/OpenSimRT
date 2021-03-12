@@ -91,7 +91,11 @@ at the continuous integration script (`.github/workflows/`) and the
 `dependencies` folder. To run the tests and examples that use files as inputs
 instead of streams, you will only need `opensim-core`.
 
-## Acknowledge
+## Acknowledgments
+
+This work was supported by the EC Horizon 2020 project OACTIVE: Advanced
+personalized, multi-scale computer models preventing osteoarthritis, Grant
+Agreement No. 777159 (http://oactive.eu/).
 
 If you find this useful you can acknowledge it as follows:
 

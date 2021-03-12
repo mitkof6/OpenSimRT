@@ -1,3 +1,22 @@
+/**
+ * -----------------------------------------------------------------------------
+ * Copyright 2019-2021 OpenSimRT developers.
+ *
+ * This file is part of OpenSimRT.
+ *
+ * OpenSimRT is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
+ * -----------------------------------------------------------------------------
+ */
 #include "MuscleOptimization.h"
 
 #include "Exception.h"
@@ -81,10 +100,12 @@ TimeSeriesTable MuscleOptimization::initializeMuscleLogger() {
 
 /*******************************************************************************/
 
-TorqueBasedTarget::TorqueBasedTarget(Model* model, int objectiveExponent,
-                                     const MomentArmFunctionT& momentArmFunction)
+TorqueBasedTarget::TorqueBasedTarget(
+        Model* model, int objectiveExponent,
+        const MomentArmFunctionT& momentArmFunction)
         : model(model), p(objectiveExponent), calcMomentArm(momentArmFunction) {
-    // number of inequalities (minus pelvis torques, which are non-physiological)
+    // number of inequalities (minus pelvis torques, which are
+    // non-physiological)
     auto& cs = model->getCoordinateSet();
     setNumEqualityConstraints(cs.getSize() - 6);
     setNumLinearEqualityConstraints(cs.getSize() - 6);
@@ -105,8 +126,7 @@ TorqueBasedTarget::TorqueBasedTarget(Model* model, int objectiveExponent,
             fMax[i] = pathAct->getOptimalForce();
             lowerBounds[i] = 0.0;
             upperBounds[i] = Infinity;
-        }
-        else {
+        } else {
             THROW_EXCEPTION("unsupported type of actuator");
         }
     }
@@ -123,7 +143,6 @@ void TorqueBasedTarget::prepareForOptimization(
 Vector TorqueBasedTarget::extractMuscleForces(const Vector& x) const {
     return x;
 }
-
 
 int TorqueBasedTarget::objectiveFunc(const Vector& x, bool newCoefficients,
                                      Real& rP) const {

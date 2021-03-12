@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 # Evaluates the accuracy of the real-time inverse dynamics method.
 #
 # author: Dimitar Stanev <jimstanev@gmail.com>
-##
+# %%
 import os
 import numpy as np
 from utils import read_from_storage, rmse_metric, plot_sto_file, annotate_plot
@@ -14,7 +13,7 @@ matplotlib.rcParams.update({'font.size': 12})
 matplotlib.rcParams.update({'legend.framealpha': 0.2})
 
 
-##
+# %%
 # data
 
 gait_cycle = True
@@ -26,7 +25,7 @@ tau_reference_file = os.path.join(subject_dir,
                                   'inverse_dynamics/task_InverseDynamics.sto')
 tau_rt_file = os.path.join(output_dir, 'tau.sto')
 
-##
+# %%
 # read data
 
 tau_reference = read_from_storage(tau_reference_file)
@@ -40,7 +39,7 @@ if gait_cycle:
 
 plot_sto_file(tau_rt_file, tau_rt_file + '.pdf', 3)
 
-##
+# %%
 # compare
 
 d_tau_total = []
@@ -93,4 +92,4 @@ with open(output_dir + 'metrics.txt', 'w') as file_handle:
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_tau_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_tau_total, ddof=1), 3)))
 
-##
+# %%
