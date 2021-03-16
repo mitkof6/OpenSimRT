@@ -46,10 +46,15 @@ template <int history, typename T> class CircularBuffer {
         current = 0;
         startOver = false;
         newValue = false;
-        externalNotification = false;
+        externalNotification = false; // flag to remove the condition_variable
+                                      // from the 'wait' state in case of no new
+                                      // data added in buffer.
         buffer.resize(history);
     }
 
+    /**
+     * Determine if the buffer is empty.
+     */
     bool notEmpty(int M) {
         if (startOver && history >= M) {
             return true;
@@ -60,11 +65,18 @@ template <int history, typename T> class CircularBuffer {
         }
     }
 
+    /**
+     * Notifies the consumer thread in case of no new data added to the buffer
+     * and remove the std::condition_variable from the wait state.
+     */
     void externalNotify() {
         externalNotification = true;
         bufferNotEmpty.notify_one();
     }
 
+    /**
+     * Append data in the buffer.
+     */
     void add(const T& value) {
         {
             // lock
@@ -82,6 +94,9 @@ template <int history, typename T> class CircularBuffer {
         bufferNotEmpty.notify_one();
     }
 
+    /**
+     * Retrieve data from buffer.
+     */
     std::vector<T> get(int M, bool reverseOrder = false) {
         if (M <= 0 || M > history) {
             THROW_EXCEPTION("M should be between [1, history]");

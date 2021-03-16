@@ -30,22 +30,6 @@ using namespace OpenSim;
 using namespace OpenSimRT;
 using namespace SimTK;
 
-Vector RealTimeAnalysis::UnfilteredData::toVector() {
-    if (size() == 0) { THROW_EXCEPTION("cannot convert from empty"); }
-
-    Vector v(size());
-    v(0, q.size()) = q;
-    for (int i = 0; i < externalWrenches.size(); ++i) {
-        auto w = externalWrenches[i].toVector();
-        v(q.size() + i * w.size(), w.size()) = w;
-    }
-    return v;
-}
-
-int RealTimeAnalysis::UnfilteredData::size() {
-    return (q.size() + externalWrenches.size() * ExternalWrench::Input::size());
-}
-
 void RealTimeAnalysis::FilteredData::fromVector(const double& time,
                                                 const SimTK::Vector& x,
                                                 const SimTK::Vector& xd,
@@ -104,6 +88,21 @@ void RealTimeAnalysis::run() {
     processingThread.detach();
 }
 
+Vector RealTimeAnalysis::prepareUnfilteredData(
+        const Vector& q,
+        const vector<ExternalWrench::Input>& externalWrenches) const {
+    int m = q.size() + externalWrenches.size() * ExternalWrench::Input::size();
+    if (m == 0) { THROW_EXCEPTION("cannot convert from empty"); }
+
+    Vector v(m);
+    v(0, q.size()) = q;
+    for (int i = 0; i < externalWrenches.size(); ++i) {
+        auto w = externalWrenches[i].toVector();
+        v(q.size() + i * w.size(), w.size()) = w;
+    }
+    return v;
+}
+
 void RealTimeAnalysis::acquisition() {
     try {
         while (true) {
@@ -122,12 +121,9 @@ void RealTimeAnalysis::acquisition() {
             auto pose = inverseKinematics->solve(acquisitionData.IkFrame);
 
             // filter
-            UnfilteredData unfilteredData;
-            unfilteredData.t = pose.t;
-            unfilteredData.q = pose.q;
-            unfilteredData.externalWrenches = acquisitionData.ExternalWrenches;
-            auto filteredData =
-                    lowPassFilter->filter({pose.t, unfilteredData.toVector()});
+            auto unfilteredData = prepareUnfilteredData(
+                    pose.q, acquisitionData.ExternalWrenches);
+            auto filteredData = lowPassFilter->filter({pose.t, unfilteredData});
 
             // push to buffer
             if (!filteredData.isValid) continue;

@@ -73,12 +73,9 @@ void RealTimeAnalysisExtended::acquisition() {
             auto pose = inverseKinematics->solve(acquisitionData.IkFrame);
 
             // filter ik results
-            UnfilteredData unfilteredData;
-            unfilteredData.t = pose.t;
-            unfilteredData.q = pose.q;
-            unfilteredData.externalWrenches = acquisitionData.ExternalWrenches;
-            auto filteredData =
-                    lowPassFilter->filter({pose.t, unfilteredData.toVector()});
+            auto unfilteredData = prepareUnfilteredData(
+                    pose.q, acquisitionData.ExternalWrenches);
+            auto filteredData = lowPassFilter->filter({pose.t, unfilteredData});
 
             // push to buffer when filter is ready
             if (!filteredData.isValid) continue;

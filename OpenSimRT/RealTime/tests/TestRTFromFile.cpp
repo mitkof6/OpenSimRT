@@ -20,17 +20,21 @@
  * @file TestRTFromFile.cpp
  *
  * @brief Tests the RealTimeAnalysis class with data acquired from file.
+ * Observed delay = ~31ms without SO + JR, ~43ms with enabled SO + JR (test with
+ * Ubuntu 20.04, Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz)
  *
- * @author Dimitar Stanev <jimstanev@gmail.com>
- * contribution: Filip Konstantinos <filip.k@ece.upatras.gr>
+ * @author Dimitar Stanev <jimstanev@gmail.com>, Filip Konstantinos
+ * <filip.k@ece.upatras.gr>
  */
 #include "INIReader.h"
 #include "InverseDynamics.h"
+#include "OpenSimUtils.h"
 #include "RealTimeAnalysis.h"
 #include "Settings.h"
 #include "Visualization.h"
 
 #include <Actuators/Thelen2003Muscle.h>
+#include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <iostream>
 #include <thread>
@@ -81,6 +85,11 @@ void run(char const* name) {
     auto delay = ini.getInteger(section, "DELAY", 0);
     auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
     auto calcDer = ini.getBoolean(section, "CALC_DER", true);
+
+    // ik parameters
+    auto ikConstraintsWeight =
+            ini.getReal(section, "IK_CONSTRAINT_WEIGHT", 0.0);
+    auto ikAccuracy = ini.getReal(section, "IK_ACCURACY", 0.0);
 
     // so parameters
     bool solveMuscleOptimization = ini.getBoolean(section, "SOLVE_SO", true);
@@ -152,7 +161,8 @@ void run(char const* name) {
 
     // initialize filter parameters
     LowPassSmoothFilter::Parameters filterParameters;
-    filterParameters.numSignals = dofs + 18;
+    filterParameters.numSignals =
+            dofs + 2 * ExternalWrench::Input::size(); // dofs + (R+L) wrenches
     filterParameters.memory = memory;
     filterParameters.delay = delay;
     filterParameters.cutoffFrequency = cutoffFreq;
@@ -170,8 +180,8 @@ void run(char const* name) {
     RealTimeAnalysis::Parameters pipelineParameters;
     pipelineParameters.solveMuscleOptimization = solveMuscleOptimization;
     pipelineParameters.ikMarkerTasks = markerTasks;
-    pipelineParameters.ikConstraintsWeight = SimTK::Infinity;
-    pipelineParameters.ikAccuracy = 1e-5;
+    pipelineParameters.ikConstraintsWeight = ikConstraintsWeight;
+    pipelineParameters.ikAccuracy = ikAccuracy;
     pipelineParameters.filterParameters = filterParameters;
     pipelineParameters.muscleOptimizationParameters =
             muscleOptimizationParameters;
@@ -195,10 +205,22 @@ void run(char const* name) {
     auto leftKneeForceDecorator = new ForceDecorator(Red, 0.0005, 3);
     visualizer.addDecorationGenerator(leftKneeForceDecorator);
 
+    // mean delay
+    int sumDelayMS = 0;
+    int sumDelayMSCount = 0;
     try {
         while (!pipeline.shouldTerminate()) {
+            chrono::high_resolution_clock::time_point t1;
+            t1 = chrono::high_resolution_clock::now();
+
             // fetch of rt results
             auto results = pipeline.getResults();
+
+            chrono::high_resolution_clock::time_point t2;
+            t2 = chrono::high_resolution_clock::now();
+            sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
+                                  .count();
+            sumDelayMSCount++;
 
             // update visualizer
             if (!solveMuscleOptimization)
@@ -217,15 +239,22 @@ void run(char const* name) {
             log.qDotLogger.appendRow(results.t, ~results.qd);
             log.qDDotLogger.appendRow(results.t, ~results.qdd);
             log.tauLogger.appendRow(results.t, ~results.tau);
-            log.fmLogger.appendRow(results.t, ~results.fm);
-            log.amLogger.appendRow(results.t, ~results.am);
-            log.residualLogger.appendRow(results.t, ~results.residuals);
-            log.jrLogger.appendRow(results.t, ~results.reactionWrenchVector);
+            if (solveMuscleOptimization) {
+                log.fmLogger.appendRow(results.t, ~results.fm);
+                log.amLogger.appendRow(results.t, ~results.am);
+                log.residualLogger.appendRow(results.t, ~results.residuals);
+                log.jrLogger.appendRow(results.t,
+                                       ~results.reactionWrenchVector);
+            }
+
         } // while loop
     } catch (const exception& e) {
         cout << e.what() << "\n";
         pipeline.shouldTerminate(true);
     }
+
+    cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCount << " ms"
+         << endl;
 
     // // store results
     // STOFileAdapter::write(log.qLogger, subjectDir +
@@ -243,6 +272,39 @@ void run(char const* name) {
     //                       subjectDir + "real_time/pipeline/residuals.sto");
     // STOFileAdapter::write(log.jrLogger,
     //                       subjectDir + "real_time/pipeline/jr.sto");
+
+    OpenSimUtils::compareTables(
+            log.qLogger,
+            TimeSeriesTable(subjectDir + "real_time/pipeline/q.sto"), 1e-5,
+            false);
+    OpenSimUtils::compareTables(
+            log.qDotLogger,
+            TimeSeriesTable(subjectDir + "real_time/pipeline/qDot.sto"), 1e-5,
+            false);
+    OpenSimUtils::compareTables(
+            log.qDDotLogger,
+            TimeSeriesTable(subjectDir + "real_time/pipeline/qDDot.sto"), 1e-5,
+            false);
+    OpenSimUtils::compareTables(
+            log.tauLogger,
+            TimeSeriesTable(subjectDir + "real_time/pipeline/tau.sto"), 1e-5,
+            false);
+    // OpenSimUtils::compareTables(
+    //         log.fmLogger,
+    //         TimeSeriesTable(subjectDir + "real_time/pipeline/fm.sto"), 1e-5,
+    //         false);
+    // OpenSimUtils::compareTables(
+    //         log.amLogger,
+    //         TimeSeriesTable(subjectDir + "real_time/pipeline/am.sto"), 1e-5,
+    //         false);
+    // OpenSimUtils::compareTables(
+    //         log.residualLogger,
+    //         TimeSeriesTable(subjectDir + "real_time/pipeline/residuals.sto"),
+    //         1e-1, false);
+    // OpenSimUtils::compareTables(
+    //         log.jrLogger,
+    //         TimeSeriesTable(subjectDir + "real_time/pipeline/jr.sto"), 1e-5,
+    //         false);
 }
 int main(int argc, char* argv[]) {
     try {

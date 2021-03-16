@@ -22,19 +22,19 @@
  * @brief This file contains a facade class as a convinient interface for
  * performing musculoskeletal analysis in mocap scenarios.
  *
- * @author Dimitar Stanev <jimstanev@gmail.com>
- * contribution: Filip Konstantinos <filip.k@ece.upatras.gr>
+ * @author Dimitar Stanev <jimstanev@gmail.com>, Filip Konstantinos
+ * <filip.k@ece.upatras.gr>
  */
 #pragma once
 
 #include "CircularBuffer.h"
-#include "OpenSimUtils.h"
-#include "SignalProcessing.h"
 #include "InverseDynamics.h"
 #include "InverseKinematics.h"
-#include "MuscleOptimization.h"
 #include "JointReaction.h"
+#include "MuscleOptimization.h"
+#include "OpenSimUtils.h"
 #include "RealTimeAnalysis.h"
+#include "SignalProcessing.h"
 #include "internal/RealTimeExports.h"
 
 #include <atomic>
@@ -63,23 +63,6 @@ typedef std::function<MotionCaptureInput()> DataAcquisitionFunction;
  */
 class RealTime_API RealTimeAnalysis {
  public:
-    struct UnfilteredData {
-        double t;
-        SimTK::Vector q;
-        std::vector<ExternalWrench::Input> externalWrenches;
-
-        /**
-         * Converts the UnfilteredData struct fields into a single SimTK::Vector
-         */
-        SimTK::Vector toVector();
-
-        /**
-         * Returns the size of the UnfilteredData fields in number of
-         * sizeof(double).
-         */
-        int size();
-    };
-
     struct FilteredData {
         double t;
         SimTK::Vector q;
@@ -205,6 +188,13 @@ class RealTime_API RealTimeAnalysis {
      * processing.
      */
     virtual void processing();
+
+    /**
+     * Prepare the input data for filtering.
+     */
+    SimTK::Vector prepareUnfilteredData(
+            const SimTK::Vector& q,
+            const std::vector<ExternalWrench::Input>& externalWrenches) const;
 
     OpenSim::Model model;
     Parameters parameters; // RealTimeAnalysis parameters
