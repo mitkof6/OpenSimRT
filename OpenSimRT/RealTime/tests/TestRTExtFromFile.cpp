@@ -32,7 +32,6 @@
 #include "RealTimeAnalysisExtended.h"
 #include "Settings.h"
 #include "Visualization.h"
-
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <iostream>
@@ -178,7 +177,7 @@ void run(char const* name) {
         double t = input.IkFrame.t;
 
         // dummy delay to simulate real time
-        this_thread::sleep_for(chrono::milliseconds(16));
+        this_thread::sleep_for(10ms);
         i++;
         return input;
     };
@@ -353,12 +352,12 @@ void run(char const* name) {
     //         1e-2, false);
     // OpenSimUtils::compareTables(
     //         log.fmLogger,
-    //         TimeSeriesTable(subjectDir + "real_time/pipeline/ext/fm.sto"), 1e-5,
-    //         false);
+    //         TimeSeriesTable(subjectDir + "real_time/pipeline/ext/fm.sto"),
+    //         1e-5, false);
     // OpenSimUtils::compareTables(
     //         log.amLogger,
-    //         TimeSeriesTable(subjectDir + "real_time/pipeline/ext/am.sto"), 1e-5,
-    //         false);
+    //         TimeSeriesTable(subjectDir + "real_time/pipeline/ext/am.sto"),
+    //         1e-5, false);
     // OpenSimUtils::compareTables(
     //         log.residualLogger,
     //         TimeSeriesTable(subjectDir +
@@ -366,8 +365,8 @@ void run(char const* name) {
     //         1e-5, false);
     // OpenSimUtils::compareTables(
     //         log.jrLogger,
-    //         TimeSeriesTable(subjectDir + "real_time/pipeline/ext/jr.sto"), 1e-5,
-    //         false);
+    //         TimeSeriesTable(subjectDir + "real_time/pipeline/ext/jr.sto"),
+    //         1e-5, false);
 }
 int main(int argc, char* argv[]) {
     try {

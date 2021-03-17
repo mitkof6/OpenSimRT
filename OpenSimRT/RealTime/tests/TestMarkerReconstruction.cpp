@@ -32,7 +32,6 @@
 #include "OpenSimUtils.h"
 #include "Settings.h"
 #include "Utils.h"
-
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <iostream>
