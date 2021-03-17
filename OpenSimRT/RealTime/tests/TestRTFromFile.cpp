@@ -20,7 +20,7 @@
  * @file TestRTFromFile.cpp
  *
  * @brief Tests the RealTimeAnalysis class with data acquired from file.
- * Observed delay = ~31ms without SO + JR, ~43ms with enabled SO + JR (test with
+ * Observed delay = ~19ms without SO + JR, ~30ms with enabled SO + JR (test with
  * Ubuntu 20.04, Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz)
  *
  * @author Dimitar Stanev <jimstanev@gmail.com>, Filip Konstantinos

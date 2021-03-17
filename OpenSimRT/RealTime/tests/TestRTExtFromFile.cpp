@@ -20,7 +20,7 @@
  * @file TestRTExtFromFile.cpp
  *
  * @brief Tests the RealTimeAnalysisExtended class with data acquired from file.
- * Observed delay (with GRFMPredition) = ~30ms without SO + JR, ~42ms with
+ * Observed delay (with GRFMPredition) = ~19ms without SO + JR, ~31ms with
  * enabled SO + JR (test with Ubuntu 20.04, Intel(R) Core(TM) i7-9750H CPU @
  * 2.60GHz)
  *

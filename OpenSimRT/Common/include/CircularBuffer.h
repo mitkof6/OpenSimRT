@@ -21,13 +21,12 @@
  *
  * \brief Implementation of a thread safe circular buffer.
  *
- * @author Dimitar Stanev <jimstanev@gmail.com>
- * contribution: Filip Konstantinos <filip.k@ece.upatras.gr>
+ * @author Dimitar Stanev <jimstanev@gmail.com>, Filip Konstantinos
+ * <filip.k@ece.upatras.gr>
  */
 #pragma once
 
 #include "Exception.h"
-
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
@@ -38,7 +37,29 @@
 namespace OpenSimRT {
 
 /**
- * \brief A thread safe circular buffer.
+ * \brief A thread safe circular buffer. It is based on a circular array with
+ *  size equal to `history` and elements of type defined by the template
+ *  parameter T. New data are appended to the buffer using the `add()` function.
+ *  Older data are discarded when adding new data when the buffer is full.
+ *  Retrieving data from the buffer is performed using the `get(M)` function,
+ *  where M \in [1, history] is the number of the latest (newer) elements
+ *  inserted in the buffer. Retrieval is possible only if new elements have been
+ *  appended to the buffer. To retrieve data from the buffer (and terminate the
+ *  'wait' state of the consumer thread) even if no new data have been added,
+ *  the user must first call the `externalNotify()` function, which notifies the
+ *  buffer from the producer thread (or any other except the consumer thread).
+ *  The order of the elements in the retrieved vector can be from new-to-old
+ *  (default) or old-to-new.
+ *
+ *                  Producer Thread | Consumer Thread
+ *                                  |
+ *                     +------------+-------------+
+ *                     |            |             |
+ *           Add ----->|          Buffer          |----> Get(M)
+ *                     |            |             |
+ *  externalNotify --->+------------+-------------+
+ *                     <----------history--------->
+ *                                    <-----M----->
  */
 template <int history, typename T> class CircularBuffer {
  public:
