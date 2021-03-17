@@ -28,7 +28,6 @@
 #pragma once
 
 #include "internal/IMUExports.h"
-
 #include <chrono>
 #include <string>
 

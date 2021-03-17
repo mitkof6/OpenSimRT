@@ -28,7 +28,6 @@
 #include "InputDriver.h"
 #include "NGIMUData.h"
 #include "ip/UdpSocket.h"
-
 #include <Common/TimeSeriesTable.h>
 #include <vector>
 

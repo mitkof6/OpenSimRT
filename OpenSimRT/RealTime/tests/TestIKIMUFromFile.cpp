@@ -29,7 +29,6 @@
 #include "Settings.h"
 #include "Utils.h"
 #include "Visualization.h"
-
 #include <Actuators/Schutte1993Muscle_Deprecated.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/TimeSeriesTable.h>

@@ -31,7 +31,6 @@
 #include "SignalProcessing.h"
 #include "SyncManager.h"
 #include "Visualization.h"
-
 #include <Actuators/Schutte1993Muscle_Deprecated.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
 #include <OpenSim/Common/STOFileAdapter.h>

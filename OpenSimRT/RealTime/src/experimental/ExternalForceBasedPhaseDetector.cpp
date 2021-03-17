@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "ExternalForceBasedPhaseDetector.h"
-
 #include <algorithm>
 
 using namespace OpenSimRT;

@@ -18,10 +18,8 @@
  * -----------------------------------------------------------------------------
  */
 #include "Visualization.h"
-
 #include "Exception.h"
 #include "Utils.h"
-
 #include <OpenSim/Simulation/Model/Muscle.h>
 #include <Simulation/Model/PhysicalOffsetFrame.h>
 #include <Simulation/SimbodyEngine/Body.h>

@@ -29,12 +29,11 @@
 #include "INIReader.h"
 #include "InverseDynamics.h"
 #include "JointReaction.h"
+#include "OpenSimUtils.h"
 #include "Settings.h"
 #include "SignalProcessing.h"
 #include "Utils.h"
-#include "OpenSimUtils.h"
 #include "Visualization.h"
-
 #include <OpenSim/Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Simulation/Model/BodySet.h>

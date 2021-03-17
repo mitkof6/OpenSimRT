@@ -25,7 +25,6 @@
  */
 #include "SyncManager.h"
 #include "Utils.h"
-
 #include <vector>
 
 using namespace std;

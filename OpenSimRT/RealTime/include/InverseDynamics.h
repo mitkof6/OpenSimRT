@@ -26,7 +26,6 @@
 #pragma once
 
 #include "internal/RealTimeExports.h"
-
 #include <OpenSim/Simulation/Model/ExternalForce.h>
 #include <OpenSim/Simulation/Model/Force.h>
 #include <OpenSim/Simulation/Model/Model.h>

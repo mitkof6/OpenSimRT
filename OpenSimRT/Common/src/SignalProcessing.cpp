@@ -18,10 +18,8 @@
  * -----------------------------------------------------------------------------
  */
 #include "SignalProcessing.h"
-
 #include "Exception.h"
 #include "Utils.h"
-
 #include <SimTKcommon/Scalar.h>
 #include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/VectorMath.h>
@@ -144,7 +142,7 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
     }
 
     // check if dt is consistent
-    if (abs(dt - dtPrev) > 1.5e-3) {
+    if (abs(dt - dtPrev) > 1.5e-3) { // NOTE: ensure double precision if throws
         THROW_EXCEPTION("signal sampling frequency is not constant");
     }
 

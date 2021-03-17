@@ -30,7 +30,6 @@
 
 #include "CircularBuffer.h"
 #include "internal/IMUExports.h"
-
 #include <map>
 #include <vector>
 

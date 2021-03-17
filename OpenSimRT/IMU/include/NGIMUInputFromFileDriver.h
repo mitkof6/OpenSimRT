@@ -27,7 +27,6 @@
 #pragma once
 #include "InputDriver.h"
 #include "NGIMUData.h"
-
 #include <Common/TimeSeriesTable.h>
 #include <condition_variable>
 #include <exception>

@@ -18,10 +18,8 @@
  * -----------------------------------------------------------------------------
  */
 #include "RealTimeAnalysis.h"
-
 #include "Exception.h"
 #include "JointReaction.h"
-
 #include <SimTKcommon/internal/BigMatrix.h>
 #include <thread>
 

@@ -31,7 +31,6 @@
 #include "SignalProcessing.h"
 #include "SyncManager.h"
 #include "Visualization.h"
-
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
 #include <OpenSim/Common/STOFileAdapter.h>

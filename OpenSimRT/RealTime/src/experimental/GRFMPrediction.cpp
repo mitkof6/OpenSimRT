@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "GRFMPrediction.h"
-
 #include "Exception.h"
 #include "GaitPhaseDetector.h"
 #include "OpenSimUtils.h"

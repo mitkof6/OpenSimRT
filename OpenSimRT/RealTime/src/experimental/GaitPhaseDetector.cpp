@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "GaitPhaseDetector.h"
-
 #include "GRFMPrediction.h"
 
 using namespace OpenSimRT;

@@ -29,7 +29,6 @@
 #pragma once
 #include "InputDriver.h"
 #include "internal/IMUExports.h"
-
 #include <memory>
 #include <string>
 

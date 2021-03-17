@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "TimeConversion.h"
-
 #include <chrono>
 #include <iomanip>
 #include <string>

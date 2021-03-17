@@ -18,11 +18,9 @@
  * -----------------------------------------------------------------------------
  */
 #include "InverseDynamics.h"
-
 #include "Exception.h"
 #include "OpenSimUtils.h"
 #include "Utils.h"
-
 #include <OpenSim/Simulation/Model/BodySet.h>
 #include <OpenSim/Simulation/Model/Muscle.h>
 

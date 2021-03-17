@@ -24,7 +24,6 @@
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "CircularBuffer.h"
-
 #include <iostream>
 #include <thread>
 

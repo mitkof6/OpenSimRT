@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "MarkerReconstruction.h"
-
 #include "OpenSimUtils.h"
 
 using namespace std;

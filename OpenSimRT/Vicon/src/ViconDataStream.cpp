@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "ViconDataStream.h"
-
 #include <chrono>
 #include <functional>
 #include <map>

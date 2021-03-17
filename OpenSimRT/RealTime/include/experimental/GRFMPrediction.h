@@ -30,7 +30,6 @@
 #include "InverseDynamics.h"
 #include "SlidingWindow.h"
 #include "internal/RealTimeExports.h"
-
 #include <OpenSim/Simulation/Model/Model.h>
 #include <SimTKcommon.h>
 

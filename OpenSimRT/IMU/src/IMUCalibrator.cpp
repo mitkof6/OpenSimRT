@@ -18,9 +18,7 @@
  * -----------------------------------------------------------------------------
  */
 #include "IMUCalibrator.h"
-
 #include "Exception.h"
-
 #include <SimTKcommon/internal/Quaternion.h>
 
 using namespace OpenSimRT;

@@ -30,7 +30,6 @@
 #include "NGIMUInputDriver.h"
 #include "Utils.h"
 #include "internal/IMUExports.h"
-
 #include <Simulation/Model/Model.h>
 #include <string>
 #include <type_traits>

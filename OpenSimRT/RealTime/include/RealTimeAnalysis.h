@@ -36,7 +36,6 @@
 #include "RealTimeAnalysis.h"
 #include "SignalProcessing.h"
 #include "internal/RealTimeExports.h"
-
 #include <atomic>
 
 namespace OpenSimRT {

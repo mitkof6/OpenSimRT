@@ -26,7 +26,6 @@
 #include "INIReader.h"
 #include "Settings.h"
 #include "ViconDataStream.h"
-
 #include <iostream>
 
 using namespace std;

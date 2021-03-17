@@ -18,11 +18,9 @@
  * -----------------------------------------------------------------------------
  */
 #include "ContactForceBasedPhaseDetector.h"
-
 #include "Exception.h"
 #include "GRFMPrediction.h"
 #include "OpenSimUtils.h"
-
 #include <OpenSim/Simulation/Model/ContactHalfSpace.h>
 #include <OpenSim/Simulation/Model/ContactSphere.h>
 #include <OpenSim/Simulation/SimbodyEngine/WeldJoint.h>

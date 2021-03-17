@@ -27,7 +27,6 @@
 
 #include "InverseKinematics.h"
 #include "internal/RealTimeExports.h"
-
 #include <Common/TimeSeriesTable.h>
 #include <SimTKcommon.h>
 

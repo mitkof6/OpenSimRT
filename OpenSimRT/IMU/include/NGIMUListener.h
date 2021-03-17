@@ -33,7 +33,6 @@
 #include "osc/OscPacketListener.h"
 #include "osc/OscReceivedElements.h"
 #include "osc/OscTypes.h"
-
 #include <bitset>
 
 namespace OpenSimRT {

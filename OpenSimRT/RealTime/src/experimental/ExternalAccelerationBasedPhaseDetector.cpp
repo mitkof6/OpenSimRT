@@ -19,9 +19,7 @@
  */
 
 #include "ExternalAccelerationBasedPhaseDetector.h"
-
 #include "SignalProcessing.h"
-
 #include <SimTKcommon.h>
 
 using namespace OpenSimRT;

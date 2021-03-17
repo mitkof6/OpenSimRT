@@ -18,10 +18,8 @@
  * -----------------------------------------------------------------------------
  */
 #include "AccelerationBasedPhaseDetector.h"
-
 #include "GRFMPrediction.h"
 #include "OpenSimUtils.h"
-
 #include <algorithm>
 
 using namespace OpenSimRT;

@@ -27,7 +27,6 @@
 
 #include "OpenSimUtils.h"
 #include "internal/RealTimeExports.h"
-
 #include <OpenSim/Simulation/Model/Model.h>
 #include <functional>
 

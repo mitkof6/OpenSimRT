@@ -29,7 +29,6 @@
 #include "GRFMPrediction.h"
 #include "GaitPhaseDetector.h"
 #include "SignalProcessing.h"
-
 #include <SimTKcommon.h>
 #include <Simulation/Model/Model.h>
 #include <string>

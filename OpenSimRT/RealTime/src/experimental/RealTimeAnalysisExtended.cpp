@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "RealTimeAnalysisExtended.h"
-
 #include "Exception.h"
 #include "InverseDynamics.h"
 

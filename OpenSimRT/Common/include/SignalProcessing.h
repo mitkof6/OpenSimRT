@@ -27,7 +27,6 @@
 #pragma once
 
 #include "internal/CommonExports.h"
-
 #include <SimTKcommon.h>
 #include <condition_variable>
 #include <mutex>

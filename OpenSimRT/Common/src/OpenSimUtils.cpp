@@ -18,9 +18,7 @@
  * -----------------------------------------------------------------------------
  */
 #include "OpenSimUtils.h"
-
 #include "DynamicLibraryLoader.h"
-
 #include <Common/TimeSeriesTable.h>
 
 using OpenSim::Actuator;

@@ -27,7 +27,6 @@
 #pragma once
 
 #include "internal/CommonExports.h"
-
 #include <OpenSim/Simulation/Model/Model.h>
 #include <OpenSim/Simulation/Model/ModelVisualizer.h>
 #include <SimTKcommon/internal/DecorationGenerator.h>

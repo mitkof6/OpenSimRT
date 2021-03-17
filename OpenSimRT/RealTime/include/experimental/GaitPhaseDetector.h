@@ -28,7 +28,6 @@
 
 #include "GRFMPrediction.h"
 #include "internal/RealTimeExports.h"
-
 #include <SimTKcommon.h>
 #include <Simulation/Model/Model.h>
 #include <utility>

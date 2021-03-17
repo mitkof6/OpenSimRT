@@ -27,7 +27,6 @@
 #pragma once
 
 #include "GaitPhaseDetector.h"
-
 #include <OpenSim/Simulation/Model/HuntCrossleyForce.h>
 #include <OpenSim/Simulation/Model/Model.h>
 #include <string>
@@ -44,8 +43,8 @@ namespace OpenSimRT {
 class RealTime_API ContactForceBasedPhaseDetector : public GaitPhaseDetector {
  public:
     struct Parameters {
-        int windowSize;   // windowSize to determine HS/TO events
-        double threshold; // force threshold
+        int windowSize;           // windowSize to determine HS/TO events
+        double threshold;         // force threshold
         SimTK::Vec3 plane_origin; // contact plane origin
 
         // constact sphere Parameters

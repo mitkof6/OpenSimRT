@@ -27,7 +27,6 @@
 
 #include "Exception.h"
 #include "internal/CommonExports.h"
-
 #include <Common/TimeSeriesTable.h>
 #include <OpenSim/Simulation/Model/Model.h>
 

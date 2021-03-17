@@ -18,9 +18,7 @@
  * -----------------------------------------------------------------------------
  */
 #include "NGIMUInputFromFileDriver.h"
-
 #include "Exception.h"
-
 #include <iostream>
 
 using namespace OpenSimRT;

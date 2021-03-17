@@ -19,7 +19,6 @@
  */
 #include "JointReaction.h"
 #include "Exception.h"
-
 #include <OpenSim/Simulation/Model/Actuator.h>
 
 using namespace std;

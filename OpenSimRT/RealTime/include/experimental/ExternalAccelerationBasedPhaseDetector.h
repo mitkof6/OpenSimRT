@@ -33,7 +33,6 @@
 #include "GaitPhaseDetector.h"
 #include "SignalProcessing.h"
 #include "internal/RealTimeExports.h"
-
 #include <SimTKcommon/internal/ReferencePtr.h>
 #include <Simulation/Model/Model.h>
 

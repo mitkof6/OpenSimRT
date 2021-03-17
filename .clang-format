@@ -56,7 +56,7 @@ ForEachMacros:
   - foreach
   - Q_FOREACH
   - BOOST_FOREACH
-IncludeBlocks: Regroup
+IncludeBlocks: Merge
 IndentCaseLabels: false
 IndentPPDirectives: AfterHash
 IndentWidth: 4
