@@ -35,31 +35,69 @@
 #include <vector>
 
 namespace OpenSimRT {
+/**
+ * Select mode for data retrieval from the buffer.
+ *
+ * - ON_ENTRY allows the user user to get data from the buffer only after
+ * new data have been added.
+ *
+ * - CONTINUOUS mode allows the user
+ */
+enum class DataRetrievalMode { CONTINUOUS, ON_ENTRY };
 
 /**
  * \brief A thread safe circular buffer. It is based on a circular array with
- *  size equal to `history` and elements of type defined by the template
- *  parameter T. New data are appended to the buffer using the `add()` function.
- *  Older data are discarded when adding new data when the buffer is full.
- *  Retrieving data from the buffer is performed using the `get(M)` function,
- *  where M \in [1, history] is the number of the latest (newer) elements
- *  inserted in the buffer. Retrieval is possible only if new elements have been
- *  appended to the buffer. To retrieve data from the buffer (and terminate the
- *  'wait' state of the consumer thread) even if no new data have been added,
- *  the user must first call the `externalNotify()` function, which notifies the
- *  buffer from the producer thread (or any other except the consumer thread).
- *  The order of the elements in the retrieved vector can be from new-to-old
- *  (default) or old-to-new.
+ * size equal to `history` and elements of type defined by the template
+ * parameter T. New data are appended to the buffer using the `add()` function.
+ * Older data are discarded when adding new data when the buffer is full.
+ * Retrieving data from the buffer is performed using the `get(M)` function,
+ * where M \in [1, history] is the number of the latest (newer) elements
+ * inserted in the buffer. By default, retrieval is possible only if new data
+ * have been appended to the buffer for real-time processing of data. To
+ * retrieve data from the buffer (and terminate the 'wait' state of the consumer
+ * thread) even if no new data have been added, the user must change the
+ * retrieval mode. The order of the elements in the retrieved vector can be from
+ * new-to-old (default) or old-to-new.
  *
- *                  Producer Thread | Consumer Thread
- *                                  |
- *                     +------------+-------------+
- *                     |            |             |
- *           Add ----->|          Buffer          |----> Get(M)
- *                     |            |             |
- *  externalNotify --->+------------+-------------+
- *                     <----------history--------->
- *                                    <-----M----->
+ *                         Producer Thread | Consumer Thread
+ *                                         |
+ *                            +------------+-------------+
+ *                            |            |             |
+ *                  Add ----->|          Buffer          |----> Get(M)
+ *                            |            |             |
+ *   setDataRetrievalMode --->+------------+-------------+
+ *                            <----------history--------->
+ *                                           <-----M----->
+ *
+ * ****************************************************************************
+ * Example code:
+ * ****************************************************************************
+ *
+ * void producerFunction() { // producer thread
+ *    // adds new data to the buffer
+ *    {
+ *       ...
+ *
+ *       buffer.add(data);
+ *
+ *       ...
+ *    }
+ *
+ *    // When no new data are present, change the retrieval mode to notify
+ *    // and unblock the buffer. Now the buffer does not wait for new data
+ *    // to be added.
+ *    buffer.setDataRetrievalMode(DataRetrievalMode::CONTINUOUS);
+ * }
+ *
+ * void consumerFunction() { // consumer thread
+ *     ...
+ *
+ *     // Retrieve data from the buffer based on the selected mode.
+ *     data = buffer.get(M);
+ *
+ *     ...
+ * }
+ *
  */
 template <int history, typename T> class CircularBuffer {
  public:
@@ -67,9 +105,7 @@ template <int history, typename T> class CircularBuffer {
         current = 0;
         startOver = false;
         newValue = false;
-        externalNotification = false; // flag to remove the condition_variable
-                                      // from the 'wait' state in case of no new
-                                      // data added in buffer.
+        continuousModeFlag = false;
         buffer.resize(history);
     }
 
@@ -87,11 +123,16 @@ template <int history, typename T> class CircularBuffer {
     }
 
     /**
-     * Notifies the consumer thread in case of no new data added to the buffer
-     * and remove the std::condition_variable from the wait state.
+     * Set the mode for data retrieval from the buffer. Retrieval can occur
+     * continuously untill the buffer is empty, or only after new data have been
+     * added to the buffer. Notifies the buffer on mode change, thus it can be
+     * called at any moment.
      */
-    void externalNotify() {
-        externalNotification = true;
+    void setDataRetrievalMode(DataRetrievalMode mode) {
+        if (mode == DataRetrievalMode::CONTINUOUS)
+            continuousModeFlag = true;
+        else
+            continuousModeFlag = false;
         bufferNotEmpty.notify_one();
     }
 
@@ -126,10 +167,9 @@ template <int history, typename T> class CircularBuffer {
         std::unique_lock<std::mutex> lock(monitor);
         // check if data are available to proceed
         bufferNotEmpty.wait(lock, [&]() {
-            return (notEmpty(M) && newValue == true) ||
-                   externalNotification.load();
+            return (notEmpty(M) && continuousModeFlag.load()) ||
+                   newValue == true;
         });
-        externalNotification = false;
         newValue = false; // when buffer is no longer empty, condition variable
                           // is no longer in "wait" state, and the cosumer
                           // thread draws data from the buffer until the buffer
@@ -152,7 +192,7 @@ template <int history, typename T> class CircularBuffer {
     int current;
     bool startOver;
     bool newValue;
-    std::atomic<bool> externalNotification;
+    std::atomic<bool> continuousModeFlag;
     std::vector<T> buffer;
     std::mutex monitor;
     std::condition_variable bufferNotEmpty;

@@ -11,10 +11,10 @@ file(GLOB tests
   tests/TestSOFromFile.cpp
   tests/TestJRFromFile.cpp
   tests/TestRTFromFile.cpp
-  tests/TestAccelerationGRFMPredictionFromFile.cpp
-  tests/TestContactForceGRFMPredictionFromFile.cpp
-  tests/TestMarkerReconstruction.cpp
-  tests/TestRTExtFromFile.cpp
+  tests/experimental/TestAccelerationGRFMPredictionFromFile.cpp
+  tests/experimental/TestContactForceGRFMPredictionFromFile.cpp
+  tests/experimental/TestMarkerReconstruction.cpp
+  tests/experimental/TestRTExtFromFile.cpp
   )
 
 # dependencies

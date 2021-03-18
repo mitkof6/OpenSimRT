@@ -134,7 +134,7 @@ void RealTimeAnalysis::acquisition() {
         terminationFlag = true;
 
         // notify buffer to not get stuck in processing thread
-        buffer.externalNotify();
+        buffer.setDataRetrievalMode(DataRetrievalMode::CONTINUOUS);
     }
 }
 
