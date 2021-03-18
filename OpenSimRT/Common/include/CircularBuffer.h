@@ -41,7 +41,8 @@ namespace OpenSimRT {
  * - ON_ENTRY allows the user user to get data from the buffer only after
  * new data have been added.
  *
- * - CONTINUOUS mode allows the user
+ * - CONTINUOUS mode allows the user the retrieve data from the buffer
+     continuously, without waiting fot new data, until the buffer is empty.
  */
 enum class DataRetrievalMode { CONTINUOUS, ON_ENTRY };
 
