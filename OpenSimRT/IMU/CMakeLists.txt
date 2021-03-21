@@ -20,13 +20,13 @@ file(GLOB sources src/*.cpp)
 # file(GLOB applications applications/*.cpp)
 file(
   GLOB applications
-  applications/LowerLimbIK.cpp
-  applications/UpperLimbIK.cpp
+  applications/OnlineLowerLimbIMUIK.cpp
+  applications/OnlineUpperLimbIMUIK.cpp
 )
 # file(GLOB tests tests/*.cpp)
 file(GLOB tests
-  tests/TestLowerLimbIKFromFile.cpp
-  tests/TestUpperLimbIKFromFile.cpp
+  tests/TestLowerLimbIMUIKFromFile.cpp
+  tests/TestUpperLimbIMUIKFromFile.cpp
 )
 
 # dependencies

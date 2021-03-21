@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file TestLowerLimbIKFromFile.cpp
+ * @file TestLowerLimbIMUIKFromFile.cpp
  *
  * @brief Test IK with prerecorded NGIMU data on the lower body.
  *

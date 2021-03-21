@@ -83,4 +83,4 @@ jobs:
     - name: Test
       run: |
         source $GITHUB_WORKSPACE/.github/workflows/env_variables
-        ctest --parallel -j$(nproc) -VV --output-on-failure -E TestMomentArm TestViconSDK
+        ctest --parallel -j$(nproc) -VV --output-on-failure -E TestMomentArm

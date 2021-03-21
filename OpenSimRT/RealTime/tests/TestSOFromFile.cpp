@@ -58,9 +58,14 @@ void run() {
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
 
+    #ifndef WIN32
     auto momentArmLibraryPath =
             LIBRARY_OUTPUT_PATH + "/" +
             ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+    #else
+    auto momentArmLibraryPath =
+            ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+    #endif
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);

@@ -277,6 +277,7 @@ void run() {
          << endl;
 
     // relax tolerance because of floating point errors between target machines
+    // (this fails on Windows)
     OpenSimUtils::compareTables(grfRightLogger,
                                 TimeSeriesTable(subjectDir +
                                                 "real_time/grfm_prediction/"

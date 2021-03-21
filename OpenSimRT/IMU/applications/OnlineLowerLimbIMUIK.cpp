@@ -17,9 +17,9 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file UpperLimbIK.cpp
+ * @file OnlineLowerLimbIMUIK.cpp
  *
- * @brief Online IK with NGIMU data on the upper body.
+ * @brief Online IK with NGIMU data on the lower body.
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
@@ -31,7 +31,7 @@
 #include "SignalProcessing.h"
 #include "SyncManager.h"
 #include "Visualization.h"
-#include <Actuators/Schutte1993Muscle_Deprecated.h>
+#include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 
@@ -42,13 +42,14 @@ using namespace SimTK;
 
 void run() {
     INIReader ini(INI_FILE);
-    auto section = "UPPER_LIMB_NGIMU";
+    auto section = "LOWER_LIMB_NGIMU";
 
     // imu communication settings
     auto IMU_IP = ini.getVector(section, "IMU_IP", vector<string>());
     auto LISTEN_IP = ini.getString(section, "LISTEN_IP", "0.0.0.0");
-    auto SEND_PORTS = ini.getVector(section, "SEND_PORTS", vector<int>());
-    auto LISTEN_PORTS = ini.getVector(section, "LISTEN_PORTS", vector<int>());
+    auto SEND_PORTS = ini.getVector(section, "IMU_SEND_PORTS", vector<int>());
+    auto LISTEN_PORTS =
+            ini.getVector(section, "IMU_LISTEN_PORTS", vector<int>());
 
     // imu calibration Settings
     auto imuObservationOrder =
@@ -59,7 +60,7 @@ void run() {
     auto yGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Y", 0);
     auto zGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Z", 0);
 
-    // filter settings
+    // filter parameters
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
     auto delay = ini.getInteger(section, "DELAY", 0);
@@ -74,7 +75,7 @@ void run() {
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 
     // setup model
-    Object::RegisterType(Schutte1993Muscle_Deprecated());
+    Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);
 
     // imu tasks
@@ -82,26 +83,21 @@ void run() {
     InverseKinematics::createIMUTasksFromObservationOrder(
             model, imuObservationOrder, imuTasks);
 
-    // imu driver
+    // driver
     NGIMUInputDriver driver;
     driver.setupInput(imuObservationOrder,
                       vector<string>(LISTEN_PORTS.size(), LISTEN_IP),
                       LISTEN_PORTS);
     driver.setupTransmitters(IMU_IP, SEND_PORTS, LISTEN_IP, LISTEN_PORTS);
+    thread listen(&NGIMUInputDriver::startListening, &driver);
     auto imuLogger = driver.initializeLogger();
 
-    // start listening
-    thread listen(&NGIMUInputDriver::startListening, &driver);
-
-    // imu calibrator
+    // calibrator
     IMUCalibrator clb = IMUCalibrator(model, &driver, imuObservationOrder);
-    clb.recordTime(3); // record for 3 seconds
+    clb.recordTime(3.0); // record for 3 seconds
     clb.setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
     clb.computeHeadingRotation(imuBaseBody, imuDirectionAxis);
     clb.calibrateIMUTasks(imuTasks);
-
-    // sensor data synchronization
-    SyncManager manager(syncRate, syncThreshold);
 
     // setup filters
     LowPassSmoothFilter::Parameters filterParam;
@@ -112,6 +108,9 @@ void run() {
     filterParam.splineOrder = splineOrder;
     filterParam.calculateDerivatives = false;
     LowPassSmoothFilter filter(filterParam);
+
+    // sync manager
+    SyncManager manager(syncRate, syncThreshold);
 
     // initialize ik (lower constraint weight and accuracy -> faster tracking)
     InverseKinematics ik(model, {}, imuTasks, SimTK::Infinity, 1e-5);
@@ -125,17 +124,12 @@ void run() {
             // get input from imus
             auto imuDataList = driver.getData();
 
-            // change frame representation
-            const auto imuDataAsPairs = driver.asPack(imuDataList);
-
-            // synchronize data streams
-            manager.appendPack(imuDataAsPairs);
+            // synchronize data packets
+            manager.appendPack(driver.asPack(imuDataList));
             auto pack = manager.getPack();
 
-            // proceed only if there are synced data
             if (pack.second.empty()) continue;
 
-            // retrieve original representation of input data
             std::pair<double, std::vector<NGIMUData>> imuData;
             imuData.first = pack.first;
             imuData.second = driver.fromVector(pack.second[0]);
@@ -149,7 +143,6 @@ void run() {
             auto t = ikFiltered.t;
             auto q = ikFiltered.x;
 
-            // proceed only if the filter output is valid
             if (!ikFiltered.isValid) continue;
 
             // visualize

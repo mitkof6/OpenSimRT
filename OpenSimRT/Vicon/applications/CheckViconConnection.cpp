@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file testViconSDK.cpp
+ * @file CheckViconConnection.cpp
  *
  * \brief Connects with Vicon server and read marker and force data.
  *
