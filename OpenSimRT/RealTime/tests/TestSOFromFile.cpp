@@ -58,14 +58,18 @@ void run() {
     auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
     auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
 
-    #ifndef WIN32
+    // Windows places executables in different folders. When ctest is
+    // called on a Linux machine it runs the test from different
+    // folders and thus the dynamic library might not be found
+    // properly.
+#ifndef WIN32
     auto momentArmLibraryPath =
             LIBRARY_OUTPUT_PATH + "/" +
             ini.getString(section, "MOMENT_ARM_LIBRARY", "");
-    #else
+#else
     auto momentArmLibraryPath =
             ini.getString(section, "MOMENT_ARM_LIBRARY", "");
-    #endif
+#endif
 
     auto memory = ini.getInteger(section, "MEMORY", 0);
     auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
@@ -149,19 +153,19 @@ void run() {
          << endl;
 
     // Compare results with reference tables. Test might fail on a different
-    // machine, possibly due to compilation differences.
-    try {
-        OpenSimUtils::compareTables(
-                fmLogger,
-                TimeSeriesTable(subjectDir +
-                                "real_time/muscle_optimization/fm.sto"),
-                1e-1);
-        OpenSimUtils::compareTables(
-                amLogger,
-                TimeSeriesTable(subjectDir +
-                                "real_time/muscle_optimization/am.sto"),
-                1e-1);
-    } catch (exception& e) { cout << e.what() << endl; }
+    // machine, possibly due to compilation differences (this fails on Windows).
+#ifndef WIN32
+    OpenSimUtils::compareTables(
+            fmLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/muscle_optimization/fm.sto"),
+            1e-1);
+    OpenSimUtils::compareTables(
+            amLogger,
+            TimeSeriesTable(subjectDir +
+                            "real_time/muscle_optimization/am.sto"),
+            1e-1);
+#endif
 
     // store results
     // STOFileAdapter::write(fmLogger,
