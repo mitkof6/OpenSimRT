@@ -29,7 +29,6 @@
 #include "NGIMUData.h"
 #include <Common/TimeSeriesTable.h>
 #include <condition_variable>
-#include <exception>
 #include <thread>
 
 namespace OpenSimRT {
@@ -97,7 +96,7 @@ class IMU_API NGIMUInputFromFileDriver : public InputDriver<NGIMUData> {
     std::thread t;
     mutable std::mutex mu;
     mutable std::condition_variable cond;
-    mutable std::exception_ptr exc_ptr;
+    std::atomic_bool terminationFlag;
     mutable bool newRow = false;
 };
 } // namespace OpenSimRT

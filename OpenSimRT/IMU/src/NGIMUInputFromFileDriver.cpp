@@ -26,42 +26,33 @@ using namespace SimTK;
 
 NGIMUInputFromFileDriver::NGIMUInputFromFileDriver(const std::string& fileName,
                                                    const double& sendRate)
-        : table(fileName), rate(sendRate) {}
+        : table(fileName), rate(sendRate), terminationFlag(false) {}
 
 NGIMUInputFromFileDriver::~NGIMUInputFromFileDriver() { t.join(); }
 
 void NGIMUInputFromFileDriver::startListening() {
     static auto f = [&]() {
-        try {
-            int i = 0;
-            while (true) {
-                {
-                    std::lock_guard<std::mutex> lock(mu);
-                    time = table.getIndependentColumn()[i];
-                    frame = table.getMatrix()[i];
-                    newRow = true;
-                }
-                cond.notify_one();
-
-                // increase counter
-                if (i < table.getNumRows())
-                    ++i;
-                else
-                    THROW_EXCEPTION("End of file. Stop streaming.");
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(
-                        static_cast<int>(1 / rate * 1000)));
+        for (int i = 0; i < table.getNumRows(); ++i) {
+            {
+                std::lock_guard<std::mutex> lock(mu);
+                time = table.getIndependentColumn()[i];
+                frame = table.getMatrix()[i];
+                newRow = true;
             }
-        } catch (std::exception& e) {
-            std::cout << e.what() << std::endl;
-            exc_ptr = std::current_exception();
+            cond.notify_one();
+
+            // artificial delay
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                    static_cast<int>(1 / rate * 1000)));
         }
+        terminationFlag = true;
+        cond.notify_one();
     };
     t = std::thread(f);
 }
 
 bool NGIMUInputFromFileDriver::shouldTerminate() {
-    return !(exc_ptr == nullptr);
+    return terminationFlag.load();
 }
 
 NGIMUInputFromFileDriver::IMUDataList
@@ -79,7 +70,8 @@ NGIMUInputFromFileDriver::fromVector(const Vector& v) const {
 NGIMUInputFromFileDriver::IMUDataList
 NGIMUInputFromFileDriver::getData() const {
     std::unique_lock<std::mutex> lock(mu);
-    cond.wait(lock, [&]() { return (newRow == true) || (exc_ptr != nullptr); });
+    cond.wait(lock,
+              [&]() { return (newRow == true) || terminationFlag.load(); });
     newRow = false;
     return fromVector(frame.getAsVector());
 }
@@ -91,7 +83,8 @@ std::pair<double, std::vector<NGIMUData>> NGIMUInputFromFileDriver::getFrame() {
 
 std::pair<double, Vector> NGIMUInputFromFileDriver::getFrameAsVector() const {
     std::unique_lock<std::mutex> lock(mu);
-    cond.wait(lock, [&]() { return (newRow == true) || (exc_ptr != nullptr); });
+    cond.wait(lock,
+              [&]() { return (newRow == true) || terminationFlag.load(); });
     newRow = false;
     return std::make_pair(time, frame.getAsVector());
 }

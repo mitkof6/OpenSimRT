@@ -49,6 +49,8 @@ void run(char const* name) {
     auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
     auto trcFile = subjectDir + ini.getString(section, "TRC_FILE", "");
     auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
+    auto ikTaskSetFile =
+            subjectDir + ini.getString(section, "IK_TASK_SET_FILE", "");
 
     // grf body and identifier labels
     auto grfRightApplyBody =
@@ -144,11 +146,14 @@ void run(char const* name) {
             model, momentArmLibraryPath);
 
     // prepare marker tasks
+    IKTaskSet ikTaskSet(ikTaskSetFile);
     MarkerData markerData(trcFile);
     vector<InverseKinematics::MarkerTask> markerTasks;
     vector<string> observationOrder;
-    InverseKinematics::createMarkerTasksFromMarkerData(
-            model, markerData, markerTasks, observationOrder);
+    // InverseKinematics::createMarkerTasksFromMarkerData(
+    //         model, markerData, markerTasks, observationOrder);
+    InverseKinematics::createMarkerTasksFromIKTaskSet(
+            model, ikTaskSet, markerTasks, observationOrder);
 
     // read external forces
     Storage grfMotion(grfMotFile);

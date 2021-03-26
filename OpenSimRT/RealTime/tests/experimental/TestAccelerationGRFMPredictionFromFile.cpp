@@ -215,8 +215,8 @@ void run() {
     visualizer.addDecorationGenerator(leftGRFDecorator);
 
     // mean delay
-    int sumDelayMS;
-    int sumDelayMSCounter;
+    int sumDelayMS = 0;
+    int sumDelayMSCounter = 0;
 
     int loopCounter = 0;
     int i = 0;
