@@ -32,27 +32,42 @@ NGIMUInputFromFileDriver::~NGIMUInputFromFileDriver() { t.join(); }
 
 void NGIMUInputFromFileDriver::startListening() {
     static auto f = [&]() {
-        for (int i = 0; i < table.getNumRows(); ++i) {
-            {
-                std::lock_guard<std::mutex> lock(mu);
-                time = table.getIndependentColumn()[i];
-                frame = table.getMatrix()[i];
-                newRow = true;
+        try {
+            for (int i = 0; i < table.getNumRows(); ++i) {
+                if (shouldTerminate())
+                    THROW_EXCEPTION("File stream terminated.");
+                {
+                    std::lock_guard<std::mutex> lock(mu);
+                    time = table.getIndependentColumn()[i];
+                    frame = table.getMatrix()[i];
+                    newRow = true;
+                }
+                cond.notify_one();
+
+                // artificial delay
+                std::this_thread::sleep_for(std::chrono::milliseconds(
+                        static_cast<int>(1 / rate * 1000)));
             }
+            terminationFlag = true;
             cond.notify_one();
 
-            // artificial delay
-            std::this_thread::sleep_for(std::chrono::milliseconds(
-                    static_cast<int>(1 / rate * 1000)));
+        } catch (const std::exception& e) {
+            std::cout << e.what() << std::endl;
+
+            terminationFlag = true;
+            cond.notify_one();
         }
-        terminationFlag = true;
-        cond.notify_one();
     };
     t = std::thread(f);
 }
 
 bool NGIMUInputFromFileDriver::shouldTerminate() {
     return terminationFlag.load();
+}
+
+void NGIMUInputFromFileDriver::shouldTerminate(bool flag) {
+    terminationFlag = flag;
+    cond.notify_one();
 }
 
 NGIMUInputFromFileDriver::IMUDataList

@@ -57,6 +57,11 @@ class IMU_API NGIMUInputFromFileDriver : public InputDriver<NGIMUData> {
     bool shouldTerminate();
 
     /**
+     * Set the termination flag;
+     */
+    void shouldTerminate(bool flag);
+
+    /**
      * Get data from file as a list of NGIMUData. Implements the stopListening
      * of the base class.
      */

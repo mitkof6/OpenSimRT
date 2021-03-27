@@ -122,7 +122,11 @@ void run() {
             // record
             qLogger.appendRow(pose.t, ~pose.q);
         }
-    } catch (std::exception& e) { cout << e.what() << endl; }
+    } catch (std::exception& e) {
+        cout << e.what() << endl;
+
+        driver.shouldTerminate(true);
+    }
 
     cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
 

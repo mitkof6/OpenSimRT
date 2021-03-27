@@ -130,9 +130,18 @@ void run(char const* name) {
     auto memoryHistory = ini.getInteger(section, "MEMORY_HISTORY", 0);
     auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
     auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
+    // Windows places executables in different folders. When ctest is
+    // called on a Linux machine it runs the test from different
+    // folders and thus the dynamic library might not be found
+    // properly.
+#ifndef WIN32
+    auto momentArmLibraryPath =
+            LIBRARY_OUTPUT_PATH + "/" +
+            ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+#else
     auto momentArmLibraryPath =
             ini.getString(section, "MOMENT_ARM_LIBRARY", "");
-
+#endif
     // prepare model
     Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);

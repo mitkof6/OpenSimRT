@@ -82,7 +82,8 @@ with PdfPages(os.path.join(output_dir,
         else:
             position_unit = ' (m)'
 
-        d_q = rmse_metric(q_reference.iloc[:, i], q_pipeline.iloc[:, j])
+        dim = min(q_pipeline.shape[0], q_reference.shape[0])
+        d_q = rmse_metric(q_reference.iloc[:dim, i], q_pipeline.iloc[:dim, j])
         if not np.isnan(d_q):  # NaN when siganl is zero
             d_q_total.append(d_q)
 
@@ -125,7 +126,8 @@ with PdfPages(os.path.join(output_dir,
                                                '').replace('_force', '')
         j = tau_pipeline.columns.get_loc(key)
 
-        d_tau = rmse_metric(tau_reference.iloc[:, i], tau_pipeline.iloc[:, j])
+        dim = min(tau_pipeline.shape[0], tau_reference.shape[0])
+        d_tau = rmse_metric(tau_reference.iloc[:dim, i], tau_pipeline.iloc[:dim, j])
         if not np.isnan(d_tau):  # NaN when siganl is zero
             d_tau_total.append(d_tau)
 
@@ -177,7 +179,8 @@ with PdfPages(os.path.join(output_dir,
         key = fm_pipeline.columns[i]
         j = fm_reference.columns.get_loc(key)
 
-        d_tau = rmse_metric(fm_pipeline.iloc[:, i], fm_reference.iloc[:, j])
+        dim = min(fm_pipeline.shape[0], fm_reference.shape[0])
+        d_tau = rmse_metric(fm_pipeline.iloc[:dim, i], fm_reference.iloc[:dim, j])
         if not np.isnan(d_tau):  # NaN when signal is zero
             d_fm_total.append(d_tau)
 
@@ -219,7 +222,8 @@ with PdfPages(os.path.join(output_dir,
         key = jr_pipeline.columns[i]
         j = jr_reference.columns.get_loc(key)
 
-        d_jr = rmse_metric(jr_reference.iloc[:, j], jr_pipeline.iloc[:, i])
+        dim = min(jr_pipeline.shape[0], jr_reference.shape[0])
+        d_jr = rmse_metric(jr_reference.iloc[:dim, j], jr_pipeline.iloc[:dim, i])
 
         if not np.isnan(d_jr):  # NaN when siganl is zero
             d_jr_total.append(d_jr)
