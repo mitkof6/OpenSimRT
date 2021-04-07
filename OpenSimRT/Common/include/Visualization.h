@@ -112,6 +112,8 @@ class Common_API BasicModelVisualizer {
                                        const SimTK::Vec3& fromBodyPoint,
                                        const std::string& toBodyName,
                                        SimTK::Vec3& toBodyPoint);
+    bool getShouldTerminate() const;
+    void setShouldTerminate(bool flag);
 
  private:
     OpenSim::Model model;

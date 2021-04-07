@@ -207,4 +207,12 @@ void BasicModelVisualizer::expressPositionInAnotherFrame(
 #endif // CONTINUOUS_INTEGRATION
 }
 
+bool BasicModelVisualizer::getShouldTerminate() const {
+    return shouldTerminate;
+}
+
+void BasicModelVisualizer::setShouldTerminate(bool flag) {
+    shouldTerminate = flag;
+}
+
 /******************************************************************************/

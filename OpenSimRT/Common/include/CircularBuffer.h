@@ -168,8 +168,9 @@ template <int history, typename T> class CircularBuffer {
         std::unique_lock<std::mutex> lock(monitor);
         // check if data are available to proceed
         bufferNotEmpty.wait(lock, [&]() {
-            return (notEmpty(M) && continuousModeFlag.load()) ||
-                   newValue == true;
+            // return (notEmpty(M) && continuousModeFlag.load()) ||
+            //        newValue == true;
+            return notEmpty(M);
         });
         newValue = false; // when buffer is no longer empty, condition variable
                           // is no longer in "wait" state, and the cosumer
