@@ -169,6 +169,7 @@ add_subdirectory(doc)
 
 if(BUILD_MOMENT_ARM)
   add_subdirectory(data/gait1992/real_time/moment_arm/code_generation)
+  add_subdirectory(data/gait1848/real_time/moment_arm/code_generation)
 endif()
 
 ################################################################################
