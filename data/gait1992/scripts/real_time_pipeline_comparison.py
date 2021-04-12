@@ -116,6 +116,8 @@ with open(os.path.join(output_dir, 'metrics_q.txt'), 'w') as file_handle:
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_q_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_q_total, ddof=1), 3)))
 
+#%%
+
 d_tau_total = []
 with PdfPages(os.path.join(output_dir,
                            'inverse_dynamics_comparison.pdf')) as pdf:
@@ -169,6 +171,7 @@ with open(os.path.join(output_dir, 'metrics_tau.txt'), 'w') as file_handle:
     file_handle.write('RMSE\n')
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_tau_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_tau_total, ddof=1), 3)))
+#%%
 
 d_fm_total = []
 with PdfPages(os.path.join(output_dir,
@@ -212,6 +215,8 @@ with open(os.path.join(output_dir, 'metrics_fm.txt'), 'w') as file_handle:
     file_handle.write('RMSE\n')
     file_handle.write('\td_q: μ = ' + str(np.round(np.mean(d_fm_total), 3)) +
                       ' σ = ' + str(np.round(np.std(d_fm_total, ddof=1), 3)))
+
+#%%
 
 d_jr_total = []
 with PdfPages(os.path.join(output_dir,
