@@ -142,10 +142,7 @@ LowPassSmoothFilter::filter(const LowPassSmoothFilter::Input& input) {
     }
 
     // check if dt is consistent
-    if (abs(dt - dtPrev) > 1.5e-3) {
-        /*NOTE: Ensure double precision if throws. This value (1.5e-3) works
-           well in cases of 60Hz (or 0.016ms) which can sometimes due to
-           floating-point errors become 0.017ms. */
+    if (abs(dt - dtPrev) > 1e-5) {
         THROW_EXCEPTION("signal sampling frequency is not constant");
     }
 
