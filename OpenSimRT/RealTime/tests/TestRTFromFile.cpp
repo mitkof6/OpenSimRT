@@ -286,6 +286,12 @@ void run(char const* name) {
     //                       subjectDir + "real_time/pipeline/residuals.sto");
     // STOFileAdapter::write(log.jrLogger,
     //                       subjectDir + "real_time/pipeline/jr.sto");
+
+    // Compare the results with reference tables. Results may differ slightly
+    // due to the non-deterministic nature of the multi-threaded processing.
+    // Enclose comparisons in try/catch blocks to avoid failure in CI, but still
+    // report errors in the console. Results should be compared with the
+    // provided Python scripts to assure consistency in performance.
     try {
         OpenSimUtils::compareTables(
                 log.qLogger,

@@ -153,9 +153,18 @@ void run() {
     cout << "Mean delay: " << (double) sumDelayMS / qTable.getNumRows() << " ms"
          << endl;
 
+    // store results
+    // STOFileAdapter::write(fmLogger,
+    //                       subjectDir +
+    //                       "real_time/muscle_optimization/fm.sto");
+    // STOFileAdapter::write(amLogger,
+    //                       subjectDir +
+    //                       "real_time/muscle_optimization/am.sto");
+
     // Compare results with reference tables. Test might fail on a different
     // machine, possibly due to compilation differences (this fails on Windows).
-#ifndef WIN32
+    // Enclose comparisons in try/catch blocks to avoid failure in CI, but still
+    // report errors in the console.
     try {
         OpenSimUtils::compareTables(
                 fmLogger,
@@ -172,15 +181,6 @@ void run() {
         // it is due to machine precision
         cout << e.what() << endl;
     }
-#endif
-
-    // store results
-    // STOFileAdapter::write(fmLogger,
-    //                       subjectDir +
-    //                       "real_time/muscle_optimization/fm.sto");
-    // STOFileAdapter::write(amLogger,
-    //                       subjectDir +
-    //                       "real_time/muscle_optimization/am.sto");
 }
 
 int main(int argc, char* argv[]) {
