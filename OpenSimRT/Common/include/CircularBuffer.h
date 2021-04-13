@@ -111,9 +111,9 @@ template <int history, typename T> class CircularBuffer {
     }
 
     /**
-     * Determine if the buffer is empty.
+     * Determine if the buffer has at least M values.
      */
-    bool notEmpty(int M) {
+    bool isSize(int M) {
         if (startOver && history >= M) {
             return true;
         } else if (!startOver && current >= M) {
@@ -158,7 +158,9 @@ template <int history, typename T> class CircularBuffer {
     }
 
     /**
-     * Retrieve data from buffer.
+     * Retrieve data from buffer. To retrieve data, the buffer must have at
+     * least M elements, else the consumer thread is blocked until buffer is
+     * filled with M values.
      */
     std::vector<T> get(int M, bool reverseOrder = false) {
         if (M <= 0 || M > history) {
@@ -168,8 +170,7 @@ template <int history, typename T> class CircularBuffer {
         std::unique_lock<std::mutex> lock(monitor);
         // check if data are available to proceed
         bufferNotEmpty.wait(lock, [&]() {
-            return (notEmpty(M) && continuousModeFlag.load()) ||
-                   newValue == true;
+            return isSize(M) && (continuousModeFlag.load() || newValue);
         });
         newValue = false; // when buffer is no longer empty, condition variable
                           // is no longer in "wait" state, and the cosumer
