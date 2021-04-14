@@ -5,7 +5,7 @@
 *Real-Time Musculoskeletal Kinematics and Dynamics Analysis Using Marker- and
 IMU-Based Solutions in Rehabilitation*
 
-![Demo video](https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4)
+[Demo video](https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4)
 
 This project aims to explore the possibility of estimating a multitude of
 kinematic and dynamic quantities using subject-specific musculoskeletal models
