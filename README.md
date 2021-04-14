@@ -5,7 +5,7 @@
 *Real-Time Musculoskeletal Kinematics and Dynamics Analysis Using Marker- and
 IMU-Based Solutions in Rehabilitation*
 
-![Demo video](https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4)
+[Demo video](https://mitkof6.gitlab.io/personal-site/publications/sensors2021/real_time_framework_video.mp4)
 
 This project aims to explore the possibility of estimating a multitude of
 kinematic and dynamic quantities using subject-specific musculoskeletal models
@@ -36,10 +36,11 @@ Relative projects:
 ## Organization
 
 The project is organized into sub-modules. Each sub-module contains the code,
-tests, and applications. In the test files, we perform unit tests of each
-sub-component. There you can find more information on how to use the different
-tools developed. For example, if you are interested in performing inverse
-kinematics with IMU, you can check
+tests, and applications. Experimental algorithms (need further improvement) are
+placed into the experimental folder within a module. In the test files, we
+perform unit tests of each sub-component. There you can find more information on
+how to use the different tools developed. For example, if you are interested in
+performing inverse kinematics with IMU, you can check
 `/OpenSimRT/IMU/tests/TestLowerLimbIKFromFile.cpp`. The organization is as
 follows:
 
@@ -95,7 +96,9 @@ instead of streams, you will only need `opensim-core`.
 
 This work was supported by the EC Horizon 2020 project OACTIVE: Advanced
 personalized, multi-scale computer models preventing osteoarthritis, Grant
-Agreement No. 777159 (http://oactive.eu/).
+Agreement No. 777159 ([OActive](http://oactive.eu/)). This project was developed
+in the [Visualization and Virtual Reality
+Group](http://www.vvr.ece.upatras.gr/), University of Patras, Greece.
 
 If you find this useful you can acknowledge it as follows:
 

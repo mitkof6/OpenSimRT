@@ -33,7 +33,7 @@ jr_reference = read_from_storage(jr_reference_file)
 jr_rt = read_from_storage(jr_rt_file)
 # make very small number zero before plotting
 jr_reference[jr_reference.abs() < 1e-9] = 0
-jr_rt[jr_reference.abs() < 1e-9] = 0
+jr_rt[jr_rt.abs() < 1e-9] = 0
 
 if gait_cycle:
     t0 = 0.6                        # right heel strike

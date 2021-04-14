@@ -1,5 +1,11 @@
-# Evaluates the accuracy of the real-time modules in the pipeline method, in
-# comparison with the resutls from the individual test files.
+# Evaluates the accuracy of the real-time modules in the pipeline
+# method, in comparison with the resutls from the individual test
+# files. Differences will contain a bias because we are comparing with
+# the augmented inverse kinematics from the residual reduction
+# analysis of OpenSim. Also, results can differ because the RT
+# pipeline might skip frames when the processing thread is lagging the
+# acquisition thread. In general we want to observe similar shape,
+# without expecting to have a perfect match.
 #
 # author: Filip Konstantinos filip.k@ece.upatras.gr
 # %%
@@ -45,6 +51,9 @@ fm_pipeline = read_from_storage(fm_pipeline_file)
 
 jr_reference = read_from_storage(jr_reference_file)
 jr_pipeline = read_from_storage(jr_pipeline_file)
+# make very small number zero before plotting
+jr_reference[jr_reference.abs() < 1e-9] = 0
+jr_pipeline[jr_pipeline.abs() < 1e-9] = 0
 
 if gait_cycle:
     t0 = 0.6  # right heel strike
