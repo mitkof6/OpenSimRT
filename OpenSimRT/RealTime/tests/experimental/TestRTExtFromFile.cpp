@@ -329,7 +329,7 @@ void run(char const* name) {
     cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCount << " ms"
          << endl;
 
-    // // store results
+    // store results
     // STOFileAdapter::write(log.qLogger,
     //                       subjectDir + "real_time/pipeline/ext/q.sto");
     // STOFileAdapter::write(log.qDotLogger,

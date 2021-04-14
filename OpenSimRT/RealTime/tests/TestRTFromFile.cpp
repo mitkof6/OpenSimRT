@@ -270,22 +270,22 @@ void run(char const* name) {
     cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCount << " ms"
          << endl;
 
-    // // store results
-    // STOFileAdapter::write(log.qLogger, subjectDir +
-    // "real_time/pipeline/q.sto"); STOFileAdapter::write(log.qDotLogger,
-    //                       subjectDir + "real_time/pipeline/qDot.sto");
-    // STOFileAdapter::write(log.qDDotLogger,
-    //                       subjectDir + "real_time/pipeline/qDDot.sto");
-    // STOFileAdapter::write(log.tauLogger,
-    //                       subjectDir + "real_time/pipeline/tau.sto");
-    // STOFileAdapter::write(log.amLogger,
-    //                       subjectDir + "real_time/pipeline/am.sto");
-    // STOFileAdapter::write(log.fmLogger,
-    //                       subjectDir + "real_time/pipeline/fm.sto");
-    // STOFileAdapter::write(log.residualLogger,
-    //                       subjectDir + "real_time/pipeline/residuals.sto");
-    // STOFileAdapter::write(log.jrLogger,
-    //                       subjectDir + "real_time/pipeline/jr.sto");
+     // store results
+     //STOFileAdapter::write(log.qLogger, subjectDir +
+     //"real_time/pipeline/q.sto"); STOFileAdapter::write(log.qDotLogger,
+     //                      subjectDir + "real_time/pipeline/qDot.sto");
+     //STOFileAdapter::write(log.qDDotLogger,
+     //                      subjectDir + "real_time/pipeline/qDDot.sto");
+     //STOFileAdapter::write(log.tauLogger,
+     //                      subjectDir + "real_time/pipeline/tau.sto");
+     //STOFileAdapter::write(log.amLogger,
+     //                      subjectDir + "real_time/pipeline/am.sto");
+     //STOFileAdapter::write(log.fmLogger,
+     //                      subjectDir + "real_time/pipeline/fm.sto");
+     //STOFileAdapter::write(log.residualLogger,
+     //                      subjectDir + "real_time/pipeline/residuals.sto");
+     //STOFileAdapter::write(log.jrLogger,
+     //                      subjectDir + "real_time/pipeline/jr.sto");
 
     // Compare the results with reference tables. Results may differ slightly
     // due to the non-deterministic nature of the multi-threaded processing.
