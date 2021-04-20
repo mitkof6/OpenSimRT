@@ -76,9 +76,45 @@ void RealTimeAnalysisExtended::acquisition() {
                     pose.q, acquisitionData.ExternalWrenches);
             auto filteredData = lowPassFilter->filter({pose.t, unfilteredData});
 
-            // push to buffer when filter is ready
+            // skip if filter is not ready
             if (!filteredData.isValid) continue;
-            buffer.add(filteredData);
+
+            // represent filtered data as struct
+            FilteredData data;
+            data.fromVector(filteredData.t, filteredData.x, filteredData.xDot,
+                            filteredData.xDDot, model.getNumCoordinates());
+
+            // grfm prediction
+            if (parameters.useGRFMPrediction) {
+                // update detector
+                if (parameters.detectorUpdateMethod ==
+                    PhaseDetectorUpdateMethod::INTERNAL)
+                    parameters.internalPhaseDetectorUpdateFunction(
+                            data.t, data.q, data.qd, data.qdd);
+                else if (parameters.detectorUpdateMethod ==
+                         PhaseDetectorUpdateMethod::EXTERNAL)
+                    parameters.externalPhaseDetectorUpdateFunction();
+                else
+                    THROW_EXCEPTION("Wrong detector update method");
+
+                // solve grfm prediction
+                auto grfmOutput = grfmPrediction->solve(
+                        {data.t, data.q, data.qd, data.qdd});
+
+                // setup wrenches
+                ExternalWrench::Input grfRightWrench = {
+                        grfmOutput.right.point, grfmOutput.right.force,
+                        grfmOutput.right.torque};
+                ExternalWrench::Input grfLeftWrench = {grfmOutput.left.point,
+                                                       grfmOutput.left.force,
+                                                       grfmOutput.left.torque};
+
+                // set external wrenches in data struct
+                data.externalWrenches = {grfRightWrench, grfLeftWrench};
+            }
+
+            // push to buffer
+            buffer.add(data);
         }
     } catch (exception& e) {
         cout << e.what() << endl;
@@ -93,7 +129,6 @@ void RealTimeAnalysisExtended::acquisition() {
 
 void RealTimeAnalysisExtended::processing() {
     try {
-        FilteredData filteredData;
         Vector am, fm, residuals, reactionWrenchVector;
         Vector_<SpatialVec> reactionWrenches;
         while (true) {
@@ -101,69 +136,32 @@ void RealTimeAnalysisExtended::processing() {
 
             // get data from buffer
             auto data = buffer.get(1)[0];
-            filteredData.fromVector(data.t, data.x, data.xDot, data.xDDot,
-                                    model.getNumCoordinates());
-
-            // grfm prediction
-            std::vector<ExternalWrench::Input> externalWrenches;
-            if (parameters.useGRFMPrediction) {
-                // update detector
-                if (parameters.detectorUpdateMethod ==
-                    PhaseDetectorUpdateMethod::INTERNAL)
-                    parameters.internalPhaseDetectorUpdateFunction(
-                            data.t, data.x, data.xDot, data.xDDot);
-                else if (parameters.detectorUpdateMethod ==
-                         PhaseDetectorUpdateMethod::EXTERNAL)
-                    parameters.externalPhaseDetectorUpdateFunction();
-                else
-                    THROW_EXCEPTION("Wrong detector update method");
-
-                // solve grfm prediction
-                auto grfmOutput = grfmPrediction->solve(
-                        {filteredData.t, filteredData.q, filteredData.qd,
-                         filteredData.qdd});
-
-                // setup wrenches
-                ExternalWrench::Input grfRightWrench = {
-                        grfmOutput.right.point, grfmOutput.right.force,
-                        grfmOutput.right.torque};
-                ExternalWrench::Input grfLeftWrench = {grfmOutput.left.point,
-                                                       grfmOutput.left.force,
-                                                       grfmOutput.left.torque};
-                externalWrenches = {grfRightWrench, grfLeftWrench};
-            } else {
-                // use filtered external measured wrenches
-                externalWrenches = filteredData.externalWrenches;
-            }
 
             // solve id
-            auto id = inverseDynamics->solve({filteredData.t, filteredData.q,
-                                              filteredData.qd, filteredData.qdd,
-                                              externalWrenches});
+            auto id = inverseDynamics->solve(
+                    {data.t, data.q, data.qd, data.qdd, data.externalWrenches});
 
             // solve so and jr
             if (parameters.solveMuscleOptimization) {
-                auto so = muscleOptimization->solve(
-                        {filteredData.t, filteredData.q, id.tau});
+                auto so = muscleOptimization->solve({data.t, data.q, id.tau});
                 am = so.am;
                 fm = so.fm;
                 residuals = so.residuals;
 
-                auto jr = jointReaction->solve({filteredData.t, filteredData.q,
-                                                filteredData.qd, so.fm,
-                                                externalWrenches});
+                auto jr = jointReaction->solve({data.t, data.q, data.qd, so.fm,
+                                                data.externalWrenches});
                 reactionWrenches = jr.reactionWrench;
                 reactionWrenchVector = jointReaction->asForceMomentPoint(jr);
             }
 
             { // thread-safe write to output
                 lock_guard<mutex> locker(mu);
-                output.t = filteredData.t;
-                output.q = filteredData.q;
-                output.qd = filteredData.qd;
-                output.qdd = filteredData.qdd;
-                output.grfRightWrench = externalWrenches[0].toVector();
-                output.grfLeftWrench = externalWrenches[1].toVector();
+                output.t = data.t;
+                output.q = data.q;
+                output.qd = data.qd;
+                output.qdd = data.qdd;
+                output.grfRightWrench = data.externalWrenches[0].toVector();
+                output.grfLeftWrench = data.externalWrenches[1].toVector();
                 output.tau = id.tau;
                 output.am = am;
                 output.fm = fm;

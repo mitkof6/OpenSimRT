@@ -105,5 +105,8 @@ class RealTime_API RealTimeAnalysisExtended : public RealTimeAnalysis {
     SimTK::ReferencePtr<MarkerReconstruction> markerReconstruction;
 
     Parameters parameters;
+
+    // data buffer
+    CircularBuffer<1, FilteredData> buffer;
 };
 } // namespace OpenSimRT
