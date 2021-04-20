@@ -27,7 +27,6 @@
 
 #include "InverseDynamics.h"
 #include "internal/RealTimeExports.h"
-
 #include <OpenSim/Simulation/Model/Model.h>
 
 namespace OpenSimRT {

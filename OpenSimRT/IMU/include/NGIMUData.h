@@ -27,7 +27,6 @@
 #pragma once
 #include "TimeConversion.h"
 #include "internal/IMUExports.h"
-
 #include <SimTKcommon.h>
 
 namespace OpenSimRT {

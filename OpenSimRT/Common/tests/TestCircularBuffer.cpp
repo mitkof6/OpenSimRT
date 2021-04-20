@@ -24,7 +24,6 @@
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "CircularBuffer.h"
-
 #include <iostream>
 #include <thread>
 
@@ -39,6 +38,7 @@ void producerFunction() {
         cout << "ID: " << this_thread::get_id() << " Add: " << i << endl;
         this_thread::sleep_for(chrono::milliseconds(1));
     }
+    buffer.setDataRetrievalMode(DataRetrievalMode::CONTINUOUS); // unblock consumers
 }
 
 void consumerFunction(int M) {

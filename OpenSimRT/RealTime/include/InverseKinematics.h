@@ -26,7 +26,6 @@
 #pragma once
 
 #include "internal/RealTimeExports.h"
-
 #include <OpenSim/Common/MarkerData.h>
 #include <OpenSim/Simulation/Model/Model.h>
 #include <OpenSim/Tools/IKTaskSet.h>

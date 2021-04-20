@@ -18,7 +18,6 @@
  * -----------------------------------------------------------------------------
  */
 #include "NGIMUInputDriver.h"
-
 #include "NGIMUListener.h"
 
 using namespace std;

@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file NGIMUInputDriverFromFile.h
+ * @file NGIMUInputFromFileDriver.h
  *
  * @brief Concrete implementation of the IMUInputDriver to stream NGIMU data
  * from file in a separate thread.
@@ -27,10 +27,8 @@
 #pragma once
 #include "InputDriver.h"
 #include "NGIMUData.h"
-
 #include <Common/TimeSeriesTable.h>
 #include <condition_variable>
-#include <exception>
 #include <thread>
 
 namespace OpenSimRT {
@@ -57,6 +55,11 @@ class IMU_API NGIMUInputFromFileDriver : public InputDriver<NGIMUData> {
      * Determine if the stream from file has ended.
      */
     bool shouldTerminate();
+
+    /**
+     * Set the termination flag;
+     */
+    void shouldTerminate(bool flag);
 
     /**
      * Get data from file as a list of NGIMUData. Implements the stopListening
@@ -98,7 +101,7 @@ class IMU_API NGIMUInputFromFileDriver : public InputDriver<NGIMUData> {
     std::thread t;
     mutable std::mutex mu;
     mutable std::condition_variable cond;
-    mutable std::exception_ptr exc_ptr;
+    std::atomic_bool terminationFlag;
     mutable bool newRow = false;
 };
 } // namespace OpenSimRT

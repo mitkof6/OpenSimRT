@@ -32,7 +32,6 @@
 #include "CircularBuffer.h"
 #include "InverseDynamics.h"
 #include "internal/ViconExports.h"
-
 #include <DataStreamClient.h>
 #include <SimTKcommon.h>
 #include <map>

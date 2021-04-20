@@ -18,11 +18,9 @@
  * -----------------------------------------------------------------------------
  */
 #include "InverseDynamics.h"
-
 #include "Exception.h"
 #include "OpenSimUtils.h"
 #include "Utils.h"
-
 #include <OpenSim/Simulation/Model/BodySet.h>
 #include <OpenSim/Simulation/Model/Muscle.h>
 
@@ -33,7 +31,7 @@ using namespace OpenSimRT;
 
 /******************************************************************************/
 
-Vector ExternalWrench::Input::toVector() {
+Vector ExternalWrench::Input::toVector() const {
     Vector out(9);
     out[0] = point[0];
     out[1] = point[1];

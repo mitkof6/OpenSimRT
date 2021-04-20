@@ -51,7 +51,7 @@ void run() {
             OpenSim::LoadOpenSimLibrary("Gait1992MomentArm", true);
 
     // get function pointer
-#ifdef _WIN32
+#ifdef WIN32
     CalcMomentArm calcMomentArm =
             (CalcMomentArm) GetProcAddress(momentArmLibHandle, "calcMomentArm");
 #else

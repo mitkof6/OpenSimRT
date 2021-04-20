@@ -18,10 +18,8 @@
  * -----------------------------------------------------------------------------
  */
 #include "InverseKinematics.h"
-
 #include "Exception.h"
 #include "OpenSimUtils.h"
-
 #include <OpenSim/Simulation/Model/BodySet.h>
 #include <OpenSim/Simulation/Model/MarkerSet.h>
 #include <OpenSim/Tools/IKCoordinateTask.h>

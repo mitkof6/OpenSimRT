@@ -18,10 +18,8 @@
  * -----------------------------------------------------------------------------
  */
 #include "Visualization.h"
-
 #include "Exception.h"
 #include "Utils.h"
-
 #include <OpenSim/Simulation/Model/Muscle.h>
 #include <Simulation/Model/PhysicalOffsetFrame.h>
 #include <Simulation/SimbodyEngine/Body.h>
@@ -114,6 +112,7 @@ void BasicModelVisualizer::update(const Vector& q,
 #endif
     // kinematics
     state.updQ() = q;
+    model.realizePosition(state);
     // muscle activations
     // TODO handle path actuators
     if (muscleActivations.size() == model.getMuscles().getSize()) {
@@ -130,6 +129,7 @@ void BasicModelVisualizer::update(const Vector& q,
     if (silo->takeKeyHit(key, modifiers)) {
         if (key == Visualizer::InputListener::KeyEsc) {
             shouldTerminate = true;
+            silo->clear();
         }
     }
 
@@ -137,8 +137,12 @@ void BasicModelVisualizer::update(const Vector& q,
     int menuId = -1, item = -1;
     silo->takeMenuPick(menuId, item);
     if (menuId == int(MenuID::SIMULATION) && item == int(SimMenuItem::QUIT)) {
+        shouldTerminate = true;
+    }
+
+    if (shouldTerminate) {
         visualizer->shutdown();
-        THROW_EXCEPTION("End Simulation. Bye!");
+        THROW_EXCEPTION("Shutdown visualizer message received.");
     }
 #endif
 }

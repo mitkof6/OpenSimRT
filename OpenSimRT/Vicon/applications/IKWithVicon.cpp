@@ -28,7 +28,6 @@
 #include "Settings.h"
 #include "ViconDataStream.h"
 #include "Visualization.h"
-
 #include <iostream>
 
 using namespace std;

@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file CommonExports.h
+ * @file IMUExports.h
  *
  * \brief Export/import definition for dynamic libraries.
  *

@@ -9,17 +9,17 @@
 #include <regex>
 #include <stdexcept>
 #pragma warning(disable : 4251)
-#include <type_traits>
-#include <vector>
+#include "internal/CommonExports.h"
 #include <map>
 #include <string>
-#include "internal/CommonExports.h"
+#include <type_traits>
+#include <vector>
 
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
 class Common_API INIReader {
-public:
-    INIReader() {};
+ public:
+    INIReader(){};
     // Construct INIReader and parse given filename. See ini.h for more info
     // about the parsing.
     INIReader(std::string filename);
@@ -166,13 +166,13 @@ public:
        error (only when INI_USE_STACK is zero).
     */
     int ini_parse(const char* filename,
-                  int(*handler)(void* user, const char* section,
-                                const char* name, const char* value),
+                  int (*handler)(void* user, const char* section,
+                                 const char* name, const char* value),
                   void* user);
     /* Same as ini_parse(), but takes a FILE* instead of filename. This doesn't
        close the file when it's finished -- the caller must do that. */
     int ini_parse_file(FILE* file,
-                       int(*handler)(void* user, const char* section,
-                                     const char* name, const char* value),
+                       int (*handler)(void* user, const char* section,
+                                      const char* name, const char* value),
                        void* user);
 };

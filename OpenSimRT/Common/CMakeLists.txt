@@ -3,10 +3,8 @@ file(GLOB includes include/*.h)
 file(GLOB sources src/*.cpp)
 # file(GLOB tests tests/*.cpp)
 file(GLOB tests
-  # Does not terminate because CircularBuffer waits when empty (new implementaiton).
-  # tests/TestCircularBuffer.cpp
+  tests/TestCircularBuffer.cpp
   tests/TestLowPassSmoothFilter.cpp
-  tests/TestLowPassSmoothFilterTS.cpp
   tests/TestButterWorthFilter.cpp
   tests/TestSyncManager.cpp
   )

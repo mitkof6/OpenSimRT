@@ -26,7 +26,6 @@
 #pragma once
 
 #include "internal/RealTimeExports.h"
-
 #include <OpenSim/Simulation/Model/ExternalForce.h>
 #include <OpenSim/Simulation/Model/Force.h>
 #include <OpenSim/Simulation/Model/Model.h>
@@ -51,7 +50,7 @@ class RealTime_API ExternalWrench : public OpenSim::Force {
         SimTK::Vec3 point;
         SimTK::Vec3 force;
         SimTK::Vec3 torque;
-        SimTK::Vector toVector();
+        SimTK::Vector toVector() const;
         void fromVector(const SimTK::Vector& in);
         static int size();
     };

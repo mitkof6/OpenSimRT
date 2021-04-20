@@ -30,7 +30,6 @@
 #include "TypeHelpers.h"
 #include "Utils.h"
 #include "internal/CommonExports.h"
-
 #include <OpenSim/Common/DataTable.h>
 #include <OpenSim/Common/PiecewiseLinearFunction.h>
 

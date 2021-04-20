@@ -25,12 +25,11 @@
  * @author Dimitar Stanev <jimstanev@gmail.com>
  */
 #include "INIReader.h"
+#include "InverseKinematics.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
 #include "Utils.h"
-#include "InverseKinematics.h"
 #include "Visualization.h"
-
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/TimeSeriesTable.h>
 #include <SimTKcommon/Scalar.h>

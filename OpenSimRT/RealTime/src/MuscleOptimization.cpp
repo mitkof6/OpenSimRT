@@ -18,10 +18,8 @@
  * -----------------------------------------------------------------------------
  */
 #include "MuscleOptimization.h"
-
 #include "Exception.h"
 #include "OpenSimUtils.h"
-
 #include <OpenSim/Actuators/CoordinateActuator.h>
 #include <OpenSim/Simulation/Model/ForceSet.h>
 

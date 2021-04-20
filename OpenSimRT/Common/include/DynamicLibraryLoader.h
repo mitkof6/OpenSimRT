@@ -26,7 +26,6 @@
 #pragma once
 
 #include "Exception.h"
-
 #include <OpenSim/Common/LoadOpenSimLibrary.h>
 
 // necessary for loading dynamic libraries

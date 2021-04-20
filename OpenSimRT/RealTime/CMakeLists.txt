@@ -1,21 +1,25 @@
 # global files
-file(GLOB includes include/*.h)
-file(GLOB sources src/*.cpp)
+file(GLOB includes include/*.h
+  include/experimental/*.h)
+file(GLOB sources src/*.cpp
+  src/experimental/*.cpp)
 # file(GLOB tests tests/*.cpp)
-file(GLOB applications applications/*.cpp)
 file(GLOB tests
   tests/TestIKFromFile.cpp
   tests/TestIKIMUFromFile.cpp
   tests/TestIDFromFile.cpp
   tests/TestSOFromFile.cpp
   tests/TestJRFromFile.cpp
-  tests/TestMarkerReconstruction.cpp
-  tests/TestAccelerationGRFMPredictionFromFile.cpp
-  tests/TestContactForceGRFMPredictionFromFile.cpp
+  tests/TestRTFromFile.cpp
+  tests/experimental/TestAccelerationGRFMPredictionFromFile.cpp
+  tests/experimental/TestContactForceGRFMPredictionFromFile.cpp
+  tests/experimental/TestMarkerReconstruction.cpp
+  tests/experimental/TestRTExtFromFile.cpp
   )
 
 # dependencies
 include_directories(include/)
+include_directories(include/experimental/)
 include_directories(../Common/include/)
 set(DEPENDENCY_LIBRARIES ${OpenSim_LIBRARIES} Common)
 
@@ -33,11 +37,5 @@ addLibrary(
 # tests
 addTests(
   TESTPROGRAMS ${tests}
-  LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
-  )
-
-# applications
-addApplications(
-  SOURCES ${applications}
   LINKLIBS ${target} ${DEPENDENCY_LIBRARIES}
   )

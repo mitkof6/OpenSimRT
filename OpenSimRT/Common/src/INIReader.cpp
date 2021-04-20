@@ -1,6 +1,5 @@
 // Read an INI file into easy-to-access name/value pairs.
 #include "INIReader.h"
-
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>

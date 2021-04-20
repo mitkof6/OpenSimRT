@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  *
- * @file TimeConversions.h
+ * @file TimeConversion.h
  *
  * @brief Define functions for converting system clock time_points to NTP
  * timestamps and vice-versa.
@@ -28,7 +28,6 @@
 #pragma once
 
 #include "internal/IMUExports.h"
-
 #include <chrono>
 #include <string>
 

@@ -78,7 +78,7 @@ with PdfPages(output_dir + 'muscle_optimization_comparison.pdf') as pdf:
         pdf.savefig(fig)
         plt.close()
 
-print('d_tau: μ = ', np.round(np.mean(d_fm_total), 3),
+print('d_fm: μ = ', np.round(np.mean(d_fm_total), 3),
       ' σ = ', np.round(np.std(d_fm_total, ddof=1), 3))
 
 with open(output_dir + 'metrics.txt', 'w') as file_handle:
